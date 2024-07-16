@@ -3,6 +3,8 @@ from rest_framework import serializers
 
 from django.apps import apps
 
+from common.features.multivariate.serializers import MultivariateFeatureStateValueSerializer
+
 
 class FeatureStateValueSerializer(serializers.ModelSerializer):
     class Meta:
@@ -14,16 +16,6 @@ class CreateSegmentOverrideFeatureSegmentSerializer(serializers.ModelSerializer)
     class Meta:
         model = apps.get_model("features", "FeatureSegment")
         fields = ("id", "segment", "priority", "uuid")
-
-
-class MultivariateFeatureStateValueSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = apps.get_model("features.multivariate", "MultivariateFeatureStateValue")
-        fields = (
-            "id",
-            "multivariate_feature_option",
-            "percentage_allocation",
-        )
 
 
 class CreateSegmentOverrideFeatureStateSerializer(WritableNestedModelSerializer):
