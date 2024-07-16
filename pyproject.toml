@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "flagsmith-common"
+version = "0.1.0"
+description = "A repository for including code that is required in multiple flagsmith repositories"
+authors = ["Matthew Elwell <matthew.elwell@flagsmith.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+django = "*"
+django-rest-framework = "*"
+drf-writable-nested = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
