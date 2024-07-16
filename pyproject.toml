@@ -9,7 +9,7 @@ packages = [{ include = "common"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 django = "*"
-django-rest-framework = "*"
+djangorestframework = "*"
 drf-writable-nested = "*"
 
 [build-system]
