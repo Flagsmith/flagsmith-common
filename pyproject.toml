@@ -4,9 +4,7 @@ version = "0.1.0"
 description = "A repository for including code that is required in multiple flagsmith repositories"
 authors = ["Matthew Elwell <matthew.elwell@flagsmith.com>"]
 readme = "README.md"
-packages = [
-    { include = "common", from = "common" }
-]
+packages = [{ include = "common"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
