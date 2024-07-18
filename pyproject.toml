@@ -13,10 +13,40 @@ djangorestframework = "*"
 drf-writable-nested = "*"
 
 [tool.poetry.group.dev.dependencies]
-pre-commit = "^3.0.4"
-flake8 = "~6.0.0"
-black = "~23.7.0"
+pre-commit = "*"
+flake8 = "*"
+black = "*"
+isort = "*"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py311', 'py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+)/
+'''
+
+[tool.isort]
+use_parentheses=true
+multi_line_output=3
+include_trailing_comma=true
+line_length=79
+known_first_party=['flagsmith','api','app','core','features','environments']
+known_third_party=['django', 'rest_framework', 'saml2', 'drf_yasg2', 'pytest']
+skip = ['migrations', '.venv']
