@@ -12,6 +12,11 @@ django = "*"
 djangorestframework = "*"
 drf-writable-nested = "*"
 
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.0.4"
+flake8 = "~6.0.0"
+black = "~23.7.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
