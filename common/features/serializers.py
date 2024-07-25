@@ -1,9 +1,10 @@
+from django.apps import apps
 from drf_writable_nested.serializers import WritableNestedModelSerializer
 from rest_framework import serializers
 
-from django.apps import apps
-
-from common.features.multivariate.serializers import MultivariateFeatureStateValueSerializer
+from common.features.multivariate.serializers import (
+    MultivariateFeatureStateValueSerializer,
+)
 
 
 class FeatureStateValueSerializer(serializers.ModelSerializer):

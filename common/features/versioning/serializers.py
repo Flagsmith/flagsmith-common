@@ -1,4 +1,6 @@
-from common.features.serializers import CreateSegmentOverrideFeatureStateSerializer
+from common.features.serializers import (
+    CreateSegmentOverrideFeatureStateSerializer,
+)
 
 
 class EnvironmentFeatureVersionFeatureStateSerializer(
