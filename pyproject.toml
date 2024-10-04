@@ -11,6 +11,7 @@ python = "^3.10"
 django = "<5.0.0"
 djangorestframework = "*"
 drf-writable-nested = "*"
+flagsmith-flag-engine = "*"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
