@@ -10,6 +10,11 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import ListSerializer
 from rest_framework_recursive.fields import RecursiveField
 
+from common.metadata.serializers import (
+    MetadataSerializer,
+    SerializerWithMetadata,
+)
+
 logger = logging.getLogger(__name__)
 
 
