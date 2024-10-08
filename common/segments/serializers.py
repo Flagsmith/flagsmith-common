@@ -3,6 +3,7 @@ from typing import Any, Optional
 
 from django.apps import apps
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from flag_engine.segments.constants import PERCENTAGE_SPLIT
 from rest_framework import serializers
