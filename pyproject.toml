@@ -11,6 +11,8 @@ python = "^3.10"
 django = "<5.0.0"
 djangorestframework = "*"
 drf-writable-nested = "*"
+flagsmith-flag-engine = "*"
+djangorestframework-recursive = "*"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
@@ -48,5 +50,12 @@ multi_line_output=3
 include_trailing_comma=true
 line_length=79
 known_first_party=['flagsmith','api','app','core','features','environments']
-known_third_party=['django', 'rest_framework', 'saml2', 'drf_yasg2', 'pytest']
+known_third_party=[
+  'django',
+  'rest_framework',
+  'saml2',
+  'drf_yasg2',
+  'pytest',
+  'rest_framework_recursive',
+]
 skip = ['migrations', '.venv']
