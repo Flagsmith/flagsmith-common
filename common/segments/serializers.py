@@ -199,7 +199,7 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
                 continue
 
             self._update_or_create_conditions(
-                conditions, child_rule, is_create=is_create
+                conditions, child_rule, is_create=is_create, segment=segment
             )
 
             self._update_or_create_segment_rules(
@@ -238,6 +238,13 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
     ) -> Optional[models.Model]:
         SegmentRule = apps.get_model("segments", "SegmentRule")
         rule_id = rule_data.pop("id", None)
+        if rule_id is not None:
+            segment_rule = SegmentRule.objects.get(id=rule_id)
+            matching_segment = segment or rule.get_segment()
+
+            if segment_rule.get_segment() != matching_segment:
+                raise ValidationError({"segment": "Mismatched segment is not allowed"})
+
         if rule_data.get("delete"):
             SegmentRule.objects.filter(id=rule_id).delete()
             return
@@ -249,16 +256,31 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
 
     @staticmethod
     def _update_or_create_conditions(
-        conditions_data: dict, rule: models.Model, is_create: bool = False
+        conditions_data: dict,
+        rule: models.Model,
+        segment: models.Model | None = None,
+        is_create: bool = False,
     ) -> None:
         Condition = apps.get_model("segments", "Condition")
-        for condition in conditions_data:
-            condition_id = condition.pop("id", None)
-            if condition.get("delete"):
+        for condition_data in conditions_data:
+            condition_id = condition_data.pop("id", None)
+            if condition_id is not None:
+                condition = Condition.objects.get(id=condition_id)
+                matching_segment = segment or rule.get_segment()
+                if condition._get_segment() != matching_segment:
+                    raise ValidationError(
+                        {"segment": "Mismatched segment is not allowed"}
+                    )
+
+            if condition_data.get("delete"):
                 Condition.objects.filter(id=condition_id).delete()
                 continue
 
             Condition.objects.update_or_create(
                 id=condition_id,
-                defaults={**condition, "created_with_segment": is_create, "rule": rule},
+                defaults={
+                    **condition_data,
+                    "created_with_segment": is_create,
+                    "rule": rule,
+                },
             )
