@@ -256,7 +256,7 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
 
     @staticmethod
     def _update_or_create_conditions(
-        conditions_data: dict,
+        conditions_data: dict[str, Any],
         rule: models.Model,
         segment: models.Model | None = None,
         is_create: bool = False,
