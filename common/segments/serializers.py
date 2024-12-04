@@ -120,7 +120,12 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
         return response
 
     def validate_project_segment_limit(self, project: models.Model) -> None:
-        if project.segments.count() >= project.max_segments_allowed:
+        if (
+            apps.get_model("segments", "Segment")
+            .objects.filter(project=project)
+            .count()
+            >= project.max_segments_allowed
+        ):
             raise ValidationError(
                 {
                     "project": "The project has reached the maximum allowed segments limit."
