@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "flagsmith_common"
-version = "1.4.1"
+version = "1.4.2"
 description = "A repository for including code that is required in multiple flagsmith repositories"
 authors = ["Matthew Elwell <matthew.elwell@flagsmith.com>"]
 readme = "README.md"
