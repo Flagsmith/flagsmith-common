@@ -122,7 +122,7 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
     def validate_project_segment_limit(self, project: models.Model) -> None:
         if (
             apps.get_model("segments", "Segment")
-            .objects.filter(project=project)
+            .live_objects.filter(project=project)
             .count()
             >= project.max_segments_allowed
         ):
