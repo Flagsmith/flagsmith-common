@@ -25,7 +25,7 @@ PROJECT_PERMISSIONS = [
     (VIEW_AUDIT_LOG, "Allows the user to view the audit logs for this organisation."),
     (
         MANAGE_PROJECT_LEVEL_CHANGE_REQUESTS,
-        "Ability to manage change requests associated with a project.",
+        "Ability to create, delete, and publish change requests associated with a project.",
     ),
     (
         APPROVE_PROJECT_LEVEL_CHANGE_REQUESTS,
