@@ -21,10 +21,19 @@ logger = logging.getLogger(__name__)
 
 class ConditionSerializer(serializers.ModelSerializer):
     delete = serializers.BooleanField(write_only=True, required=False)
+    version_of = RecursiveField(required=False, allow_null=True)
 
     class Meta:
         model = apps.get_model("segments", "Condition")
-        fields = ("id", "operator", "property", "value", "description", "delete")
+        fields = (
+            "id",
+            "operator",
+            "property",
+            "value",
+            "description",
+            "delete",
+            "version_of",
+        )
 
     def validate(self, attrs):
         super(ConditionSerializer, self).validate(attrs)
@@ -42,10 +51,11 @@ class RuleSerializer(serializers.ModelSerializer):
     delete = serializers.BooleanField(write_only=True, required=False)
     conditions = ConditionSerializer(many=True, required=False)
     rules = ListSerializer(child=RecursiveField(), required=False)
+    version_of = RecursiveField(required=False, allow_null=True)
 
     class Meta:
         model = apps.get_model("segments", "SegmentRule")
-        fields = ("id", "type", "rules", "conditions", "delete")
+        fields = ("id", "type", "rules", "conditions", "delete", "version_of")
 
 
 class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
