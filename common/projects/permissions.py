@@ -12,6 +12,7 @@ MANAGE_TAGS = "MANAGE_TAGS"
 # Note that this does not impact change requests in an environment
 MANAGE_PROJECT_LEVEL_CHANGE_REQUESTS = "MANAGE_PROJECT_LEVEL_CHANGE_REQUESTS"
 APPROVE_PROJECT_LEVEL_CHANGE_REQUESTS = "APPROVE_PROJECT_LEVEL_CHANGE_REQUESTS"
+CREATE_PROJECT_LEVEL_CHANGE_REQUESTS = "CREATE_PROJECT_LEVEL_CHANGE_REQUESTS"
 
 TAG_SUPPORTED_PERMISSIONS = [DELETE_FEATURE]
 
@@ -30,6 +31,10 @@ PROJECT_PERMISSIONS = [
     (
         APPROVE_PROJECT_LEVEL_CHANGE_REQUESTS,
         "Ability to approve project level change requests.",
+    ),
+    (
+        CREATE_PROJECT_LEVEL_CHANGE_REQUESTS,
+        "Ability to create project level change requests.",
     ),
     (MANAGE_TAGS, "Allows the user to manage tags in the given project."),
 ]
