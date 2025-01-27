@@ -270,7 +270,11 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
         for condition_data in conditions_data:
             condition_id = condition_data.pop("id", None)
             if condition_id is not None:
-                condition = Condition.objects.get(id=condition_id)
+                condition = Condition.objects.filter(id=condition_id).first()
+                if condition is None:
+                    raise ValidationError(
+                        {"condition": "Condition can't be found and is likely deleted"}
+                    )
                 matching_segment = segment or rule.get_segment()
                 if condition._get_segment() != matching_segment:
                     raise ValidationError(
