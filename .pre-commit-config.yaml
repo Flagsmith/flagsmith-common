@@ -1,21 +1,28 @@
 repos:
-    - repo: https://github.com/PyCQA/isort
-      rev: 5.13.2
-      hooks:
-          - id: isort
-            name: isort (python)
-    - repo: https://github.com/psf/black
-      rev: 24.4.2
-      hooks:
-          - id: black
-            language_version: python3
-    - repo: https://github.com/pycqa/flake8
-      rev: 7.1.0
-      hooks:
-          - id: flake8
-    - repo: https://github.com/python-poetry/poetry
-      rev: 1.7.1
-      hooks:
-        - id: poetry-check
-        - id: poetry-lock
-          args: ['--check']
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.9.7
+    hooks:
+      # Run the linter.
+      - id: ruff
+        args: [--fix]
+      # Run the formatter.
+      - id: ruff-format
+  - repo: https://github.com/python-poetry/poetry
+    rev: 2.1.1
+    hooks:
+      - id: poetry-check
+      - id: poetry-lock
+  - repo: local
+    hooks:
+      - id: python-typecheck
+        name: python-typecheck
+        language: system
+        entry: poetry run mypy .
+        require_serial: true
+        pass_filenames: false
+        types: [python]
+
+ci:
+  skip: [python-typecheck]
+  autoupdate_commit_msg: "ci: pre-commit autoupdate"

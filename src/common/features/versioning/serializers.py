@@ -9,5 +9,5 @@ class EnvironmentFeatureVersionFeatureStateSerializer(
     class Meta(CreateSegmentOverrideFeatureStateSerializer.Meta):
         read_only_fields = (
             CreateSegmentOverrideFeatureStateSerializer.Meta.read_only_fields
-            + ("feature",)
+            + ("feature",)  # type: ignore[assignment]
         )
