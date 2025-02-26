@@ -1,4 +1,4 @@
-name: Python Typing and Tests
+name: Python Checks and Unit Tests 
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: Linting and Formatting
+    name: Python Checks and Unit Tests
 
     steps:
       - name: Cloning repo
