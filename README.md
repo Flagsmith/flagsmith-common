@@ -46,3 +46,4 @@ make install-packages opts="--with dev"
 
 # Install with specific extras
 make install-packages opts="--extras 'feature1 feature2'"
+```
