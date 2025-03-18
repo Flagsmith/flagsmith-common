@@ -1,21 +1,30 @@
 import json
 import pathlib
 from functools import lru_cache
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractBaseUser
+from django.db.models import Manager
 
 UNKNOWN = "unknown"
 VERSIONS_INFO_FILE_LOCATION = ".versions.json"
 
 
-class VersionInfo(TypedDict, total=False):
+class SelfHostedData(TypedDict):
+    has_users: bool
+    has_logins: bool
+
+
+class VersionInfo(TypedDict):
     ci_commit_sha: str
     image_tag: str
     has_email_provider: bool
     is_enterprise: bool
     is_saas: bool
-    package_versions: dict[str, str]
+    self_hosted_data: SelfHostedData | None
+    package_versions: NotRequired[dict[str, str]]
 
 
 def is_enterprise() -> bool:
@@ -41,23 +50,30 @@ def has_email_provider() -> bool:
 @lru_cache
 def get_version_info() -> VersionInfo:
     """Reads the version info baked into src folder of the docker container"""
-    version_json: VersionInfo = {}
-    image_tag = UNKNOWN
+    _is_saas = is_saas()
+    version_json: VersionInfo = {
+        "ci_commit_sha": _get_file_contents("./CI_COMMIT_SHA"),
+        "image_tag": UNKNOWN,
+        "has_email_provider": has_email_provider(),
+        "is_enterprise": is_enterprise(),
+        "is_saas": _is_saas,
+        "self_hosted_data": None,
+    }
 
     manifest_versions_content: str = _get_file_contents(VERSIONS_INFO_FILE_LOCATION)
 
     if manifest_versions_content != UNKNOWN:
         manifest_versions = json.loads(manifest_versions_content)
         version_json["package_versions"] = manifest_versions
-        image_tag = manifest_versions["."]
+        version_json["image_tag"] = manifest_versions["."]
 
-    version_json = version_json | {
-        "ci_commit_sha": _get_file_contents("./CI_COMMIT_SHA"),
-        "image_tag": image_tag,
-        "has_email_provider": has_email_provider(),
-        "is_enterprise": is_enterprise(),
-        "is_saas": is_saas(),
-    }
+    if not _is_saas:
+        user_objects: Manager[AbstractBaseUser] = getattr(get_user_model(), "objects")
+
+        version_json["self_hosted_data"] = {
+            "has_users": user_objects.exists(),
+            "has_logins": user_objects.filter(last_login__isnull=False).exists(),
+        }
 
     return version_json
 

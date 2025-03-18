@@ -1,9 +1,9 @@
 import typing
 
-from django.contrib.contenttypes.models import ContentType
-from django.db import models
-
 if typing.TYPE_CHECKING:
+    from django.contrib.contenttypes.models import ContentType
+    from django.db import models
+
     FeatureStateValue: typing.TypeAlias = models.Model
     FeatureSegment: typing.TypeAlias = models.Model
     Condition: typing.TypeAlias = models.Model

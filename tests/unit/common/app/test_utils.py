@@ -8,6 +8,9 @@ from pytest_django.fixtures import SettingsWrapper
 from common.app.utils import get_version_info
 
 
+pytestmark = pytest.mark.django_db
+
+
 @pytest.fixture(autouse=True)
 def clear_get_version_info_cache() -> Generator[None, None, None]:
     yield
@@ -35,6 +38,10 @@ def test_get_version_info(fs: FakeFilesystem) -> None:
         "is_enterprise": True,
         "is_saas": False,
         "package_versions": {".": "2.66.2"},
+        "self_hosted_data": {
+            "has_logins": False,
+            "has_users": False,
+        },
     }
 
 
@@ -52,6 +59,10 @@ def test_get_version_info_with_missing_files(fs: FakeFilesystem) -> None:
         "has_email_provider": False,
         "is_enterprise": True,
         "is_saas": False,
+        "self_hosted_data": {
+            "has_logins": False,
+            "has_users": False,
+        },
     }
 
 
