@@ -8,8 +8,3 @@ DATABASES = {
         "NAME": "common",
     }
 }
-
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-SENDGRID_API_KEY = ""
-AWS_SES_REGION_ENDPOINT = ""
-SEGMENT_RULES_CONDITIONS_LIMIT = 0
