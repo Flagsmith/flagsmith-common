@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from django.apps import apps
 from django.conf import settings
@@ -9,17 +9,30 @@ from flag_engine.segments.constants import PERCENTAGE_SPLIT
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import ListSerializer
-from rest_framework_recursive.fields import RecursiveField
+from rest_framework_recursive.fields import (  # type: ignore[import-untyped]
+    RecursiveField,
+)
 
 from common.metadata.serializers import (
     MetadataSerializer,
     SerializerWithMetadata,
 )
 
+if TYPE_CHECKING:
+    from common.types import (  # noqa: F401
+        Condition,
+        Project,
+        Rule,
+        Segment,
+    )
+    from common.types import (
+        SegmentRule as SegmentRule_,
+    )
+
 logger = logging.getLogger(__name__)
 
 
-class ConditionSerializer(serializers.ModelSerializer):
+class ConditionSerializer(serializers.ModelSerializer["Condition"]):
     delete = serializers.BooleanField(write_only=True, required=False)
     version_of = RecursiveField(required=False, allow_null=True)
 
@@ -35,22 +48,24 @@ class ConditionSerializer(serializers.ModelSerializer):
             "version_of",
         )
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         super(ConditionSerializer, self).validate(attrs)
         if attrs.get("operator") != PERCENTAGE_SPLIT and not attrs.get("property"):
             raise ValidationError({"property": ["This field may not be blank."]})
         return attrs
 
-    def to_internal_value(self, data):
+    def to_internal_value(self, data: dict[str, Any]) -> Any:
         # convert value to a string - conversion to correct value type is handled elsewhere
         data["value"] = str(data["value"]) if "value" in data else None
         return super(ConditionSerializer, self).to_internal_value(data)
 
 
-class RuleSerializer(serializers.ModelSerializer):
+class RuleSerializer(serializers.ModelSerializer["Rule"]):
     delete = serializers.BooleanField(write_only=True, required=False)
     conditions = ConditionSerializer(many=True, required=False)
-    rules = ListSerializer(child=RecursiveField(), required=False)
+    rules: ListSerializer["Rule"] = ListSerializer(
+        child=RecursiveField(), required=False
+    )
     version_of = RecursiveField(required=False, allow_null=True)
 
     class Meta:
@@ -58,7 +73,7 @@ class RuleSerializer(serializers.ModelSerializer):
         fields = ("id", "type", "rules", "conditions", "delete", "version_of")
 
 
-class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
+class SegmentSerializer(serializers.ModelSerializer["Segment"], SerializerWithMetadata):
     rules = RuleSerializer(many=True)
     metadata = MetadataSerializer(required=False, many=True)
 
@@ -66,7 +81,7 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
         model = apps.get_model("segments", "Segment")
         fields = "__all__"
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         attrs = super().validate(attrs)
         self.validate_required_metadata(attrs)
         if not attrs.get("rules"):
@@ -75,13 +90,20 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
             )
         return attrs
 
-    def get_project(self, validated_data: dict = None) -> models.Model:
-        return validated_data.get("project") or apps.get_model(
-            "projects", "Project"
-        ).objects.get(id=self.context["view"].kwargs["project_pk"])
+    def get_project(
+        self,
+        validated_data: dict[str, Any] | None = None,
+    ) -> "Project":
+        project: "Project"
+        if validated_data and "project" in validated_data:
+            project = validated_data["project"]
+            return project
+        project = apps.get_model("projects", "Project").objects.get(
+            id=self.context["view"].kwargs["project_pk"]
+        )
+        return project
 
-    def create(self, validated_data: dict) -> models.Model:
-        Segment = apps.get_model("segments", "Segment")
+    def create(self, validated_data: dict[str, Any]) -> "Segment":
         project = validated_data["project"]
         self.validate_project_segment_limit(project)
 
@@ -90,7 +112,9 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
         self.validate_segment_rules_conditions_limit(rules_data)
 
         # create segment with nested rules and conditions
-        segment = Segment.objects.create(**validated_data)
+        segment: "Segment" = apps.get_model("segments", "Segment").objects.create(
+            **validated_data
+        )
         self._update_or_create_segment_rules(
             rules_data, segment=segment, is_create=True
         )
@@ -98,8 +122,10 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
         return segment
 
     def update(
-        self, instance: models.Model, validated_data: dict[str, Any]
-    ) -> models.Model:
+        self,
+        instance: "Segment",
+        validated_data: dict[str, Any],
+    ) -> "Segment":
         # use the initial data since we need the ids included to determine which to update & which to create
         rules_data = self.initial_data.pop("rules", [])
         metadata_data = validated_data.pop("metadata", [])
@@ -129,7 +155,7 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
 
         return response
 
-    def validate_project_segment_limit(self, project: models.Model) -> None:
+    def validate_project_segment_limit(self, project: "Project") -> None:
         if (
             apps.get_model("segments", "Segment")
             .live_objects.filter(project=project)
@@ -143,7 +169,7 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
             )
 
     def validate_segment_rules_conditions_limit(
-        self, rules_data: dict[str, object]
+        self, rules_data: list[dict[str, Any]]
     ) -> None:
         if self.instance and getattr(self.instance, "whitelisted_segment", None):
             return
@@ -160,15 +186,15 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
 
     def _calculate_condition_count(
         self,
-        rules_data: dict[str, object],
-    ) -> None:
+        rules_data: list[dict[str, Any]],
+    ) -> int:
         count: int = 0
 
         for rule_data in rules_data:
-            child_rules = rule_data.get("rules", [])
+            child_rules: list[dict[str, Any]] = rule_data.get("rules", [])
             if child_rules:
                 count += self._calculate_condition_count(child_rules)
-            conditions = rule_data.get("conditions", [])
+            conditions: list[dict[str, Any]] = rule_data.get("conditions", [])
             for condition in conditions:
                 if condition.get("delete", False) is True:
                     continue
@@ -176,7 +202,9 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
         return count
 
     def _update_segment_rules(
-        self, rules_data: dict, segment: Optional[models.Model] = None
+        self,
+        rules_data: list[dict[str, Any]],
+        segment: "Segment | None" = None,
     ) -> None:
         """
         Since we don't have a unique identifier for the rules / conditions for the update, we assume that the client
@@ -188,15 +216,16 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
         # existing rules and create the ones that were sent)
         # note: we do this to preserve backwards compatibility after adding logic to include the id in requests
         if not Segment.id_exists_in_rules_data(rules_data):
+            assert segment
             segment.rules.set([])
 
         self._update_or_create_segment_rules(rules_data, segment=segment)
 
     def _update_or_create_segment_rules(
         self,
-        rules_data: dict,
-        segment: Optional[models.Model] = None,
-        rule: Optional[models.Model] = None,
+        rules_data: list[dict[str, Any]],
+        segment: "Segment | None" = None,
+        rule: "Rule | None" = None,
         is_create: bool = False,
     ) -> None:
         if all(x is None for x in {segment, rule}):
@@ -222,10 +251,13 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
             )
 
     def _update_or_create_metadata(
-        self, metadata_data: dict, segment: Optional[models.Model] = None
+        self,
+        metadata_data: list[dict[str, Any]],
+        segment: "Segment | None" = None,
     ) -> None:
         Metadata = apps.get_model("metadata", "Metadata")
         Segment = apps.get_model("segments", "Segment")
+        assert segment
         if len(metadata_data) == 0:
             Metadata.objects.filter(object_id=segment.id).delete()
             return
@@ -247,14 +279,15 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
 
     @staticmethod
     def _update_or_create_segment_rule(
-        rule_data: dict,
-        segment: Optional[models.Model] = None,
-        rule: Optional[models.Model] = None,
-    ) -> Optional[models.Model]:
+        rule_data: dict[str, Any],
+        segment: "Segment | None" = None,
+        rule: "Rule | None" = None,
+    ) -> "SegmentRule_ | None":
         SegmentRule = apps.get_model("segments", "SegmentRule")
         rule_id = rule_data.pop("id", None)
         if rule_id is not None:
-            segment_rule = SegmentRule.objects.get(id=rule_id)
+            segment_rule: "SegmentRule_" = SegmentRule.objects.get(id=rule_id)
+            assert rule
             matching_segment = segment or rule.get_segment()
 
             if segment_rule.get_segment() != matching_segment:
@@ -262,7 +295,7 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
 
         if rule_data.get("delete"):
             SegmentRule.objects.filter(id=rule_id).delete()
-            return
+            return None
 
         segment_rule, _ = SegmentRule.objects.update_or_create(
             id=rule_id, defaults={"segment": segment, "rule": rule, **rule_data}
@@ -271,8 +304,8 @@ class SegmentSerializer(serializers.ModelSerializer, SerializerWithMetadata):
 
     @staticmethod
     def _update_or_create_conditions(
-        conditions_data: dict[str, Any],
-        rule: models.Model,
+        conditions_data: list[dict[str, Any]],
+        rule: "Rule",
         segment: models.Model | None = None,
         is_create: bool = False,
     ) -> None:

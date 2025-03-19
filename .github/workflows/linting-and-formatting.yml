@@ -1,4 +1,4 @@
-name: Linting & formatting
+name: Python Checks and Unit Tests 
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: Linting and Formatting
+    name: Python Checks and Unit Tests
 
     steps:
       - name: Cloning repo
@@ -20,10 +20,13 @@ jobs:
           python-version: 3.12
 
       - name: Install Dependencies
-        run: poetry install
+        run: poetry install --with dev
 
-      - name: Run Linters
-        run: | 
-          poetry run black --check .
-          poetry run isort --check-only --diff .
-          poetry run flake8
+      - name: Check for missing migrations
+        run: poetry run python manage.py makemigrations --no-input --dry-run --check
+
+      - name: Check for new typing errors
+        run: poetry run mypy .
+
+      - name: Run Tests
+        run: poetry run pytest
