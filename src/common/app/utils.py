@@ -27,14 +27,17 @@ class VersionInfo(TypedDict):
     package_versions: NotRequired[dict[str, str]]
 
 
+@lru_cache()
 def is_enterprise() -> bool:
     return pathlib.Path("./ENTERPRISE_VERSION").exists()
 
 
+@lru_cache()
 def is_saas() -> bool:
     return pathlib.Path("./SAAS_DEPLOYMENT").exists()
 
 
+@lru_cache()
 def has_email_provider() -> bool:
     match settings.EMAIL_BACKEND:
         case "django.core.mail.backends.smtp.EmailBackend":
@@ -47,12 +50,11 @@ def has_email_provider() -> bool:
             return False
 
 
-@lru_cache
 def get_version_info() -> VersionInfo:
     """Reads the version info baked into src folder of the docker container"""
     _is_saas = is_saas()
     version_json: VersionInfo = {
-        "ci_commit_sha": _get_file_contents("./CI_COMMIT_SHA"),
+        "ci_commit_sha": get_file_contents("./CI_COMMIT_SHA") or UNKNOWN,
         "image_tag": UNKNOWN,
         "has_email_provider": has_email_provider(),
         "is_enterprise": is_enterprise(),
@@ -60,9 +62,9 @@ def get_version_info() -> VersionInfo:
         "self_hosted_data": None,
     }
 
-    manifest_versions_content: str = _get_file_contents(VERSIONS_INFO_FILE_LOCATION)
+    manifest_versions_content = get_file_contents(VERSIONS_INFO_FILE_LOCATION)
 
-    if manifest_versions_content != UNKNOWN:
+    if manifest_versions_content:
         manifest_versions = json.loads(manifest_versions_content)
         version_json["package_versions"] = manifest_versions
         version_json["image_tag"] = manifest_versions["."]
@@ -78,10 +80,11 @@ def get_version_info() -> VersionInfo:
     return version_json
 
 
-def _get_file_contents(file_path: str) -> str:
+@lru_cache()
+def get_file_contents(file_path: str) -> str | None:
     """Attempts to read a file from the filesystem and return the contents"""
     try:
         with open(file_path) as f:
             return f.read().replace("\n", "")
     except FileNotFoundError:
-        return UNKNOWN
+        return None
