@@ -5,16 +5,24 @@ import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 from pytest_django.fixtures import SettingsWrapper
 
-from common.app.utils import get_version_info
-
+from common.app.utils import (
+    get_file_contents,
+    get_version_info,
+    has_email_provider,
+    is_enterprise,
+    is_saas,
+)
 
 pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture(autouse=True)
-def clear_get_version_info_cache() -> Generator[None, None, None]:
+def clear_lru_caches() -> Generator[None, None, None]:
     yield
-    get_version_info.cache_clear()
+    get_file_contents.cache_clear()
+    has_email_provider.cache_clear()
+    is_enterprise.cache_clear()
+    is_saas.cache_clear()
 
 
 def test_get_version_info(fs: FakeFilesystem) -> None:
