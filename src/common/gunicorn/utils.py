@@ -57,25 +57,14 @@ class DjangoWSGIApplication(GunicornWSGIApplication):  # type: ignore[misc]
 @lru_cache(maxsize=64)
 def get_status_from_wsgi_response_status(
     status: str | bytes | int | None,
-) -> LabelValue:
+) -> str | None:
     if isinstance(status, int):
         return str(status)
     if isinstance(status, bytes):
         status = status.decode("utf-8")
     if isinstance(status, str):
         status = status.split(None, 1)[0]
-    return status or UNKNOWN_LABEL_VALUE
-
-
-def get_route_from_wsgi_path_info(
-    path_info: str | None,
-) -> LabelValue:
-    try:
-        if path_info:
-            return resolve(path_info).route
-    except Resolver404:
-        pass
-    return UNKNOWN_LABEL_VALUE
+    return status
 
 
 def add_arguments(parser: argparse._ArgumentGroup) -> None:

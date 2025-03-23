@@ -18,6 +18,9 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "common.core",
 ]
+MIDDLEWARE = [
+    "common.gunicorn.middleware.PrometheusGunicornLoggerMiddleware",
+]
 LOG_FORMAT = "json"
 PROMETHEUS_HISTOGRAM_BUCKETS = prometheus_client.Histogram.DEFAULT_BUCKETS
 ROOT_URLCONF = "common.core.urls"

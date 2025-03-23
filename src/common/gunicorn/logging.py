@@ -13,10 +13,9 @@ from gunicorn.instrument.statsd import (  # type: ignore[import-untyped]
 
 from common.core.logging import JsonFormatter
 from common.gunicorn import metrics
-from common.gunicorn.utils import (
-    get_route_from_wsgi_path_info,
-    get_status_from_wsgi_response_status,
-)
+from common.gunicorn.constants import WSGI_DJANGO_ROUTE_ENVIRON_KEY
+from common.gunicorn.utils import get_status_from_wsgi_response_status
+from common.prometheus.utils import with_labels
 
 
 class GunicornAccessLogJsonFormatter(JsonFormatter):
@@ -53,12 +52,17 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
             request_time.seconds + float(request_time.microseconds) / 10**6
         )
         labels = {
-            "path": get_route_from_wsgi_path_info(environ.get("PATH_INFO")),
-            "method": environ.get("REQUEST_METHOD") or "-",
+            # To avoid cardinality explosion, we use a resolved Django route
+            # instead of raw path.
+            # The Django route is set by `PrometheusGunicornLoggerMiddleware`.
+            "path": environ.get(WSGI_DJANGO_ROUTE_ENVIRON_KEY),
+            "method": environ.get("REQUEST_METHOD"),
             "response_status": get_status_from_wsgi_response_status(resp.status),
         }
-        metrics.http_request_duration_seconds.labels(**labels).observe(duration_seconds)
-        metrics.http_requests_total.labels(**labels).inc()
+        with_labels(metrics.http_request_duration_seconds, **labels).observe(
+            duration_seconds
+        )
+        with_labels(metrics.http_requests_total, **labels).inc()
 
 
 class GunicornJsonCapableLogger(PrometheusGunicornLogger):
