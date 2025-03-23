@@ -1,5 +1,5 @@
 # flagsmith-common
-A repository for including code that is required in multiple flagsmith repositories
+Flagsmith's common library
 
 ### Development Setup
 
@@ -7,7 +7,7 @@ This project uses [Poetry](https://python-poetry.org/) for dependency management
 
 #### Prerequisites
 
-- Python >= 3.8
+- Python >= 3.10
 - Make
 
 #### Installation
@@ -47,3 +47,15 @@ make install-packages opts="--with dev"
 # Install with specific extras
 make install-packages opts="--extras 'feature1 feature2'"
 ```
+
+### Usage
+
+#### Installation
+
+Add `"common.core"` to `INSTALLED_APPS` in your settings module.
+This enables the `start` management command.
+
+#### Metrics
+
+Flagsmith uses Prometheus to export backend metrics.
+
