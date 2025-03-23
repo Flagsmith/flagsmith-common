@@ -1,4 +1,5 @@
 import os
+import pathlib
 import sys
 
 from django.core.management import execute_from_command_line
@@ -22,7 +23,10 @@ def main() -> None:
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.dev")
 
     # Set up Prometheus' multiprocess mode
-    os.environ.setdefault("PROMETHEUS_MULTIPROC_DIR", "/tmp")
+    if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
+        prometheus_multiproc_dir = pathlib.Path("/tmp/flagsmith-metrics")
+        prometheus_multiproc_dir.mkdir(parents=True, exist_ok=True)
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = str(prometheus_multiproc_dir)
 
     # Run Django
     execute_from_command_line(sys.argv)

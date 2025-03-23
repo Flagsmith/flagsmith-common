@@ -9,7 +9,7 @@ from environs import Env
 from gunicorn.app.wsgiapp import (  # type: ignore[import-untyped]
     WSGIApplication as GunicornWSGIApplication,
 )
-from gunicorn.config import Config
+from gunicorn.config import Config  # type: ignore[import-untyped]
 
 from common.prometheus.constants import UNKNOWN_LABEL_VALUE
 from common.prometheus.types import LabelValue
@@ -17,7 +17,7 @@ from common.prometheus.types import LabelValue
 env = Env()
 
 DEFAULT_ACCESS_LOG_FORMAT = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %({origin}i)s %({access-control-allow-origin}o)s'
-DEFAULT_GUNICORN_SETTINGS = {
+GUNICORN_FLAGSMITH_DEFAULTS = {
     "access_log_format": env.str("ACCESS_LOG_FORMAT", DEFAULT_ACCESS_LOG_FORMAT),
     "accesslog": env.str("ACCESS_LOG_LOCATION", "/dev/null"),
     "bind": "0.0.0.0:8000",
@@ -42,8 +42,8 @@ class DjangoWSGIApplication(GunicornWSGIApplication):  # type: ignore[misc]
         cfg_settings = self.cfg.settings
         options_items = (
             (key, value)
-            for key, value in {**DEFAULT_GUNICORN_SETTINGS, **self.options}.items()
-            if key in cfg_settings and value is not None
+            for key, value in {**GUNICORN_FLAGSMITH_DEFAULTS, **self.options}.items()
+            if key in cfg_settings
         )
         for key, value in options_items:
             print(f"setting {key=} {value=}")
