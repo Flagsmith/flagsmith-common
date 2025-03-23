@@ -14,7 +14,6 @@ from gunicorn.instrument.statsd import (  # type: ignore[import-untyped]
 from common.core.logging import JsonFormatter
 from common.gunicorn import metrics
 from common.gunicorn.constants import WSGI_DJANGO_ROUTE_ENVIRON_KEY
-from common.gunicorn.utils import get_status_from_wsgi_response_status
 from common.prometheus.utils import with_labels
 
 
@@ -57,7 +56,7 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
             # The Django route is set by `PrometheusGunicornLoggerMiddleware`.
             "path": environ.get(WSGI_DJANGO_ROUTE_ENVIRON_KEY),
             "method": environ.get("REQUEST_METHOD"),
-            "response_status": get_status_from_wsgi_response_status(resp.status),
+            "response_status": resp.status_code,
         }
         with_labels(metrics.http_request_duration_seconds, **labels).observe(
             duration_seconds

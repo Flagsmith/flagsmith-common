@@ -1,18 +1,13 @@
 import argparse
-from functools import lru_cache
 from typing import Any
 
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.wsgi import get_wsgi_application
-from django.urls import Resolver404, resolve
 from environs import Env
 from gunicorn.app.wsgiapp import (  # type: ignore[import-untyped]
     WSGIApplication as GunicornWSGIApplication,
 )
 from gunicorn.config import Config  # type: ignore[import-untyped]
-
-from common.prometheus.constants import UNKNOWN_LABEL_VALUE
-from common.prometheus.types import LabelValue
 
 env = Env()
 
@@ -52,19 +47,6 @@ class DjangoWSGIApplication(GunicornWSGIApplication):  # type: ignore[misc]
 
     def load_wsgiapp(self) -> WSGIHandler:
         return get_wsgi_application()
-
-
-@lru_cache(maxsize=64)
-def get_status_from_wsgi_response_status(
-    status: str | bytes | int | None,
-) -> str | None:
-    if isinstance(status, int):
-        return str(status)
-    if isinstance(status, bytes):
-        status = status.decode("utf-8")
-    if isinstance(status, str):
-        status = status.split(None, 1)[0]
-    return status
 
 
 def add_arguments(parser: argparse._ArgumentGroup) -> None:

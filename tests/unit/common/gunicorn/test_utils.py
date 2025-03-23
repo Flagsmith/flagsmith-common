@@ -8,29 +8,8 @@ import pytest_mock
 
 from common.gunicorn.utils import (
     DjangoWSGIApplication,
-    get_status_from_wsgi_response_status,
     run_server,
 )
-
-
-@pytest.mark.parametrize(
-    "status,expected",
-    (
-        [b" 200 ", "200"],
-        [200, "200"],
-        ["200", "200"],
-        [None, "unknown"],
-    ),
-)
-def test_get_status_from_wsgi_response_status__returns_expected(
-    status: str | bytes | int | None,
-    expected: str,
-) -> None:
-    # When
-    result = get_status_from_wsgi_response_status(status)
-
-    # Then
-    assert result == expected
 
 
 def test_django_wsgi_application__defaults__expected_config(

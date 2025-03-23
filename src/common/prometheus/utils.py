@@ -5,7 +5,6 @@ from prometheus_client.metrics import MetricWrapperBase
 from prometheus_client.multiprocess import MultiProcessCollector
 
 from common.prometheus.constants import UNKNOWN_LABEL_VALUE
-from common.prometheus.types import LabelValue
 
 T = typing.TypeVar("T", bound=MetricWrapperBase)
 
@@ -18,7 +17,7 @@ def get_registry() -> prometheus_client.CollectorRegistry:
 
 def with_labels(
     metric: T,
-    **labels: LabelValue | None,
+    **labels: typing.Any,
 ) -> T:
     """
     Add labels to a given metric. If a label value is `None` or is not provided,

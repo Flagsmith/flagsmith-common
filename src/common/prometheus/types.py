@@ -1,4 +1,3 @@
-from typing import Literal, TypeAlias
+from typing import Literal
 
 UnknownLabelValue = Literal["unknown"]
-LabelValue: TypeAlias = str | UnknownLabelValue
