@@ -10,7 +10,7 @@ SENDGRID_API_KEY: str
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": "common",
+        "NAME": "common.sqlite3",
     }
 }
 INSTALLED_APPS = [

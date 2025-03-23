@@ -3,3 +3,4 @@
 .idea/
 *.pyc
 .coverage
+common.sqlite3
