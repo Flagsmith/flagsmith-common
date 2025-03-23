@@ -52,10 +52,10 @@ make install-packages opts="--extras 'feature1 feature2'"
 
 #### Installation
 
-Add `"common.core"` to `INSTALLED_APPS` in your settings module.
+1. Add `"common.core"` to `INSTALLED_APPS` in your settings module.
 This enables the `start` management command.
 
-To enable the `path` label for HTTP metrics, add `"common.gunicorn.middleware.PrometheusGunicornLoggerMiddleware"` to `MIDDLEWARE` in your settings module.
+2. Add `"common.gunicorn.middleware.PrometheusGunicornLoggerMiddleware"` to `MIDDLEWARE` in your settings module. This enables the `path` label for Prometheus HTTP metrics.
 
 #### Metrics
 
