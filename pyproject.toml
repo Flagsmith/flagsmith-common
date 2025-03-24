@@ -67,6 +67,7 @@ pytest-mock = "^3.14.0"
 requests = "^2.32.3"
 ruff = "*"
 setuptools = "^77.0.3"
+pytest-asyncio = "^0.25.3"
 
 [build-system]
 requires = ["poetry-core"]
