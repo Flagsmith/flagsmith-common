@@ -1,4 +1,5 @@
 import argparse
+import os
 from typing import Any
 
 from django.core.handlers.wsgi import WSGIHandler
@@ -14,7 +15,7 @@ env = Env()
 DEFAULT_ACCESS_LOG_FORMAT = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %({origin}i)s %({access-control-allow-origin}o)s'
 GUNICORN_FLAGSMITH_DEFAULTS = {
     "access_log_format": env.str("ACCESS_LOG_FORMAT", DEFAULT_ACCESS_LOG_FORMAT),
-    "accesslog": env.str("ACCESS_LOG_LOCATION", "/dev/null"),
+    "accesslog": env.str("ACCESS_LOG_LOCATION", os.devnull),
     "bind": "0.0.0.0:8000",
     "config": "python:common.gunicorn.conf",
     "logger_class": "common.gunicorn.logging.GunicornJsonCapableLogger",
