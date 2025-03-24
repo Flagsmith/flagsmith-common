@@ -46,7 +46,7 @@ def test_json_formatter__outputs_expected(
             "message": "hello arg1, 22",
             "timestamp": "2023-12-08 06:05:47,319",
             "logger_name": "test_json_formatter__outputs_expected",
-            "process_id": expected_pid,
+            "pid": expected_pid,
             "thread_name": "MainThread",
         },
         {
@@ -54,7 +54,7 @@ def test_json_formatter__outputs_expected(
             "message": "this is an error",
             "timestamp": "2023-12-08 06:05:47,319",
             "logger_name": "test_json_formatter__outputs_expected",
-            "process_id": expected_pid,
+            "pid": expected_pid,
             "thread_name": "MainThread",
             "exc_info": expected_tb_string,
         },

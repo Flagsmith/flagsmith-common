@@ -36,9 +36,7 @@ class GunicornAccessLogJsonFormatter(JsonFormatter):
             "method": args["m"],
             "status": str(args["s"]),
             "user_agent": args["a"],
-            "referer": args["f"],
             "duration_in_ms": args["M"],
-            "pid": args["p"],
         }
 
 

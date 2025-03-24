@@ -13,7 +13,7 @@ class JsonFormatter(logging.Formatter):
             "message": formatted_message,
             "timestamp": self.formatTime(record, self.datefmt),
             "logger_name": record.name,
-            "process_id": record.process,
+            "pid": record.process,
             "thread_name": record.threadName,
         }
         if record.exc_info:
