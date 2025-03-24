@@ -73,8 +73,6 @@ Try to come up with meaningful metrics to cover your feature with when developin
 
 Define your metrics in a `metrics.py` module of your Django application — see [example][2]. Contrary to Prometheus Python client examples and documentation, please name a metric variable exactly as your metric name.
 
-The Prometheus client runs in multi-process mode to accommodate for [Gunicorn server model][3]. When defining a `Gauge` metric, select the appropriate `multiprocess_mode` for it. Refer to the [Metrics tuning][4] section of Prometheus Python client documentation. Usually, the appropriate mode is `livesum`, which aggregates values from all live Gunicorn workers.
-
 Flagsmith assumes missing or null metric label values as unknown, and converts them to an `"unknown"` constant value. To support the convention, use the `with_labels` utility function when labelling your metric sample:
 
 ```python
