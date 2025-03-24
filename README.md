@@ -69,11 +69,11 @@ The following default metrics are exposed:
 
 ##### Guidelines
 
-Try to come up with meaningful metrics to cover your feature with when developing it. Refer to [Prometheus best practices](https://prometheus.io/docs/practices/naming/) when naming your metric and labels.
+Try to come up with meaningful metrics to cover your feature with when developing it. Refer to [Prometheus best practices][1] when naming your metric and labels.
 
-Define your metrics in a `metrics.py` module of your Django application (see [example](https://github.com/Flagsmith/flagsmith-common/blob/main/src/common/gunicorn/metrics.py)). Contrary to Prometheus Python client examples and documentation, please name a metric variable exactly as your metric name.
+Define your metrics in a `metrics.py` module of your Django application — see [example][2]. Contrary to Prometheus Python client examples and documentation, please name a metric variable exactly as your metric name.
 
-The Prometheus client runs in multi-process mode to accommodate for Gunicorn's [server model](https://docs.gunicorn.org/en/stable/design.html#server-model). When defining a `Gauge` metric, select the appropriate `multiprocess_mode` for it. Refer to the [Metrics tuning](https://prometheus.github.io/client_python/multiprocess/) section of Prometheus Python client documentation. Usually, the appropriate mode is `livesum`, which aggregates values from all live Gunicorn workers.
+The Prometheus client runs in multi-process mode to accommodate for [Gunicorn server model][3]. When defining a `Gauge` metric, select the appropriate `multiprocess_mode` for it. Refer to the [Metrics tuning][4] section of Prometheus Python client documentation. Usually, the appropriate mode is `livesum`, which aggregates values from all live Gunicorn workers.
 
 Flagsmith assumes missing or null metric label values as unknown, and converts them to an `"unknown"` constant value. To support the convention, use the `with_labels` utility function when labelling your metric sample:
 
@@ -86,6 +86,11 @@ def get_galaxy() -> str | None: ...
 
 with_labels(
     metrics.planets_in_universe_total,
-    galaxy=get_galaxy()
+    galaxy=get_galaxy(),
 ).inc(1)
 ```
+
+[1]: https://prometheus.io/docs/practices/naming/
+[2]: https://github.com/Flagsmith/flagsmith-common/blob/main/src/common/gunicorn/metrics.py
+[3]: https://docs.gunicorn.org/en/stable/design.html#server-model
+[4]: https://prometheus.github.io/client_python/multiprocess
