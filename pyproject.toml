@@ -2,7 +2,7 @@
 name = "flagsmith-common"
 version = "1.5.0"
 description = "Flagsmith's common library"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 dependencies = [
     "django (<5)",
     "django-health-check",

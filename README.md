@@ -7,7 +7,7 @@ This project uses [Poetry](https://python-poetry.org/) for dependency management
 
 #### Prerequisites
 
-- Python >= 3.10
+- Python >= 3.11
 - Make
 
 #### Installation
