@@ -52,18 +52,18 @@ make install-packages opts="--extras 'feature1 feature2'"
 
 #### Installation
 
-1. Add `"common.core"` to `INSTALLED_APPS` in your settings module.
-This enables the `start` management command.
+1. Make sure `"common.core"` is in the `INSTALLED_APPS` of your settings module.
+This enables the `manage.py flagsmith` commands.
 
 2. Add `"common.gunicorn.middleware.PrometheusGunicornLoggerMiddleware"` to `MIDDLEWARE` in your settings module. This enables the `path` label for Prometheus HTTP metrics.
 
 #### Metrics
 
-Flagsmith uses Prometheus to export backend metrics.
+Flagsmith uses Prometheus to track performance metrics.
 
 The following default metrics are exposed:
 
-- `flagsmith_build_info`: Gauge with a constant value of `1.0`. Labeled with `ci_commit_sha` and `version`.
+- `flagsmith_build_info`: Has the labels `version` and `ci_commit_sha`.
 - `http_request_duration_seconds`: Histogram labeled with `method`, `path`, and `response_status`.
 - `http_requests_total`: Counter labeled with `method`, `path`, and `response_status`.
 
