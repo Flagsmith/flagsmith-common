@@ -1,7 +1,7 @@
 import logging
 import sys
 from datetime import datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from gunicorn.config import Config  # type: ignore[import-untyped]
@@ -20,21 +20,25 @@ from common.prometheus.utils import with_labels
 class GunicornAccessLogJsonFormatter(JsonFormatter):
     def get_json_record(self, record: logging.LogRecord) -> dict[str, Any]:
         args = record.args
-        url = args["U"]  # type: ignore[call-overload,index]
-        if q := args["q"]:  # type: ignore[call-overload,index]
-            url += f"?{q}"  # type: ignore[operator]
+
+        if TYPE_CHECKING:
+            assert isinstance(args, dict)
+
+        url = args["U"]
+        if q := args["q"]:
+            url += f"?{q}"
 
         return {
             **super().get_json_record(record),
-            "time": datetime.strptime(args["t"], "[%d/%b/%Y:%H:%M:%S %z]").isoformat(),  # type: ignore[arg-type,call-overload,index]  # noqa: E501
+            "time": datetime.strptime(args["t"], "[%d/%b/%Y:%H:%M:%S %z]").isoformat(),
             "path": url,
-            "remote_ip": args["h"],  # type: ignore[call-overload,index]
-            "method": args["m"],  # type: ignore[call-overload,index]
-            "status": str(args["s"]),  # type: ignore[call-overload,index]
-            "user_agent": args["a"],  # type: ignore[call-overload,index]
-            "referer": args["f"],  # type: ignore[call-overload,index]
-            "duration_in_ms": args["M"],  # type: ignore[call-overload,index]
-            "pid": args["p"],  # type: ignore[call-overload,index]
+            "remote_ip": args["h"],
+            "method": args["m"],
+            "status": str(args["s"]),
+            "user_agent": args["a"],
+            "referer": args["f"],
+            "duration_in_ms": args["M"],
+            "pid": args["p"],
         }
 
 
