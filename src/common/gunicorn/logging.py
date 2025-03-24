@@ -60,10 +60,10 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
             "method": environ.get("REQUEST_METHOD"),
             "response_status": resp.status_code,
         }
-        with_labels(metrics.http_request_duration_seconds, **labels).observe(
+        with_labels(metrics.http_server_request_duration_seconds, **labels).observe(
             duration_seconds
         )
-        with_labels(metrics.http_requests_total, **labels).inc()
+        with_labels(metrics.http_server_requests_total, **labels).inc()
 
 
 class GunicornJsonCapableLogger(PrometheusGunicornLogger):
