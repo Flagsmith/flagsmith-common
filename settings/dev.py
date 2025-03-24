@@ -2,7 +2,6 @@ import prometheus_client
 
 # Settings expected by `mypy_django_plugin`
 AWS_SES_REGION_ENDPOINT: str
-PROMETHEUS_ENABLED: bool
 SEGMENT_RULES_CONDITIONS_LIMIT: int
 SENDGRID_API_KEY: str
 
