@@ -13,9 +13,7 @@ class Command(BaseCommand):
         return super().create_parser(*args, conflict_handler="resolve", **kwargs)
 
     def add_arguments(self, parser: CommandParser) -> None:
-        gunicorn_parser = parser.add_argument_group("gunicorn")
-
-        add_arguments(gunicorn_parser)
+        add_arguments(parser)
 
         subparsers = parser.add_subparsers(
             title="sub-commands",

@@ -48,11 +48,12 @@ class DjangoWSGIApplication(GunicornWSGIApplication):  # type: ignore[misc]
         return get_wsgi_application()
 
 
-def add_arguments(parser: argparse._ArgumentGroup) -> None:
+def add_arguments(parser: argparse.ArgumentParser) -> None:
+    gunicorn_group = parser.add_argument_group("gunicorn")
     _config = Config()
     keys = sorted(_config.settings, key=_config.settings.__getitem__)
     for key in keys:
-        _config.settings[key].add_option(parser)
+        _config.settings[key].add_option(gunicorn_group)
 
 
 def run_server(options: dict[str, Any] | None = None) -> None:

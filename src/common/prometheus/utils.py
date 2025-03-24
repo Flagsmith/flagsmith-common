@@ -25,7 +25,7 @@ def with_labels(
     """
     return metric.labels(
         **{
-            **{key: UNKNOWN_LABEL_VALUE for key in metric._labelnames},
-            **{key: value for key, value in labels.items() if value is not None},
+            key: UNKNOWN_LABEL_VALUE if (value := labels.get(key)) is None else value
+            for key in metric._labelnames
         },
     )
