@@ -15,17 +15,14 @@ dependencies = [
     "environs (<15)",
 ]
 authors = [
-    { name = "Matthew Elwell", email = "matthew.elwell@flagsmith.com" },
-    { name = "Gagan Trivedi", email = "gagan.trivedi@flagsmith.com" },
-    { name = "Kim Gustyr", email = "kim.gustyr@flagsmith.com" },
+    { name = "Matthew Elwell" },
+    { name = "Gagan Trivedi" },
+    { name = "Kim Gustyr" },
     { name = "Zach Aysan" },
     { name = "Francesco Lo Franco" },
+    { name = "Rodrigo López Dato" },
 ]
-maintainers = [
-    { name = "Matthew Elwell", email = "matthew.elwell@flagsmith.com" },
-    { name = "Gagan Trivedi", email = "gagan.trivedi@flagsmith.com" },
-    { name = "Kim Gustyr", email = "kim.gustyr@flagsmith.com" },
-]
+maintainers = [{ name = "Flagsmith Team", email = "support@flagsmith.com" }]
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 readme = "README.md"
