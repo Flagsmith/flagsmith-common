@@ -41,7 +41,6 @@ class DjangoWSGIApplication(GunicornWSGIApplication):  # type: ignore[misc]
             if key in cfg_settings
         )
         for key, value in options_items:
-            print(f"setting {key=} {value=}")
             self.cfg.set(key.lower(), value)
         self.load_config_from_module_name_or_filename(self.cfg.config)
 

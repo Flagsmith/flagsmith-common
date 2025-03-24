@@ -86,13 +86,14 @@ def test_gunicorn_prometheus_gunicorn_logger__expected_metrics(
     logger = PrometheusGunicornLogger(config)
 
     response_mock = mocker.Mock()
-    response_mock.status = 200
+    response_mock.status = b"200 OK"
+    response_mock.status_code = 200
 
     # When
     logger.access(
         response_mock,
         mocker.Mock(),
-        {"PATH_INFO": "/health", "REQUEST_METHOD": "GET"},
+        {"wsgi.django_route": "^health", "REQUEST_METHOD": "GET"},
         timedelta(milliseconds=101),
     )
 
