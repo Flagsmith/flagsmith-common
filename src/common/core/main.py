@@ -1,8 +1,11 @@
+import logging
 import os
-import pathlib
 import sys
+import tempfile
 
 from django.core.management import execute_from_command_line
+
+logger = logging.getLogger(__name__)
 
 
 def main() -> None:
@@ -24,9 +27,14 @@ def main() -> None:
 
     # Set up Prometheus' multiprocess mode
     if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
-        prometheus_multiproc_dir = pathlib.Path("/tmp/flagsmith-metrics")
-        prometheus_multiproc_dir.mkdir(parents=True, exist_ok=True)
-        os.environ["PROMETHEUS_MULTIPROC_DIR"] = str(prometheus_multiproc_dir)
+        prometheus_multiproc_dir = tempfile.TemporaryDirectory(
+            prefix="prometheus_multiproc",
+        )
+        logger.info(
+            "Created %s for Prometheus multi-process mode",
+            prometheus_multiproc_dir.name,
+        )
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = prometheus_multiproc_dir.name
 
     # Run Django
     execute_from_command_line(sys.argv)
