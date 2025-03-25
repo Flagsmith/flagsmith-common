@@ -14,7 +14,6 @@ from gunicorn.instrument.statsd import (  # type: ignore[import-untyped]
 from common.core.logging import JsonFormatter
 from common.gunicorn import metrics
 from common.gunicorn.constants import WSGI_DJANGO_ROUTE_ENVIRON_KEY
-from common.prometheus.utils import with_labels
 
 
 class GunicornAccessLogJsonFormatter(JsonFormatter):
@@ -56,14 +55,14 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
             # To avoid cardinality explosion, we use a resolved Django route
             # instead of raw path.
             # The Django route is set by `PrometheusGunicornLoggerMiddleware`.
-            "path": environ.get(WSGI_DJANGO_ROUTE_ENVIRON_KEY),
-            "method": environ.get("REQUEST_METHOD"),
+            "path": environ.get(WSGI_DJANGO_ROUTE_ENVIRON_KEY) or "",
+            "method": environ.get("REQUEST_METHOD") or "",
             "response_status": resp.status_code,
         }
-        with_labels(metrics.http_server_request_duration_seconds, **labels).observe(
+        metrics.http_server_request_duration_seconds.labels(**labels).observe(
             duration_seconds
         )
-        with_labels(metrics.http_server_requests_total, **labels).inc()
+        metrics.http_server_requests_total.labels(**labels).inc()
 
 
 class GunicornJsonCapableLogger(PrometheusGunicornLogger):

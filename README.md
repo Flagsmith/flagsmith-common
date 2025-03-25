@@ -89,21 +89,6 @@ distance_from_earth_au = prometheus.Histogram(
 )
 ```
 
-Flagsmith assumes missing or null metric label values as unknown, and converts them to an `"unknown"` constant value. To support the convention, use the `with_labels` utility function when labelling your metric sample:
-
-```python
-from common.prometheus.utils import with_labels
-
-from yourapp import metrics
-
-def get_galaxy() -> str | None: ...
-
-with_labels(
-    metrics.planets_in_universe_total,
-    galaxy=get_galaxy(),
-).inc(1)
-```
-
 [1]: https://prometheus.io/docs/practices/naming/
 [2]: https://github.com/Flagsmith/flagsmith-common/blob/main/src/common/gunicorn/metrics.py
 [3]: https://docs.gunicorn.org/en/stable/design.html#server-model
