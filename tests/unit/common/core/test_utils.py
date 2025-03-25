@@ -5,7 +5,7 @@ import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 from pytest_django.fixtures import SettingsWrapper
 
-from common.app.utils import (
+from common.core.utils import (
     get_file_contents,
     get_version_info,
     has_email_provider,
