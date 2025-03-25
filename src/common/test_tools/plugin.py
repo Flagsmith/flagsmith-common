@@ -1,22 +1,34 @@
+from typing import Generator
+
 import prometheus_client
 import pytest
+from prometheus_client.metrics import MetricWrapperBase
 
 from common.test_tools.types import AssertMetricFixture
 
 
-@pytest.fixture
-def assert_metric() -> AssertMetricFixture:
+def assert_metric_impl() -> Generator[AssertMetricFixture, None, None]:
+    registry = prometheus_client.REGISTRY
+    collectors = [*registry._collector_to_names]
+
     def _assert_metric(
         *,
         name: str,
         labels: dict[str, str],
         value: float | int,
     ) -> None:
-        registry = prometheus_client.REGISTRY
         metric_value = registry.get_sample_value(name, labels)
         assert metric_value == value, (
             f"Metric {name} not found in registry:\n"
             f"{prometheus_client.generate_latest(registry).decode()}"
         )
 
-    return _assert_metric
+    yield _assert_metric
+
+    # Reset registry state
+    for collector in collectors:
+        if isinstance(collector, MetricWrapperBase):
+            collector.clear()
+
+
+assert_metric = pytest.fixture(assert_metric_impl)
