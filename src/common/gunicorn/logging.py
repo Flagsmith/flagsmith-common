@@ -32,6 +32,7 @@ class GunicornAccessLogJsonFormatter(JsonFormatter):
             "time": datetime.strptime(args["t"], "[%d/%b/%Y:%H:%M:%S %z]").isoformat(),
             "path": url,
             "remote_ip": args["h"],
+            "route": args["R"],
             "method": args["m"],
             "status": str(args["s"]),
             "user_agent": args["a"],
@@ -54,8 +55,8 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
         labels = {
             # To avoid cardinality explosion, we use a resolved Django route
             # instead of raw path.
-            # The Django route is set by `PrometheusGunicornLoggerMiddleware`.
-            "path": environ.get(WSGI_DJANGO_ROUTE_ENVIRON_KEY) or "",
+            # The Django route is set by `RouteLoggerMiddleware`.
+            "route": environ.get(WSGI_DJANGO_ROUTE_ENVIRON_KEY) or "",
             "method": environ.get("REQUEST_METHOD") or "",
             "response_status": resp.status_code,
         }
@@ -66,6 +67,17 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
 
 
 class GunicornJsonCapableLogger(PrometheusGunicornLogger):
+    def atoms(
+        self,
+        resp: Response,
+        req: Request,
+        environ: dict[str, Any],
+        request_time: timedelta,
+    ) -> dict[str, str]:
+        atoms: dict[str, str] = super().atoms(resp, req, environ, request_time)
+        atoms["R"] = environ.get(WSGI_DJANGO_ROUTE_ENVIRON_KEY) or "-"
+        return atoms
+
     def setup(self, cfg: Config) -> None:
         super().setup(cfg)
         if getattr(settings, "LOG_FORMAT", None) == "json":

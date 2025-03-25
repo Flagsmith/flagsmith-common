@@ -5,7 +5,7 @@ from django.http import HttpRequest, HttpResponse
 from common.gunicorn.constants import WSGI_DJANGO_ROUTE_ENVIRON_KEY
 
 
-class PrometheusGunicornLoggerMiddleware:
+class RouteLoggerMiddleware:
     """
     Make the resolved Django route available to the WSGI server
     (e.g. Gunicorn) for logging purposes.

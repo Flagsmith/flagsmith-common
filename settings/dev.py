@@ -19,7 +19,7 @@ INSTALLED_APPS = [
     "common.core",
 ]
 MIDDLEWARE = [
-    "common.gunicorn.middleware.PrometheusGunicornLoggerMiddleware",
+    "common.gunicorn.middleware.RouteLoggerMiddleware",
 ]
 LOG_FORMAT = "json"
 PROMETHEUS_HISTOGRAM_BUCKETS = prometheus_client.Histogram.DEFAULT_BUCKETS

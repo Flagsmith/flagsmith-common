@@ -41,6 +41,7 @@ def test_gunicorn_access_log_json_formatter__outputs_expected() -> None:
             "M": 1000,
             "p": "<42>",
             "q": "foo=bar",
+            "R": "^test/",
             "r": "GET",
             "s": 200,
             "T": 1,
@@ -67,6 +68,7 @@ def test_gunicorn_access_log_json_formatter__outputs_expected() -> None:
         "path": "/test?foo=bar",
         "pid": expected_pid,
         "remote_ip": "192.168.0.1",
+        "route": "^test/",
         "status": "200",
         "thread_name": "MainThread",
         "time": "2023-12-08T06:05:47+00:00",
@@ -99,12 +101,12 @@ def test_gunicorn_prometheus_gunicorn_logger__expected_metrics(
     assert_metric(
         name="http_server_requests_total",
         value=1.0,
-        labels={"method": "GET", "path": "^health", "response_status": "200"},
+        labels={"method": "GET", "route": "^health", "response_status": "200"},
     )
     assert_metric(
         name="http_server_request_duration_seconds_sum",
         value=0.101,
-        labels={"method": "GET", "path": "^health", "response_status": "200"},
+        labels={"method": "GET", "route": "^health", "response_status": "200"},
     )
 
 
