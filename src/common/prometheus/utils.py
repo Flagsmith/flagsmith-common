@@ -5,8 +5,6 @@ from django.conf import settings
 from prometheus_client.metrics import MetricWrapperBase
 from prometheus_client.multiprocess import MultiProcessCollector
 
-from common.prometheus.constants import UNKNOWN_LABEL_VALUE
-
 T = typing.TypeVar("T", bound=MetricWrapperBase)
 
 
