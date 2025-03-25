@@ -287,8 +287,11 @@ class SegmentSerializer(serializers.ModelSerializer["Segment"], SerializerWithMe
         rule_id = rule_data.pop("id", None)
         if rule_id is not None:
             segment_rule: "SegmentRule_" = SegmentRule.objects.get(id=rule_id)
-            assert rule
-            matching_segment = segment or rule.get_segment()
+            if segment:
+                matching_segment = segment
+            else:
+                assert rule
+                matching_segment = rule.get_segment()
 
             if segment_rule.get_segment() != matching_segment:
                 raise ValidationError({"segment": "Mismatched segment is not allowed"})
