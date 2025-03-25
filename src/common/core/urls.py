@@ -5,7 +5,7 @@ from common.core import views
 
 urlpatterns = [
     re_path(r"^version/?", views.version_info),
-    re_path(r"^health/liveness/?", views.version_info),
+    re_path(r"^health/liveness/?", views.liveness),
     re_path(r"^health/readiness/?", include("health_check.urls", namespace="health")),
     re_path(r"^health", include("health_check.urls", namespace="health-deprecated")),
     # Aptible health checks must be on /healthcheck and cannot redirect
