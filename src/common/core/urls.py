@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.urls import include, re_path
 
 from common.core import views
@@ -10,5 +11,7 @@ urlpatterns = [
     # Aptible health checks must be on /healthcheck and cannot redirect
     # see https://www.aptible.com/docs/core-concepts/apps/connecting-to-apps/app-endpoints/https-endpoints/health-checks
     re_path(r"^healthcheck", include("health_check.urls", namespace="health-aptible")),
-    re_path(r"^metrics/?", views.metrics),
 ]
+
+if settings.PROMETHEUS_ENABLED:
+    urlpatterns += [re_path(r"^metrics/?", views.metrics)]

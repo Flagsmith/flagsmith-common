@@ -4,6 +4,7 @@ import prometheus_client
 AWS_SES_REGION_ENDPOINT: str
 SEGMENT_RULES_CONDITIONS_LIMIT: int
 SENDGRID_API_KEY: str
+PROMETHEUS_ENABLED = True
 
 # Settings required for tests
 DATABASES = {
