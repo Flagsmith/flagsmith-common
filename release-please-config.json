@@ -15,7 +15,7 @@
   "changelog-sections": [
     {
       "type": "chore",
-      "hidden": false,
+      "hidden": true,
       "section": "Other"
     },
     {
