@@ -30,5 +30,5 @@ repos:
         types: [python]
 
 ci:
-  skip: [python-typecheck]
+  skip: [python-typecheck, poetry-lock]
   autoupdate_commit_msg: "ci: pre-commit autoupdate"
