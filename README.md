@@ -67,8 +67,8 @@ Flagsmith uses Prometheus to track performance metrics.
 The following default metrics are exposed:
 
 - `flagsmith_build_info`: Has the labels `version` and `ci_commit_sha`.
-- `http_server_request_duration_seconds`: Histogram labeled with `method`, `path`, and `response_status`.
-- `http_server_requests_total`: Counter labeled with `method`, `path`, and `response_status`.
+- `http_server_request_duration_seconds`: Histogram labeled with `route`, `path`, and `response_status`.
+- `http_server_requests_total`: Counter labeled with `route`, `path`, and `response_status`.
 
 ##### Guidelines
 
