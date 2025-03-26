@@ -4,3 +4,4 @@
 *.pyc
 .coverage
 common.sqlite3
+dist/

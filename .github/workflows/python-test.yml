@@ -1,23 +1,26 @@
-name: Python Checks and Unit Tests 
+name: Python Checks and Unit Tests
 
 on:
   pull_request:
 
 jobs:
-  test:
+  lint-test:
     runs-on: ubuntu-latest
-    name: Python Checks and Unit Tests
+
+    strategy:
+      max-parallel: 2
+      matrix:
+        python-version: ["3.11", "3.12"]
 
     steps:
-      - name: Cloning repo
-        uses: actions/checkout@v3
-
-      - name: Install poetry
-        run: pipx install poetry
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.12
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        run: pipx install poetry
 
       - name: Install Dependencies
         run: poetry install --with dev
