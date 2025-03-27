@@ -47,3 +47,6 @@ TASK_DELETE_RETENTION_DAYS = 15
 TASK_DELETE_RUN_EVERY = timedelta(days=1)
 TASK_DELETE_RUN_TIME = time(5, 0, 0)
 TASK_RUN_METHOD = TaskRunMethod.TASK_PROCESSOR
+
+# Avoid models.W042 warnings
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
