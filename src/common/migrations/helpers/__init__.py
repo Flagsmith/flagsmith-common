@@ -4,6 +4,6 @@ that don't include a Migration class. As such, I've defined this helpers submodu
 and simplified the imports by defining the __all__ attribute.
 """
 
-from task_processor.migrations.helpers.postgres_helpers import PostgresOnlyRunSQL
+from common.migrations.helpers.postgres_helpers import PostgresOnlyRunSQL
 
 __all__ = ["PostgresOnlyRunSQL"]

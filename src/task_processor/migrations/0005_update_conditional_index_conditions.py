@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 
-from task_processor.migrations.helpers import PostgresOnlyRunSQL
+from common.migrations.helpers import PostgresOnlyRunSQL
 
 
 class Migration(migrations.Migration):
