@@ -53,7 +53,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
         os.environ["PROMETHEUS_MULTIPROC_DIR"] = prometheus_multiproc_dir_name
 
     if "task-processor" in sys.argv:
-        # A bit hacky way to signal we're not running the API
+        # A hacky way to signal we're not running the API
         os.environ["RUN_BY_PROCESSOR"] = "true"
 
     with ctx:
