@@ -30,7 +30,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
 
     # TODO @khvn26 Move logging setup to here
 
-    # Currently we don't install Flagsmith modues as a package, so we need to add
+    # Currently we don't install Flagsmith modules as a package, so we need to add
     # $CWD to the Python path to be able to import them
     sys.path.append(os.getcwd())
 
