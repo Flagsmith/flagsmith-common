@@ -8,6 +8,7 @@ from pytest_django import DjangoCaptureOnCommitCallbacks
 from pytest_django.fixtures import SettingsWrapper
 from pytest_mock import MockerFixture
 
+from common.test_tools import AssertMetricFixture
 from task_processor.decorators import (
     register_recurring_task,
     register_task_handler,
@@ -206,6 +207,29 @@ def test_delay_returns_none_if_task_queue_is_full(
 
     # Then
     assert task is None
+
+
+def test_delay__expected_metrics(
+    settings: SettingsWrapper,
+    db: None,
+    assert_metric: AssertMetricFixture,
+) -> None:
+    # Given
+    settings.TASK_RUN_METHOD = TaskRunMethod.TASK_PROCESSOR
+
+    @register_task_handler(queue_size=1)
+    def my_function(*args: typing.Any, **kwargs: typing.Any) -> None:
+        pass
+
+    # When
+    my_function.delay()
+
+    # Then
+    assert_metric(
+        name="task_processor_enqueued_tasks_total",
+        value=1.0,
+        labels={"task_identifier": "test_unit_task_processor_decorators.my_function"},
+    )
 
 
 def test_can_create_task_with_priority(settings: SettingsWrapper, db: None) -> None:
