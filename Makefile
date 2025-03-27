@@ -15,7 +15,7 @@ install-poetry:
 
 .PHONY: install-packages
 install-packages:
-	poetry install --no-root $(opts)
+	poetry install $(opts)
 
 .PHONY: install
 install: install-pip install-poetry install-packages
