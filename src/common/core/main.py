@@ -1,17 +1,22 @@
+import contextlib
 import logging
 import os
 import sys
 import tempfile
+import typing
 
 from django.core.management import execute_from_command_line
 
 logger = logging.getLogger(__name__)
 
 
-def ensure_cli_env() -> None:
+@contextlib.contextmanager
+def ensure_cli_env() -> typing.Generator[None, None, None]:
     """
     Set up the environment for the main entry point of the application.
     """
+    ctx = contextlib.ExitStack()
+
     # TODO @khvn26 Move logging setup to here
 
     # Currently we don't install Flagsmith modues as a package, so we need to add
@@ -24,15 +29,20 @@ def ensure_cli_env() -> None:
 
     # Set up Prometheus' multiprocess mode
     if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
-        prometheus_multiproc_dir = tempfile.TemporaryDirectory(
-            prefix="prometheus_multiproc",
-            delete=False,
+        prometheus_multiproc_dir_name = ctx.enter_context(
+            tempfile.TemporaryDirectory(
+                prefix="prometheus_multiproc",
+            )
         )
+
         logger.info(
             "Created %s for Prometheus multi-process mode",
-            prometheus_multiproc_dir.name,
+            prometheus_multiproc_dir_name,
         )
-        os.environ["PROMETHEUS_MULTIPROC_DIR"] = prometheus_multiproc_dir.name
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = prometheus_multiproc_dir_name
+
+    with ctx:
+        yield
 
 
 def main() -> None:
@@ -50,7 +60,6 @@ def main() -> None:
     Usage:
     `flagsmith <command> [options]`
     """
-    ensure_cli_env()
-
-    # Run Django
-    execute_from_command_line(sys.argv)
+    with ensure_cli_env():
+        # Run Django
+        execute_from_command_line(sys.argv)
