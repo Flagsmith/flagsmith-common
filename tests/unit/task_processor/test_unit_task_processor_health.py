@@ -1,0 +1,43 @@
+from pytest_django.fixtures import SettingsWrapper
+from pytest_mock import MockerFixture
+
+from task_processor.health import is_processor_healthy
+from task_processor.models import HealthCheckModel
+from task_processor.task_run_method import TaskRunMethod
+
+
+def test_is_processor_healthy_returns_false_if_task_not_processed(
+    mocker: MockerFixture,
+) -> None:
+    # Given
+    mocker.patch("task_processor.health.create_health_check_model")
+    mocked_health_check_model_class = mocker.patch(
+        "task_processor.health.HealthCheckModel"
+    )
+    mocked_health_check_model_class.objects.filter.return_value.first.return_value = (
+        None
+    )
+
+    # When
+    result = is_processor_healthy(max_tries=3)
+
+    # Then
+    assert result is False
+
+
+def test_is_processor_healthy_returns_true_if_task_processed(
+    db: None,
+    settings: SettingsWrapper,
+) -> None:
+    # Given
+    settings.TASK_RUN_METHOD = TaskRunMethod.SYNCHRONOUSLY
+
+    # When
+    result = is_processor_healthy(max_tries=3)
+
+    # Then
+    # the health is reported as success
+    assert result is True
+
+    # but the health check model used to verify the health is deleted
+    assert not HealthCheckModel.objects.exists()

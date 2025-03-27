@@ -12,6 +12,15 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
 
+    services:
+      postgres:
+        image: postgres:15.5-alpine
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: flagsmith
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -23,13 +32,17 @@ jobs:
         run: pipx install poetry
 
       - name: Install Dependencies
-        run: poetry install --with dev
+        env:
+          opts: --with dev
+        run: make install-packages
 
       - name: Check for missing migrations
-        run: poetry run python manage.py makemigrations --no-input --dry-run --check
+        env:
+          opts: --no-input --dry-run --check
+        run: make django-make-migrations
 
       - name: Check for new typing errors
-        run: poetry run mypy .
+        run: make typecheck
 
       - name: Run Tests
-        run: poetry run pytest
+        run: make test
