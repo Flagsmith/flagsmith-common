@@ -31,7 +31,7 @@ docker-up:
 
 .PHONY: docker-down
 docker-down:
-	docker compose stop
+	docker compose down
 
 .PHONY: test
 test:
