@@ -2,10 +2,13 @@ import logging
 import traceback
 import typing
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from datetime import timedelta
 
+from django.conf import settings
 from django.utils import timezone
 
+from task_processor import metrics
 from task_processor.models import (
     AbstractBaseTask,
     RecurringTask,
@@ -101,10 +104,21 @@ def run_recurring_tasks() -> list[RecurringTaskRun]:
 def _run_task(
     task: T,
 ) -> typing.Tuple[T, AnyTaskRun]:
+    assert settings.TASK_PROCESSOR_MODE, (
+        "Attempt to run tasks in a non-task-processor environment"
+    )
+
+    ctx = ExitStack()
+    timer = metrics.task_processor_task_duration_seconds.time()
+    ctx.enter_context(timer)
+
+    task_identifier = task.task_identifier
+
     logger.debug(
-        f"Running task {task.task_identifier} id={task.pk} args={task.args} kwargs={task.kwargs}"
+        f"Running task {task_identifier} id={task.pk} args={task.args} kwargs={task.kwargs}"
     )
     task_run: AnyTaskRun = task.task_runs.model(started_at=timezone.now(), task=task)  # type: ignore[attr-defined]
+    result: str
 
     try:
         with ThreadPoolExecutor(max_workers=1) as executor:
@@ -112,27 +126,41 @@ def _run_task(
             timeout = task.timeout.total_seconds() if task.timeout else None
             future.result(timeout=timeout)  # Wait for completion or timeout
 
-        task_run.result = TaskResult.SUCCESS.value
+        task_run.result = result = TaskResult.SUCCESS.value
         task_run.finished_at = timezone.now()
         task.mark_success()
-        logger.debug(f"Task {task.task_identifier} id={task.pk} completed")
+
+        logger.debug(f"Task {task_identifier} id={task.pk} completed")
 
     except Exception as e:
         # For errors that don't include a default message (e.g., TimeoutError),
         # fall back to using repr.
         err_msg = str(e) or repr(e)
 
+        task.mark_failure()
+
+        task_run.result = result = TaskResult.FAILURE.value
+        task_run.error_details = str(traceback.format_exc())
+
         logger.error(
             "Failed to execute task '%s', with id %d. Exception: %s",
-            task.task_identifier,
+            task_identifier,
             task.pk,
             err_msg,
             exc_info=True,
         )
 
-        task.mark_failure()
+    result_label_value = result.lower()
 
-        task_run.result = TaskResult.FAILURE.value
-        task_run.error_details = str(traceback.format_exc())
+    timer.labels(
+        task_identifier=task_identifier,
+        result=result_label_value,
+    )  # type: ignore[no-untyped-call]
+    ctx.close()
+
+    metrics.task_processor_finished_tasks_total.labels(
+        task_identifier=task_identifier,
+        result=result_label_value,
+    ).inc()
 
     return task, task_run

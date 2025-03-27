@@ -12,6 +12,7 @@ from freezegun import freeze_time
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 
+from common.test_tools import AssertMetricFixture
 from task_processor.decorators import (
     TaskHandler,
     register_recurring_task,
@@ -576,6 +577,65 @@ def test_run_task_runs_tasks_in_correct_priority(
     assert task_runs_1[0].task == task_3
     assert task_runs_2[0].task == task_1
     assert task_runs_3[0].task == task_2
+
+
+@pytest.mark.django_db(transaction=True)
+def test_run_tasks__expected_metrics(
+    dummy_task: TaskHandler[[str, str]],
+    raise_exception_task: TaskHandler[[str]],
+    assert_metric: AssertMetricFixture,
+    mocker: MockerFixture,
+) -> None:
+    # Given
+    dummy_task_identifier = dummy_task.task_identifier
+    raise_exception_task_identifier = raise_exception_task.task_identifier
+    Task.create(
+        dummy_task_identifier,
+        scheduled_for=timezone.now(),
+        args=("arg1", "arg2"),
+    ).save()
+    Task.create(
+        raise_exception_task_identifier,
+        scheduled_for=timezone.now(),
+        args=("arg1",),
+    ).save()
+
+    # When
+    run_tasks(2)
+
+    # Then
+    assert_metric(
+        name="task_processor_finished_tasks_total",
+        value=1.0,
+        labels={
+            "task_identifier": dummy_task_identifier,
+            "result": "success",
+        },
+    )
+    assert_metric(
+        name="task_processor_finished_tasks_total",
+        value=1.0,
+        labels={
+            "task_identifier": raise_exception_task_identifier,
+            "result": "failure",
+        },
+    )
+    assert_metric(
+        name="task_processor_task_duration_seconds",
+        value=mocker.ANY,
+        labels={
+            "task_identifier": dummy_task_identifier,
+            "result": "success",
+        },
+    )
+    assert_metric(
+        name="task_processor_task_duration_seconds",
+        value=mocker.ANY,
+        labels={
+            "task_identifier": raise_exception_task_identifier,
+            "result": "success",
+        },
+    )
 
 
 @pytest.mark.django_db(transaction=True)
