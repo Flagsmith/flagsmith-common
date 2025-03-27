@@ -13,7 +13,18 @@ logger = logging.getLogger(__name__)
 @contextlib.contextmanager
 def ensure_cli_env() -> typing.Generator[None, None, None]:
     """
-    Set up the environment for the main entry point of the application.
+    Set up the environment for the main entry point of the application
+    and clean up after it's done.
+
+    Add environment-related code that needs to happen before and after Django is involved
+    to here.
+
+    Use as a context manager, e.g.:
+
+    ```python
+    with ensure_cli_env():
+        main()
+    ```
     """
     ctx = contextlib.ExitStack()
 
