@@ -4,15 +4,19 @@ version = "1.5.2"
 description = "Flagsmith's common library"
 requires-python = ">=3.11,<4.0"
 dependencies = [
-    "django (<5)",
+    "backoff (>=2.2.1,<3.0.0)",
+    "django (>4,<5)",
     "django-health-check",
     "djangorestframework-recursive",
     "djangorestframework",
     "drf-writable-nested",
+    "drf-yasg (>=1.21.10,<2.0.0)",
+    "environs (<15)",
     "flagsmith-flag-engine",
     "gunicorn (>=19.1)",
     "prometheus-client (>=0.0.16)",
-    "environs (<15)",
+    "psycopg2 (>=2,<3)",
+    "simplejson (>=3,<4)",
 ]
 authors = [
     { name = "Matthew Elwell" },
@@ -29,6 +33,7 @@ readme = "README.md"
 dynamic = ["classifiers"]
 
 [project.urls]
+Changelog = "https://github.com/flagsmith/flagsmith-common/blob/main/CHANGELOG.md"
 Download = "https://github.com/flagsmith/flagsmith-common/releases"
 Homepage = "https://flagsmith.com"
 Issues = "https://github.com/flagsmith/flagsmith-common/issues"
@@ -48,9 +53,13 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: BSD License",
 ]
-packages = [{ include = "common", from = "src" }]
+packages = [
+    { include = "common", from = "src" },
+    { include = "task_processor", from = "src" },
+]
 
 [tool.poetry.group.dev.dependencies]
+dj-database-url = "^2.3.0"
 django-stubs = "^5.1.3"
 djangorestframework-stubs = "^3.15.3"
 mypy = "^1.15.0"
@@ -65,6 +74,7 @@ pytest-mock = "^3.14.0"
 requests = "^2.32.3"
 ruff = "*"
 setuptools = "^77.0.3"
+types-simplejson = "^3.20.0.20250326"
 
 [build-system]
 requires = ["poetry-core"]
