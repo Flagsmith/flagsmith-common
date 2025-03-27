@@ -33,6 +33,7 @@ readme = "README.md"
 dynamic = ["classifiers"]
 
 [project.urls]
+Changelog = "https://github.com/flagsmith/flagsmith-common/blob/main/CHANGELOG.md"
 Download = "https://github.com/flagsmith/flagsmith-common/releases"
 Homepage = "https://flagsmith.com"
 Issues = "https://github.com/flagsmith/flagsmith-common/issues"
