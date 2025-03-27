@@ -1,5 +1,4 @@
 import json
-import logging
 import pathlib
 from functools import lru_cache
 from typing import NotRequired, TypedDict
@@ -11,8 +10,6 @@ from django.db.models import Manager
 
 UNKNOWN = "unknown"
 VERSIONS_INFO_FILE_LOCATION = ".versions.json"
-
-logger = logging.getLogger(__name__)
 
 
 class SelfHostedData(TypedDict):
