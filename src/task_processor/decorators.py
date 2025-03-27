@@ -8,7 +8,7 @@ from django.conf import settings
 from django.db.transaction import on_commit
 from django.utils import timezone
 
-from task_processor import task_registry
+from task_processor import metrics, task_registry
 from task_processor.exceptions import InvalidArgumentsError, TaskQueueFullError
 from task_processor.models import RecurringTask, Task, TaskPriority
 from task_processor.task_run_method import TaskRunMethod
@@ -69,7 +69,8 @@ class TaskHandler(typing.Generic[TaskParameters]):
         args: tuple[typing.Any, ...] = (),
         kwargs: dict[str, typing.Any] | None = None,
     ) -> Task | None:
-        logger.debug("Request to run task '%s' asynchronously.", self.task_identifier)
+        task_identifier = self.task_identifier
+        logger.debug("Request to run task '%s' asynchronously.", task_identifier)
 
         kwargs = kwargs or {}
 
@@ -84,13 +85,16 @@ class TaskHandler(typing.Generic[TaskParameters]):
             _validate_inputs(*args, **kwargs)
             self.unwrapped(*args, **kwargs)
         elif settings.TASK_RUN_METHOD == TaskRunMethod.SEPARATE_THREAD:
-            logger.debug("Running task '%s' in separate thread", self.task_identifier)
+            logger.debug("Running task '%s' in separate thread", task_identifier)
             self.run_in_thread(args=args, kwargs=kwargs)
         else:
-            logger.debug("Creating task for function '%s'...", self.task_identifier)
+            logger.debug("Creating task for function '%s'...", task_identifier)
+            metrics.task_processor_enqueued_tasks_total.labels(
+                task_identifier=task_identifier
+            ).inc()
             try:
                 task = Task.create(
-                    task_identifier=self.task_identifier,
+                    task_identifier=task_identifier,
                     scheduled_for=delay_until or timezone.now(),
                     priority=self.priority,
                     queue_size=self.queue_size,
