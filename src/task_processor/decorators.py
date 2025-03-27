@@ -144,7 +144,7 @@ def register_task_handler(  # noqa: C901
         the task processor Defaults to `None` (infinite).
     :param TaskPriority priority: task priority.
     :param bool transaction_on_commit: (`SEPARATE_THREAD` task run method only)
-        Whether to wrap the task call in `transanction.on_commit`. Defaults to `True`.
+        Whether to wrap the task call in `transaction.on_commit`. Defaults to `True`.
         We need this for the task to be able to access data committed with the current
         transaction. If the task is invoked outside of a transaction, it will start
         immediately.
