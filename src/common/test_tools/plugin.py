@@ -11,6 +11,11 @@ def assert_metric_impl() -> Generator[AssertMetricFixture, None, None]:
     registry = prometheus_client.REGISTRY
     collectors = [*registry._collector_to_names]
 
+    # Reset registry state
+    for collector in collectors:
+        if isinstance(collector, MetricWrapperBase):
+            collector.clear()
+
     def _assert_metric(
         *,
         name: str,
@@ -24,11 +29,6 @@ def assert_metric_impl() -> Generator[AssertMetricFixture, None, None]:
         )
 
     yield _assert_metric
-
-    # Reset registry state
-    for collector in collectors:
-        if isinstance(collector, MetricWrapperBase):
-            collector.clear()
 
 
 assert_metric = pytest.fixture(assert_metric_impl)
