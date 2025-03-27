@@ -633,7 +633,7 @@ def test_run_tasks__expected_metrics(
         value=mocker.ANY,
         labels={
             "task_identifier": raise_exception_task_identifier,
-            "result": "success",
+            "result": "failure",
         },
     )
 
