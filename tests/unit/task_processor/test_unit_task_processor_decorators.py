@@ -99,10 +99,10 @@ def test_register_task_handler_run_in_thread__transaction_commit__false(
     )
 
 
+@pytest.mark.django_db
+@pytest.mark.task_processor_mode
 def test_register_recurring_task(
     mocker: MockerFixture,
-    db: None,
-    run_by_processor: None,
 ) -> None:
     # Given
     mock = mocker.Mock()
@@ -128,10 +128,8 @@ def test_register_recurring_task(
     assert task.callable is mock
 
 
-def test_register_recurring_task_does_nothing_if_not_run_by_processor(
-    mocker: MockerFixture,
-    db: None,
-) -> None:
+@pytest.mark.django_db
+def test_register_recurring_task_does_nothing_if_not_run_by_processor() -> None:
     # Given
 
     task_kwargs = {"first_arg": "foo", "second_arg": "bar"}
@@ -187,9 +185,8 @@ def test_inputs_are_validated_when_run_without_task_processor(
         my_function.delay(args=(NonSerializableObj(),))
 
 
-def test_delay_returns_none_if_task_queue_is_full(
-    settings: SettingsWrapper, db: None
-) -> None:
+@pytest.mark.django_db
+def test_delay_returns_none_if_task_queue_is_full(settings: SettingsWrapper) -> None:
     # Given
     settings.TASK_RUN_METHOD = TaskRunMethod.TASK_PROCESSOR
 
@@ -209,9 +206,9 @@ def test_delay_returns_none_if_task_queue_is_full(
     assert task is None
 
 
+@pytest.mark.django_db
 def test_delay__expected_metrics(
     settings: SettingsWrapper,
-    db: None,
     assert_metric: AssertMetricFixture,
 ) -> None:
     # Given
@@ -232,7 +229,8 @@ def test_delay__expected_metrics(
     )
 
 
-def test_can_create_task_with_priority(settings: SettingsWrapper, db: None) -> None:
+@pytest.mark.django_db
+def test_can_create_task_with_priority(settings: SettingsWrapper) -> None:
     # Given
     settings.TASK_RUN_METHOD = TaskRunMethod.TASK_PROCESSOR
 
