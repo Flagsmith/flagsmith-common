@@ -17,8 +17,8 @@ if typing.TYPE_CHECKING:
     "exception_class, exception_message",
     [(DatabaseError, "Database error"), (Exception, "Generic error")],
 )
+@pytest.mark.django_db
 def test_task_runner_is_resilient_to_errors(
-    db: None,
     mocker: MockerFixture,
     get_task_processor_caplog: "GetTaskProcessorCaplog",
     exception_class: Type[Exception],

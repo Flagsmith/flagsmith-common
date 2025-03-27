@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+import pytest
 from django.utils import timezone
 from pytest_django.fixtures import DjangoAssertNumQueries, SettingsWrapper
 
@@ -16,7 +17,8 @@ one_hour_from_now = now + timedelta(hours=1)
 sixty_days_ago = now - timedelta(days=60)
 
 
-def test_clean_up_old_tasks_does_nothing_when_no_tasks(db: None) -> None:
+@pytest.mark.django_db
+def test_clean_up_old_tasks_does_nothing_when_no_tasks() -> None:
     # Given
     assert Task.objects.count() == 0
 
@@ -38,10 +40,10 @@ def test_clean_up_old_recurring_task_runs_does_nothing_when_no_runs(db: None) ->
     assert RecurringTaskRun.objects.count() == 0
 
 
+@pytest.mark.django_db
 def test_clean_up_old_tasks(
     settings: SettingsWrapper,
     django_assert_num_queries: DjangoAssertNumQueries,
-    db: None,
 ) -> None:
     # Given
     settings.TASK_DELETE_RETENTION_DAYS = 2
@@ -89,10 +91,10 @@ def test_clean_up_old_tasks(
     ]
 
 
+@pytest.mark.django_db
 def test_clean_up_old_recurring_task_runs(
     settings: SettingsWrapper,
     django_assert_num_queries: DjangoAssertNumQueries,
-    db: None,
 ) -> None:
     # Given
     settings.RECURRING_TASK_RUN_RETENTION_DAYS = 2
@@ -125,11 +127,8 @@ def test_clean_up_old_recurring_task_runs(
     assert list(RecurringTaskRun.objects.all()) == [task_in_retention_period]
 
 
-def test_clean_up_old_tasks_include_failed_tasks(
-    settings: SettingsWrapper,
-    django_assert_num_queries: DjangoAssertNumQueries,
-    db: None,
-) -> None:
+@pytest.mark.django_db
+def test_clean_up_old_tasks_include_failed_tasks(settings: SettingsWrapper) -> None:
     # Given
     settings.TASK_DELETE_RETENTION_DAYS = 2
     settings.TASK_DELETE_INCLUDE_FAILED_TASKS = True
@@ -146,10 +145,10 @@ def test_clean_up_old_tasks_include_failed_tasks(
     assert not Task.objects.exists()
 
 
+@pytest.mark.django_db
 def test_clean_up_old_tasks_does_not_run_if_disabled(
     settings: SettingsWrapper,
     django_assert_num_queries: DjangoAssertNumQueries,
-    db: None,
 ) -> None:
     # Given
     settings.ENABLE_CLEAN_UP_OLD_TASKS = False
@@ -166,10 +165,10 @@ def test_clean_up_old_tasks_does_not_run_if_disabled(
     assert Task.objects.filter(id=task.id).exists()
 
 
+@pytest.mark.django_db
 def test_clean_up_old_recurring_task_runs_does_not_run_if_disabled(
     settings: SettingsWrapper,
     django_assert_num_queries: DjangoAssertNumQueries,
-    db: None,
 ) -> None:
     # Given
     settings.RECURRING_TASK_RUN_RETENTION_DAYS = 2

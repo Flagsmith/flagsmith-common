@@ -1,3 +1,4 @@
+import pytest
 from pytest_django.fixtures import SettingsWrapper
 from pytest_mock import MockerFixture
 
@@ -25,8 +26,8 @@ def test_is_processor_healthy_returns_false_if_task_not_processed(
     assert result is False
 
 
+@pytest.mark.django_db
 def test_is_processor_healthy_returns_true_if_task_processed(
-    db: None,
     settings: SettingsWrapper,
 ) -> None:
     # Given
