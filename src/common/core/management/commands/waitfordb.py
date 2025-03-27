@@ -3,7 +3,7 @@ import time
 from argparse import ArgumentParser
 from typing import Any
 
-from django.core.management import BaseCommand
+from django.core.management import BaseCommand, CommandError
 from django.db import OperationalError, connections
 from django.db.migrations.executor import MigrationExecutor
 
@@ -54,7 +54,7 @@ class Command(BaseCommand):
             if time.monotonic() - start > wait_for:
                 msg = f"Failed to connect to DB within {wait_for} seconds."
                 logger.error(msg)
-                exit(msg)
+                raise CommandError(msg)
 
             conn = connections.create_connection(database)
             try:
@@ -75,7 +75,7 @@ class Command(BaseCommand):
                 if time.monotonic() - start > wait_for:
                     msg = f"Didn't detect applied migrations for {wait_for} seconds."
                     logger.error(msg)
-                    exit(msg)
+                    raise CommandError(msg)
 
                 conn = connections[database]
                 executor = MigrationExecutor(conn)
