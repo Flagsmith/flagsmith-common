@@ -1,12 +1,9 @@
 import importlib
-import typing
 
 import prometheus_client
 from django.conf import settings
 from prometheus_client.metrics import MetricWrapperBase
 from prometheus_client.multiprocess import MultiProcessCollector
-
-T = typing.TypeVar("T", bound=MetricWrapperBase)
 
 
 class Histogram(prometheus_client.Histogram):
@@ -28,15 +25,14 @@ def reload_metrics(*metric_module_names: str) -> None:
     when needed.
     """
 
+    registry = prometheus_client.REGISTRY
+
     for module_name in metric_module_names:
         metrics_module = importlib.import_module(module_name)
 
-        _collectors = metrics_module.__dict__.values()
-
-        for collector in [
-            *(registry := prometheus_client.REGISTRY)._collector_to_names
-        ]:
-            if collector in _collectors:
-                registry.unregister(collector)
+        for module_attr in vars(metrics_module).values():
+            if isinstance(module_attr, MetricWrapperBase):
+                # Unregister the collector from the registry
+                registry.unregister(module_attr)
 
         importlib.reload(metrics_module)
