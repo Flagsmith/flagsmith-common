@@ -32,11 +32,6 @@ from task_processor.processor import (
 )
 from task_processor.task_registry import initialise, registered_tasks
 
-if typing.TYPE_CHECKING:
-    # This import breaks private-package-test workflow in core
-    from tests.unit.task_processor.conftest import GetTaskProcessorCaplog
-
-
 DEFAULT_CACHE_KEY = "foo"
 DEFAULT_CACHE_VALUE = "bar"
 
@@ -109,10 +104,9 @@ def test_run_task_runs_task_and_creates_task_run_object_when_success(
 @pytest.mark.task_processor_mode
 def test_run_task_kills_task_after_timeout(
     sleep_task: TaskHandler[[int]],
-    get_task_processor_caplog: "GetTaskProcessorCaplog",
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     # Given
-    caplog = get_task_processor_caplog(logging.ERROR)
     task = Task.create(
         sleep_task.task_identifier,
         scheduled_for=timezone.now(),
@@ -148,11 +142,9 @@ def test_run_task_kills_task_after_timeout(
 @pytest.mark.django_db
 @pytest.mark.task_processor_mode
 def test_run_recurring_task_kills_task_after_timeout(
-    get_task_processor_caplog: "GetTaskProcessorCaplog",
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     # Given
-    caplog = get_task_processor_caplog(logging.ERROR)
-
     @register_recurring_task(
         run_every=timedelta(seconds=1), timeout=timedelta(microseconds=1)
     )
@@ -414,11 +406,10 @@ def test_run_recurring_tasks_deletes_the_task_if_unregistered_task_is_old() -> N
 @pytest.mark.task_processor_mode
 def test_run_task_runs_task_and_creates_task_run_object_when_failure(
     raise_exception_task: TaskHandler[[str]],
-    get_task_processor_caplog: "GetTaskProcessorCaplog",
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     # Given
-    caplog = get_task_processor_caplog(logging.DEBUG)
-
+    caplog.set_level(logging.DEBUG)
     msg = "Error!"
     task = Task.create(
         raise_exception_task.task_identifier, args=(msg,), scheduled_for=timezone.now()

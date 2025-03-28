@@ -1,4 +1,5 @@
 import json
+import logging
 import typing
 from datetime import timedelta
 from unittest.mock import MagicMock
@@ -18,10 +19,6 @@ from task_processor.models import RecurringTask, Task, TaskPriority
 from task_processor.task_registry import get_task, initialise
 from task_processor.task_run_method import TaskRunMethod
 
-if typing.TYPE_CHECKING:
-    # This import breaks private-package-test workflow in core
-    from tests.unit.task_processor.conftest import GetTaskProcessorCaplog
-
 
 @pytest.fixture
 def mock_thread_class(
@@ -36,12 +33,12 @@ def mock_thread_class(
 
 @pytest.mark.django_db
 def test_register_task_handler_run_in_thread__transaction_commit__true__default(
-    get_task_processor_caplog: "GetTaskProcessorCaplog",
+    caplog: pytest.LogCaptureFixture,
     mock_thread_class: MagicMock,
     django_capture_on_commit_callbacks: DjangoCaptureOnCommitCallbacks,
 ) -> None:
     # Given
-    caplog = get_task_processor_caplog()
+    caplog.set_level(logging.DEBUG)
 
     @register_task_handler()
     def my_function(*args: str, **kwargs: str) -> None:
@@ -69,11 +66,11 @@ def test_register_task_handler_run_in_thread__transaction_commit__true__default(
 
 
 def test_register_task_handler_run_in_thread__transaction_commit__false(
-    get_task_processor_caplog: "GetTaskProcessorCaplog",
+    caplog: pytest.LogCaptureFixture,
     mock_thread_class: MagicMock,
 ) -> None:
     # Given
-    caplog = get_task_processor_caplog()
+    caplog.set_level(logging.DEBUG)
 
     @register_task_handler(transaction_on_commit=False)
     def my_function(*args: typing.Any, **kwargs: typing.Any) -> None:
