@@ -15,8 +15,8 @@ dependencies = [
     "flagsmith-flag-engine",
     "gunicorn (>=19.1)",
     "prometheus-client (>=0.0.16)",
-    "simplejson (>=3,<4)",
     "psycopg2-binary (>=2.9,<3)",
+    "simplejson (>=3,<4)",
 ]
 authors = [
     { name = "Matthew Elwell" },
