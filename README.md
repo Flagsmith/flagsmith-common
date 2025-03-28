@@ -24,12 +24,6 @@ make install-poetry    # Install Poetry
 make install-packages  # Install project dependencies
 ```
 
-By default, Poetry version 2.0.1 will be installed. You can specify a different version:
-
-```bash
-make install-poetry POETRY_VERSION=2.1.0
-```
-
 #### Development
 
 Run linting checks using pre-commit:
