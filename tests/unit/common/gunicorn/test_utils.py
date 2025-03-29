@@ -4,16 +4,18 @@ import threading
 import time
 
 import pytest
-import pytest_mock
+from drf_yasg.generators import EndpointEnumerator  # type: ignore[import-untyped]
+from pytest_mock import MockerFixture
 
 from common.gunicorn.utils import (
     DjangoWSGIApplication,
+    get_route_template,
     run_server,
 )
 
 
 def test_django_wsgi_application__defaults__expected_config(
-    mocker: pytest_mock.MockerFixture,
+    mocker: MockerFixture,
 ) -> None:
     # Given
     wsgi_handler_mock = mocker.Mock()
@@ -37,7 +39,7 @@ def test_django_wsgi_application__defaults__expected_config(
 
 def test_run_server__default_config_file__runs_expected(
     unused_tcp_port: int,
-    mocker: pytest_mock.MockerFixture,
+    mocker: MockerFixture,
 ) -> None:
     # Given
     # prevent real forking from Gunicorn
@@ -58,3 +60,19 @@ def test_run_server__default_config_file__runs_expected(
 
     # Then
     mark_process_dead_mock.assert_called_once_with(pid)
+
+
+def test_get_route_template__returns_expected__caches_expected(
+    mocker: MockerFixture,
+) -> None:
+    # Given
+    get_path_from_regex_spy = mocker.spy(EndpointEnumerator, "get_path_from_regex")
+    regex_route = "^api/v1/environments/(?P<environment_api_key>[^/.]+)/api-keys/$"
+
+    # When
+    result = get_route_template(regex_route)
+    get_route_template(regex_route)
+
+    # Then
+    assert result == "/api/v1/environments/{environment_api_key}/api-keys/"
+    get_path_from_regex_spy.assert_called_once()

@@ -1,9 +1,11 @@
 import argparse
 import os
+from functools import lru_cache
 from typing import Any
 
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.wsgi import get_wsgi_application
+from drf_yasg.generators import EndpointEnumerator  # type: ignore[import-untyped]
 from environs import Env
 from gunicorn.app.wsgiapp import (  # type: ignore[import-untyped]
     WSGIApplication as GunicornWSGIApplication,
@@ -59,3 +61,18 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
 
 def run_server(options: dict[str, Any] | None = None) -> None:
     DjangoWSGIApplication(options).run()
+
+
+@lru_cache
+def get_route_template(route: str) -> str:
+    """
+    Convert a Django regex route to a template string that can be
+    searched for in the API documentation.
+
+    e.g.,
+
+    `"^api/v1/environments/(?P<environment_api_key>[^/.]+)/api-keys/$"` ->
+    `"/api/v1/environments/{environment_api_key}/api-keys/"`
+    """
+    route_template: str = EndpointEnumerator().get_path_from_regex(route)
+    return route_template
