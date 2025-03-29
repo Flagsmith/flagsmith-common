@@ -72,7 +72,7 @@ def get_route_template(route: str) -> str:
     e.g.,
 
     `"^api/v1/environments/(?P<environment_api_key>[^/.]+)/api-keys/$"` ->
-    `"api/v1/environments/{environment_api_key}/api-keys/"`
+    `"/api/v1/environments/{environment_api_key}/api-keys/"`
     """
     route_template: str = EndpointEnumerator().get_path_from_regex(route)
     return route_template
