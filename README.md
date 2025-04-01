@@ -24,12 +24,6 @@ make install-poetry    # Install Poetry
 make install-packages  # Install project dependencies
 ```
 
-By default, Poetry version 2.0.1 will be installed. You can specify a different version:
-
-```bash
-make install-poetry POETRY_VERSION=2.1.0
-```
-
 #### Development
 
 Run linting checks using pre-commit:
@@ -67,8 +61,8 @@ Flagsmith uses Prometheus to track performance metrics.
 The following default metrics are exposed:
 
 - `flagsmith_build_info`: Has the labels `version` and `ci_commit_sha`.
-- `http_server_request_duration_seconds`: Histogram labeled with `route`, `path`, and `response_status`.
-- `http_server_requests_total`: Counter labeled with `route`, `path`, and `response_status`.
+- `http_server_request_duration_seconds`: Histogram labeled with `method`, `route`, and `response_status`.
+- `http_server_requests_total`: Counter labeled with `method`, `route`, and `response_status`.
 
 ##### Guidelines
 
