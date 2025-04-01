@@ -1,6 +1,6 @@
 .EXPORT_ALL_VARIABLES:
 
-POETRY_VERSION ?= 2.1.1
+POETRY_VERSION ?= 2.1.2
 
 COMPOSE_FILE ?= docker/docker-compose.local.yml
 COMPOSE_PROJECT_NAME ?= flagsmith-common
