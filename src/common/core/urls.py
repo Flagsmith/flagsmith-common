@@ -1,12 +1,12 @@
 from django.conf import settings
-from django.urls import include, re_path
+from django.urls import include, path, re_path
 
 from common.core import views
 
 urlpatterns = [
-    re_path(r"^version/?", views.version_info),
-    re_path(r"^health/liveness/?", views.liveness),
-    re_path(r"^health/readiness/?", include("health_check.urls", namespace="health")),
+    path(r"^version/?", views.version_info),
+    path(r"^health/liveness/?", views.liveness),
+    path(r"^health/readiness/?", include("health_check.urls", namespace="health")),
     re_path(r"^health", include("health_check.urls", namespace="health-deprecated")),
     # Aptible health checks must be on /healthcheck and cannot redirect
     # see https://www.aptible.com/docs/core-concepts/apps/connecting-to-apps/app-endpoints/https-endpoints/health-checks
@@ -14,4 +14,4 @@ urlpatterns = [
 ]
 
 if settings.PROMETHEUS_ENABLED:
-    urlpatterns += [re_path(r"^metrics/?", views.metrics)]
+    urlpatterns += [path("metrics", views.metrics)]
