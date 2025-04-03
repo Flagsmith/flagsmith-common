@@ -322,13 +322,12 @@ def test_run_recurring_tasks_loops_over_all_tasks(
         pass
 
     initialise()
-    task_runs = []
 
     # When, we call run_recurring_tasks in a loop few times
     for _ in range(4):
-        task_runs.append(run_recurring_tasks())
+        run_recurring_tasks()
 
-    # Then, we should have exactly one RecurringTaskRun for each task
+    # Then - we should have exactly one RecurringTaskRun for each task
     for i in range(1, 4):
         task = RecurringTask.objects.get(
             task_identifier=f"test_unit_task_processor_processor._dummy_recurring_task_{i}",
