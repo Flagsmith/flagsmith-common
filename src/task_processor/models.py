@@ -163,7 +163,7 @@ class RecurringTask(AbstractBaseTask):
     locked_at = models.DateTimeField(blank=True, null=True)
     timeout = models.DurationField(default=timedelta(minutes=30))
 
-    last_picked_at = models.DateTimeField(auto_now_add=True)
+    last_picked_at = models.DateTimeField(blank=True, null=True)
     objects: RecurringTaskManager = RecurringTaskManager()
 
     class Meta:

@@ -9,7 +9,7 @@ BEGIN
         FROM task_processor_recurringtask
         -- Add one minute to the timeout as a grace period for overhead
         WHERE is_locked = FALSE OR (locked_at IS NOT NULL AND locked_at < NOW() - timeout + INTERVAL '1 minute')
-        ORDER BY last_picked_at
+        ORDER BY last_picked_at NULLS FIRST
         LIMIT 1
         -- Select for update to ensure that no other workers can select these tasks while in this transaction block
         FOR UPDATE SKIP LOCKED
