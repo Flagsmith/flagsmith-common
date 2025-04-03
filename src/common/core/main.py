@@ -2,7 +2,6 @@ import contextlib
 import logging
 import os
 import sys
-import tempfile
 import typing
 
 from django.core.management import execute_from_command_line
@@ -40,11 +39,8 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
 
     # Set up Prometheus' multiprocess mode
     if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
-        prometheus_multiproc_dir_name = ctx.enter_context(
-            tempfile.TemporaryDirectory(
-                prefix="prometheus_multiproc",
-            )
-        )
+        prometheus_multiproc_dir_name = "/tmp/prometheus_multiproc"
+        os.mkdir(prometheus_multiproc_dir_name)
 
         logger.info(
             "Created %s for Prometheus multi-process mode",
