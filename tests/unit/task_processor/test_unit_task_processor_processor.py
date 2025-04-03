@@ -303,6 +303,39 @@ def test_run_recurring_tasks_multiple_runs(
         assert task_run.error_details is None
 
 
+@pytest.mark.django_db(transaction=True)
+def test_run_recurring_tasks_loops_over_all_tasks(
+    db: None,
+    run_by_processor: None,
+) -> None:
+    # Given, Three recurring tasks
+    @register_recurring_task(run_every=timedelta(milliseconds=200))
+    def _dummy_recurring_task_1() -> None:
+        pass
+
+    @register_recurring_task(run_every=timedelta(milliseconds=200))
+    def _dummy_recurring_task_2() -> None:
+        pass
+
+    @register_recurring_task(run_every=timedelta(milliseconds=200))
+    def _dummy_recurring_task_3() -> None:
+        pass
+
+    initialise()
+
+    # When, we call run_recurring_tasks in a loop few times
+    for _ in range(4):
+        run_recurring_tasks()
+
+    # Then - we should have exactly one RecurringTaskRun for each task
+    for i in range(1, 4):
+        task = RecurringTask.objects.get(
+            task_identifier=f"test_unit_task_processor_processor._dummy_recurring_task_{i}",
+        )
+
+        assert RecurringTaskRun.objects.filter(task=task).count() == 1
+
+
 def test_run_recurring_tasks_only_executes_tasks_after_interval_set_by_run_every(
     db: None,
     run_by_processor: None,
