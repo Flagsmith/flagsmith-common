@@ -2,6 +2,20 @@
 
 <a name="v1.5.2"></a>
 
+## [1.7.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.6.0...v1.7.0) (2025-04-04)
+
+
+### Features
+
+* Add common namespace for metrics ([#40](https://github.com/Flagsmith/flagsmith-common/issues/40)) ([7588379](https://github.com/Flagsmith/flagsmith-common/commit/7588379b19e13ff2173bb34221389cb809ac6513))
+* Add Task Processor metrics ([#27](https://github.com/Flagsmith/flagsmith-common/issues/27)) ([d0ea561](https://github.com/Flagsmith/flagsmith-common/commit/d0ea5619b6e711bccd023655dd2858dfdf33aeef))
+
+
+### Bug Fixes
+
+* `PROMETHEUS_MULTIPROC_DIR` deleted prematurely ([#38](https://github.com/Flagsmith/flagsmith-common/issues/38)) ([ca396df](https://github.com/Flagsmith/flagsmith-common/commit/ca396df49a2b872f0dceca1bde08696f9d45fe43))
+* Unnecessary regex path definitions for `/metrics`, `/version`, healthcheck routes ([#36](https://github.com/Flagsmith/flagsmith-common/issues/36)) ([5550108](https://github.com/Flagsmith/flagsmith-common/commit/55501086ca061ee25c3c4e945d86abf6afd94dc0))
+
 ## [1.6.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.5.2...v1.6.0) (2025-04-03)
 
 
