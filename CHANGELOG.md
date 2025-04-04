@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [1.7.1](https://github.com/Flagsmith/flagsmith-common/compare/v1.7.0...v1.7.1) (2025-04-04)
+
+
+### Bug Fixes
+
+* Regex url paths used as simple url path values ([#41](https://github.com/Flagsmith/flagsmith-common/issues/41)) ([ef1842e](https://github.com/Flagsmith/flagsmith-common/commit/ef1842e6a70d8388d6588e4f1fe290e186719f04))
+
 ## [1.7.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.6.0...v1.7.0) (2025-04-04)
 
 
