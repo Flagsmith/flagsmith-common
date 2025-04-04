@@ -40,11 +40,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
 
     # Set up Prometheus' multiprocess mode
     if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
-        prometheus_multiproc_dir_name = ctx.enter_context(
-            tempfile.TemporaryDirectory(
-                prefix="prometheus_multiproc",
-            )
-        )
+        prometheus_multiproc_dir_name = tempfile.mkdtemp()
 
         logger.info(
             "Created %s for Prometheus multi-process mode",
