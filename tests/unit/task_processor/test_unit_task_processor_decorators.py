@@ -220,7 +220,7 @@ def test_delay__expected_metrics(
 
     # Then
     assert_metric(
-        name="task_processor_enqueued_tasks_total",
+        name="flagsmith_task_processor_enqueued_tasks_total",
         value=1.0,
         labels={"task_identifier": "test_unit_task_processor_decorators.my_function"},
     )

@@ -99,12 +99,12 @@ def test_gunicorn_prometheus_gunicorn_logger__expected_metrics(
 
     # Then
     assert_metric(
-        name="http_server_requests_total",
+        name="flagsmith_http_server_requests_total",
         value=1.0,
         labels={"method": "GET", "route": "^health", "response_status": "200"},
     )
     assert_metric(
-        name="http_server_request_duration_seconds_sum",
+        name="flagsmith_http_server_request_duration_seconds_sum",
         value=0.101,
         labels={"method": "GET", "route": "^health", "response_status": "200"},
     )

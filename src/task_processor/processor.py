@@ -109,7 +109,7 @@ def _run_task(
     )
 
     ctx = ExitStack()
-    timer = metrics.task_processor_task_duration_seconds.time()
+    timer = metrics.flagsmith_task_processor_task_duration_seconds.time()
     ctx.enter_context(timer)
 
     task_identifier = task.task_identifier
@@ -158,7 +158,7 @@ def _run_task(
     )  # type: ignore[no-untyped-call]
     ctx.close()
 
-    metrics.task_processor_finished_tasks_total.labels(
+    metrics.flagsmith_task_processor_finished_tasks_total.labels(
         task_identifier=task_identifier,
         result=result_label_value,
     ).inc()
