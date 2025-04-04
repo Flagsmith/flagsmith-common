@@ -1,12 +1,14 @@
 from datetime import timedelta
 
+import pytest
 from django.utils import timezone
 
 from task_processor.models import Task
 from task_processor.monitoring import get_num_waiting_tasks
 
 
-def test_get_num_waiting_tasks(db: None) -> None:
+@pytest.mark.django_db
+def test_get_num_waiting_tasks() -> None:
     # Given
     now = timezone.now()
 

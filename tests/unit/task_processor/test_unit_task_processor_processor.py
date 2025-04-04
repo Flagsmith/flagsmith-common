@@ -9,9 +9,9 @@ import pytest
 from django.core.cache import cache
 from django.utils import timezone
 from freezegun import freeze_time
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 
+from common.test_tools import AssertMetricFixture
 from task_processor.decorators import (
     TaskHandler,
     register_recurring_task,
@@ -31,11 +31,6 @@ from task_processor.processor import (
     run_tasks,
 )
 from task_processor.task_registry import initialise, registered_tasks
-
-if typing.TYPE_CHECKING:
-    # This import breaks private-package-test workflow in core
-    from tests.unit.task_processor.conftest import GetTaskProcessorCaplog
-
 
 DEFAULT_CACHE_KEY = "foo"
 DEFAULT_CACHE_VALUE = "bar"
@@ -78,6 +73,7 @@ def sleep_task(db: None) -> TaskHandler[[int]]:
     return _sleep_task
 
 
+@pytest.mark.task_processor_mode
 def test_run_task_runs_task_and_creates_task_run_object_when_success(
     dummy_task: TaskHandler[[str, str]],
 ) -> None:
@@ -105,12 +101,12 @@ def test_run_task_runs_task_and_creates_task_run_object_when_success(
     assert task.completed
 
 
+@pytest.mark.task_processor_mode
 def test_run_task_kills_task_after_timeout(
     sleep_task: TaskHandler[[int]],
-    get_task_processor_caplog: "GetTaskProcessorCaplog",
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     # Given
-    caplog = get_task_processor_caplog(logging.ERROR)
     task = Task.create(
         sleep_task.task_identifier,
         scheduled_for=timezone.now(),
@@ -143,15 +139,12 @@ def test_run_task_kills_task_after_timeout(
     )
 
 
+@pytest.mark.django_db
+@pytest.mark.task_processor_mode
 def test_run_recurring_task_kills_task_after_timeout(
-    db: None,
-    monkeypatch: MonkeyPatch,
-    get_task_processor_caplog: "GetTaskProcessorCaplog",
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     # Given
-    caplog = get_task_processor_caplog(logging.ERROR)
-    monkeypatch.setenv("RUN_BY_PROCESSOR", "True")
-
     @register_recurring_task(
         run_every=timedelta(seconds=1), timeout=timedelta(microseconds=1)
     )
@@ -186,13 +179,12 @@ def test_run_recurring_task_kills_task_after_timeout(
     )
 
 
-def test_run_recurring_tasks_runs_task_and_creates_recurring_task_run_object_when_success(
-    db: None,
-    monkeypatch: MonkeyPatch,
-) -> None:
+@pytest.mark.django_db
+@pytest.mark.task_processor_mode
+def test_run_recurring_tasks_runs_task_and_creates_recurring_task_run_object_when_success() -> (
+    None
+):
     # Given
-    monkeypatch.setenv("RUN_BY_PROCESSOR", "True")
-
     @register_recurring_task(run_every=timedelta(seconds=1))
     def _dummy_recurring_task() -> None:
         cache.set(DEFAULT_CACHE_KEY, DEFAULT_CACHE_VALUE)
@@ -216,13 +208,10 @@ def test_run_recurring_tasks_runs_task_and_creates_recurring_task_run_object_whe
     assert task_run.error_details is None
 
 
-def test_run_recurring_tasks_runs_locked_task_after_tiemout(
-    db: None,
-    monkeypatch: MonkeyPatch,
-) -> None:
+@pytest.mark.django_db
+@pytest.mark.task_processor_mode
+def test_run_recurring_tasks_runs_locked_task_after_tiemout() -> None:
     # Given
-    monkeypatch.setenv("RUN_BY_PROCESSOR", "True")
-
     @register_recurring_task(run_every=timedelta(hours=1))
     def _dummy_recurring_task() -> None:
         cache.set(DEFAULT_CACHE_KEY, DEFAULT_CACHE_VALUE)
@@ -257,10 +246,8 @@ def test_run_recurring_tasks_runs_locked_task_after_tiemout(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_run_recurring_tasks_multiple_runs(
-    db: None,
-    run_by_processor: None,
-) -> None:
+@pytest.mark.task_processor_mode
+def test_run_recurring_tasks_multiple_runs() -> None:
     # Given
     @register_recurring_task(run_every=timedelta(milliseconds=200))
     def _dummy_recurring_task() -> None:
@@ -304,10 +291,8 @@ def test_run_recurring_tasks_multiple_runs(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_run_recurring_tasks_loops_over_all_tasks(
-    db: None,
-    run_by_processor: None,
-) -> None:
+@pytest.mark.task_processor_mode
+def test_run_recurring_tasks_loops_over_all_tasks() -> None:
     # Given, Three recurring tasks
     @register_recurring_task(run_every=timedelta(milliseconds=200))
     def _dummy_recurring_task_1() -> None:
@@ -336,10 +321,11 @@ def test_run_recurring_tasks_loops_over_all_tasks(
         assert RecurringTaskRun.objects.filter(task=task).count() == 1
 
 
-def test_run_recurring_tasks_only_executes_tasks_after_interval_set_by_run_every(
-    db: None,
-    run_by_processor: None,
-) -> None:
+@pytest.mark.django_db
+@pytest.mark.task_processor_mode
+def test_run_recurring_tasks_only_executes_tasks_after_interval_set_by_run_every() -> (
+    None
+):
     # Given
     @register_recurring_task(run_every=timedelta(milliseconds=200))
     def _dummy_recurring_task() -> None:
@@ -363,15 +349,10 @@ def test_run_recurring_tasks_only_executes_tasks_after_interval_set_by_run_every
     assert RecurringTaskRun.objects.filter(task=task).count() == 1
 
 
-def test_run_recurring_tasks_does_nothing_if_unregistered_task_is_new(
-    db: None,
-    run_by_processor: None,
-    caplog: pytest.LogCaptureFixture,
-) -> None:
+@pytest.mark.django_db
+@pytest.mark.task_processor_mode
+def test_run_recurring_tasks_does_nothing_if_unregistered_task_is_new() -> None:
     # Given
-    task_processor_logger = logging.getLogger("task_processor")
-    task_processor_logger.propagate = True
-
     task_identifier = "test_unit_task_processor_processor._a_task"
 
     @register_recurring_task(run_every=timedelta(milliseconds=100))
@@ -393,11 +374,9 @@ def test_run_recurring_tasks_does_nothing_if_unregistered_task_is_new(
     assert RecurringTask.objects.filter(task_identifier=task_identifier).exists()
 
 
-def test_run_recurring_tasks_deletes_the_task_if_unregistered_task_is_old(
-    db: None,
-    run_by_processor: None,
-    mocker: MockerFixture,
-) -> None:
+@pytest.mark.django_db
+@pytest.mark.task_processor_mode
+def test_run_recurring_tasks_deletes_the_task_if_unregistered_task_is_old() -> None:
     # Given
     task_processor_logger = logging.getLogger("task_processor")
     task_processor_logger.propagate = True
@@ -425,13 +404,13 @@ def test_run_recurring_tasks_deletes_the_task_if_unregistered_task_is_old(
     )
 
 
+@pytest.mark.task_processor_mode
 def test_run_task_runs_task_and_creates_task_run_object_when_failure(
     raise_exception_task: TaskHandler[[str]],
-    get_task_processor_caplog: "GetTaskProcessorCaplog",
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     # Given
-    caplog = get_task_processor_caplog(logging.DEBUG)
-
+    caplog.set_level(logging.DEBUG)
     msg = "Error!"
     task = Task.create(
         raise_exception_task.task_identifier, args=(msg,), scheduled_for=timezone.now()
@@ -470,6 +449,7 @@ def test_run_task_runs_task_and_creates_task_run_object_when_failure(
     ]
 
 
+@pytest.mark.task_processor_mode
 def test_run_task_runs_failed_task_again(
     raise_exception_task: TaskHandler[[str]],
 ) -> None:
@@ -501,10 +481,11 @@ def test_run_task_runs_failed_task_again(
     assert task.is_locked is False
 
 
-def test_run_recurring_task_runs_task_and_creates_recurring_task_run_object_when_failure(
-    db: None,
-    run_by_processor: None,
-) -> None:
+@pytest.mark.django_db
+@pytest.mark.task_processor_mode
+def test_run_recurring_task_runs_task_and_creates_recurring_task_run_object_when_failure() -> (
+    None
+):
     # Given
     task_identifier = "test_unit_task_processor_processor._raise_exception"
 
@@ -528,7 +509,8 @@ def test_run_recurring_task_runs_task_and_creates_recurring_task_run_object_when
     assert task_run.error_details is not None
 
 
-def test_run_task_does_nothing_if_no_tasks(db: None) -> None:
+@pytest.mark.django_db
+def test_run_task_does_nothing_if_no_tasks() -> None:
     # Given - no tasks
     # When
     result = run_tasks()
@@ -538,6 +520,7 @@ def test_run_task_does_nothing_if_no_tasks(db: None) -> None:
 
 
 @pytest.mark.django_db(transaction=True)
+@pytest.mark.task_processor_mode
 def test_run_task_runs_tasks_in_correct_priority(
     dummy_task: TaskHandler[[str, str]],
 ) -> None:
@@ -578,7 +561,83 @@ def test_run_task_runs_tasks_in_correct_priority(
     assert task_runs_3[0].task == task_2
 
 
+def test_run_tasks__fails_if_not_in_task_processor_mode(
+    dummy_task: TaskHandler[[str, str]],
+) -> None:
+    # Given
+    Task.create(
+        dummy_task.task_identifier,
+        scheduled_for=timezone.now(),
+        args=("arg1", "arg2"),
+    ).save()
+
+    # When
+    with pytest.raises(AssertionError):
+        run_tasks()
+
+
 @pytest.mark.django_db(transaction=True)
+@pytest.mark.task_processor_mode
+def test_run_tasks__expected_metrics(
+    dummy_task: TaskHandler[[str, str]],
+    raise_exception_task: TaskHandler[[str]],
+    assert_metric: AssertMetricFixture,
+    mocker: MockerFixture,
+) -> None:
+    # Given
+    dummy_task_identifier = dummy_task.task_identifier
+    raise_exception_task_identifier = raise_exception_task.task_identifier
+    Task.create(
+        dummy_task_identifier,
+        scheduled_for=timezone.now(),
+        args=("arg1", "arg2"),
+    ).save()
+    Task.create(
+        raise_exception_task_identifier,
+        scheduled_for=timezone.now(),
+        args=("arg1",),
+    ).save()
+
+    # When
+    run_tasks(2)
+
+    # Then
+    assert_metric(
+        name="task_processor_finished_tasks_total",
+        value=1.0,
+        labels={
+            "task_identifier": dummy_task_identifier,
+            "result": "success",
+        },
+    )
+    assert_metric(
+        name="task_processor_finished_tasks_total",
+        value=1.0,
+        labels={
+            "task_identifier": raise_exception_task_identifier,
+            "result": "failure",
+        },
+    )
+    assert_metric(
+        name="task_processor_task_duration_seconds",
+        value=mocker.ANY,
+        labels={
+            "task_identifier": dummy_task_identifier,
+            "result": "success",
+        },
+    )
+    assert_metric(
+        name="task_processor_task_duration_seconds",
+        value=mocker.ANY,
+        labels={
+            "task_identifier": raise_exception_task_identifier,
+            "result": "failure",
+        },
+    )
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.task_processor_mode
 def test_run_tasks_skips_locked_tasks(
     dummy_task: TaskHandler[[str, str]],
     sleep_task: TaskHandler[[int]],
@@ -620,6 +679,7 @@ def test_run_tasks_skips_locked_tasks(
     task_runner_thread.join()
 
 
+@pytest.mark.task_processor_mode
 def test_run_more_than_one_task(dummy_task: TaskHandler[[str, str]]) -> None:
     # Given
     num_tasks = 5
@@ -653,10 +713,9 @@ def test_run_more_than_one_task(dummy_task: TaskHandler[[str, str]]) -> None:
         assert task.completed
 
 
-def test_recurring_tasks_are_unlocked_if_picked_up_but_not_executed(
-    db: None,
-    run_by_processor: None,
-) -> None:
+@pytest.mark.django_db
+@pytest.mark.task_processor_mode
+def test_recurring_tasks_are_unlocked_if_picked_up_but_not_executed() -> None:
     # Given
     @register_recurring_task(run_every=timedelta(days=1))
     def my_task() -> None:
