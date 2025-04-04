@@ -76,6 +76,8 @@ The following default metrics are exposed:
 
 Try to come up with meaningful metrics to cover your feature with when developing it. Refer to [Prometheus best practices][1] when naming your metric and labels.
 
+As a reasonable default, Flagsmith metrics are expected to be namespaced with the `"flagsmith_"` prefix.
+
 Define your metrics in a `metrics.py` module of your Django application — see [example][2]. Contrary to Prometheus Python client examples and documentation, please name a metric variable exactly as your metric name.
 
 It's generally a good idea to allow users to define histogram buckets of their own. Flagsmith accepts a `PROMETHEUS_HISTOGRAM_BUCKETS` setting so users can customise their buckets. To honour the setting, use the `common.prometheus.Histogram` class when defining your histograms. When using `prometheus_client.Histogram` directly, please expose a dedicated setting like so:
@@ -84,8 +86,8 @@ It's generally a good idea to allow users to define histogram buckets of their o
 import prometheus_client
 from django.conf import settings
 
-distance_from_earth_au = prometheus.Histogram(
-    "distance_from_earth_au",
+flagsmith_distance_from_earth_au = prometheus.Histogram(
+    "flagsmith_distance_from_earth_au",
     "Distance from Earth in astronomical units",
     buckets=settings.DISTANCE_FROM_EARTH_AU_HISTOGRAM_BUCKETS,
 )
