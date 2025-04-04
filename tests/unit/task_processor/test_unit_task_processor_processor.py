@@ -603,7 +603,7 @@ def test_run_tasks__expected_metrics(
 
     # Then
     assert_metric(
-        name="task_processor_finished_tasks_total",
+        name="flagsmith_task_processor_finished_tasks_total",
         value=1.0,
         labels={
             "task_identifier": dummy_task_identifier,
@@ -611,7 +611,7 @@ def test_run_tasks__expected_metrics(
         },
     )
     assert_metric(
-        name="task_processor_finished_tasks_total",
+        name="flagsmith_task_processor_finished_tasks_total",
         value=1.0,
         labels={
             "task_identifier": raise_exception_task_identifier,
@@ -619,7 +619,7 @@ def test_run_tasks__expected_metrics(
         },
     )
     assert_metric(
-        name="task_processor_task_duration_seconds",
+        name="flagsmith_task_processor_task_duration_seconds",
         value=mocker.ANY,
         labels={
             "task_identifier": dummy_task_identifier,
@@ -627,7 +627,7 @@ def test_run_tasks__expected_metrics(
         },
     )
     assert_metric(
-        name="task_processor_task_duration_seconds",
+        name="flagsmith_task_processor_task_duration_seconds",
         value=mocker.ANY,
         labels={
             "task_identifier": raise_exception_task_identifier,

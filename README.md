@@ -63,18 +63,20 @@ The following default metrics are exposed:
 ##### Common metrics
 
 - `flagsmith_build_info`: Has the labels `version` and `ci_commit_sha`.
-- `http_server_request_duration_seconds`: Histogram labeled with `method`, `route`, and `response_status`.
-- `http_server_requests_total`: Counter labeled with `method`, `route`, and `response_status`.
-- `task_processor_enqueued_tasks_total`: Counter labeled with `task_identifier`.
+- `flagsmith_http_server_request_duration_seconds`: Histogram labeled with `method`, `route`, and `response_status`.
+- `flagsmith_http_server_requests_total`: Counter labeled with `method`, `route`, and `response_status`.
+- `flagsmith_task_processor_enqueued_tasks_total`: Counter labeled with `task_identifier`.
 
 ##### Task Processor metrics
 
-- `task_processor_finished_tasks_total`: Counter labeled with `task_identifier` and `result` (`"success"`, `"failure"`).
-- `task_processor_task_duration_seconds`: Histogram labeled with `task_identifier` and `result` (`"success"`, `"failure"`).
+- `flagsmith_task_processor_finished_tasks_total`: Counter labeled with `task_identifier` and `result` (`"success"`, `"failure"`).
+- `flagsmith_task_processor_task_duration_seconds`: Histogram labeled with `task_identifier` and `result` (`"success"`, `"failure"`).
 
 ##### Guidelines
 
 Try to come up with meaningful metrics to cover your feature with when developing it. Refer to [Prometheus best practices][1] when naming your metric and labels.
+
+As a reasonable default, Flagsmith metrics are expected to be namespaced with the `"flagsmith_"` prefix.
 
 Define your metrics in a `metrics.py` module of your Django application — see [example][2]. Contrary to Prometheus Python client examples and documentation, please name a metric variable exactly as your metric name.
 
@@ -84,8 +86,8 @@ It's generally a good idea to allow users to define histogram buckets of their o
 import prometheus_client
 from django.conf import settings
 
-distance_from_earth_au = prometheus.Histogram(
-    "distance_from_earth_au",
+flagsmith_distance_from_earth_au = prometheus.Histogram(
+    "flagsmith_distance_from_earth_au",
     "Distance from Earth in astronomical units",
     buckets=settings.DISTANCE_FROM_EARTH_AU_HISTOGRAM_BUCKETS,
 )

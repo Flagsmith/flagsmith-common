@@ -88,7 +88,7 @@ class TaskHandler(typing.Generic[TaskParameters]):
             self.run_in_thread(args=args, kwargs=kwargs)
         else:
             logger.debug("Creating task for function '%s'...", task_identifier)
-            metrics.task_processor_enqueued_tasks_total.labels(
+            metrics.flagsmith_task_processor_enqueued_tasks_total.labels(
                 task_identifier=task_identifier
             ).inc()
             try:
