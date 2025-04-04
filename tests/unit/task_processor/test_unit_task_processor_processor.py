@@ -321,10 +321,11 @@ def test_run_recurring_tasks_loops_over_all_tasks() -> None:
         assert RecurringTaskRun.objects.filter(task=task).count() == 1
 
 
-def test_run_recurring_tasks_only_executes_tasks_after_interval_set_by_run_every(
-    db: None,
-    run_by_processor: None,
-) -> None:
+@pytest.mark.django_db
+@pytest.mark.task_processor_mode
+def test_run_recurring_tasks_only_executes_tasks_after_interval_set_by_run_every() -> (
+    None
+):
     # Given
     @register_recurring_task(run_every=timedelta(milliseconds=200))
     def _dummy_recurring_task() -> None:
