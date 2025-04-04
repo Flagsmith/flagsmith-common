@@ -63,14 +63,14 @@ The following default metrics are exposed:
 ##### Common metrics
 
 - `flagsmith_build_info`: Has the labels `version` and `ci_commit_sha`.
-- `http_server_request_duration_seconds`: Histogram labeled with `method`, `route`, and `response_status`.
-- `http_server_requests_total`: Counter labeled with `method`, `route`, and `response_status`.
-- `task_processor_enqueued_tasks_total`: Counter labeled with `task_identifier`.
+- `flagsmith_http_server_request_duration_seconds`: Histogram labeled with `method`, `route`, and `response_status`.
+- `flagsmith_http_server_requests_total`: Counter labeled with `method`, `route`, and `response_status`.
+- `flagsmith_task_processor_enqueued_tasks_total`: Counter labeled with `task_identifier`.
 
 ##### Task Processor metrics
 
-- `task_processor_finished_tasks_total`: Counter labeled with `task_identifier` and `result` (`"success"`, `"failure"`).
-- `task_processor_task_duration_seconds`: Histogram labeled with `task_identifier` and `result` (`"success"`, `"failure"`).
+- `flagsmith_task_processor_finished_tasks_total`: Counter labeled with `task_identifier` and `result` (`"success"`, `"failure"`).
+- `flagsmith_task_processor_task_duration_seconds`: Histogram labeled with `task_identifier` and `result` (`"success"`, `"failure"`).
 
 ##### Guidelines
 
