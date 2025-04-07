@@ -2,6 +2,18 @@
 
 <a name="v1.5.2"></a>
 
+## [1.8.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.7.1...v1.8.0) (2025-04-07)
+
+
+### Features
+
+* **utils/is_oss:** Add a function to check oss deployment mode ([#44](https://github.com/Flagsmith/flagsmith-common/issues/44)) ([13c2016](https://github.com/Flagsmith/flagsmith-common/commit/13c2016f5b384818e9e796dea226d045d8769094))
+
+
+### Bug Fixes
+
+* Trailing slash in default routes, add tests for default routes ([#43](https://github.com/Flagsmith/flagsmith-common/issues/43)) ([29b3256](https://github.com/Flagsmith/flagsmith-common/commit/29b32565b676b9210bcb2608b9e51bfaa28d5883))
+
 ## [1.7.1](https://github.com/Flagsmith/flagsmith-common/compare/v1.7.0...v1.7.1) (2025-04-04)
 
 
