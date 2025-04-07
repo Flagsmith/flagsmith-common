@@ -37,6 +37,10 @@ def is_saas() -> bool:
     return pathlib.Path("./SAAS_DEPLOYMENT").exists()
 
 
+def is_oss() -> bool:
+    return not (is_enterprise() or is_saas())
+
+
 @lru_cache()
 def has_email_provider() -> bool:
     match settings.EMAIL_BACKEND:
