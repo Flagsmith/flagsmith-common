@@ -11,6 +11,7 @@ from common.core.utils import (
     has_email_provider,
     is_enterprise,
     is_saas,
+    is_oss,
 )
 
 pytestmark = pytest.mark.django_db
@@ -23,6 +24,27 @@ def clear_lru_caches() -> Generator[None, None, None]:
     has_email_provider.cache_clear()
     is_enterprise.cache_clear()
     is_saas.cache_clear()
+
+
+def test__is_oss_for_enterprise_returns_false(fs: FakeFilesystem) -> None:
+    # Given
+    fs.create_file("./ENTERPRISE_VERSION")
+
+    # Then
+    assert is_oss() is False
+
+
+def test__is_oss_for_saas_returns_false(fs: FakeFilesystem) -> None:
+    # Given
+    fs.create_file("./SAAS_DEPLOYMENT")
+
+    # Then
+    assert is_oss() is False
+
+
+def test__is_oss_for_oss_returns_true(fs: FakeFilesystem) -> None:
+    # Then
+    assert is_oss() is True
 
 
 def test_get_version_info(fs: FakeFilesystem) -> None:
