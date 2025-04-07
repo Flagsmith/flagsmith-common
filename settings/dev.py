@@ -15,6 +15,7 @@ SENDGRID_API_KEY: str
 PROMETHEUS_ENABLED = True
 
 # Settings required for tests
+SECRET_KEY = "test"
 DATABASES = {
     "default": dj_database_url.parse(
         env(
@@ -30,6 +31,7 @@ INSTALLED_APPS = [
     "task_processor",
 ]
 MIDDLEWARE = [
+    "django.middleware.common.CommonMiddleware",
     "common.gunicorn.middleware.RouteLoggerMiddleware",
 ]
 LOG_FORMAT = "json"

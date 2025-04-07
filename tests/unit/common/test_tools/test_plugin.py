@@ -4,15 +4,10 @@ import pytest
 from common.test_tools import AssertMetricFixture
 from common.test_tools.plugin import assert_metric_impl
 
-test_metric = prometheus_client.Counter(
-    "pytest_tests_run_total",
-    "Total number of tests run by pytest",
-    ["test_name"],
-)
-
 
 def test_assert_metrics__asserts_expected(
     assert_metric: AssertMetricFixture,
+    test_metric: prometheus_client.Counter,
 ) -> None:
     # Given
     test_metric.labels(test_name="test_assert_metrics__asserts_expected").inc()
@@ -25,7 +20,9 @@ def test_assert_metrics__asserts_expected(
     )
 
 
-def test_assert_metrics__registry_reset_expected() -> None:
+def test_assert_metrics__registry_reset_expected(
+    test_metric: prometheus_client.Counter,
+) -> None:
     # Given
     test_metric.labels(test_name="test_assert_metrics__registry_reset_expected").inc()
 
