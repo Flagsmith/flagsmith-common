@@ -10,8 +10,8 @@ from common.core.utils import (
     get_version_info,
     has_email_provider,
     is_enterprise,
-    is_saas,
     is_oss,
+    is_saas,
 )
 
 pytestmark = pytest.mark.django_db
