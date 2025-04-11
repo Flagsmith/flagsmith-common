@@ -1,4 +1,5 @@
 import prometheus_client
+from django.conf import settings
 
 from common.prometheus import Histogram
 
@@ -12,8 +13,9 @@ flagsmith_http_server_request_duration_seconds = Histogram(
     "HTTP request duration in seconds",
     ["route", "method", "response_status"],
 )
-flagsmith_http_server_response_size_bytes = prometheus_client.Histogram(
+flagsmith_http_server_response_size_bytes = Histogram(
     "flagsmith_http_server_response_size_bytes",
     "HTTP response size in bytes",
     ["route", "method"],
+    buckets=settings.PROMETHEUS_HTTP_SERVER_RESPONSE_SIZE_HISTOGRAM_BUCKETS,
 )
