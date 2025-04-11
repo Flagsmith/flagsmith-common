@@ -17,6 +17,8 @@ dependencies = [
     "prometheus-client (>=0.0.16)",
     "psycopg2-binary (>=2.9,<3)",
     "simplejson (>=3,<4)",
+    "opentelemetry-sdk (>=1.32.0,<2.0.0)",
+    "opentelemetry-instrumentation-django (>=0.53b0,<0.54)",
 ]
 authors = [
     { name = "Matthew Elwell" },

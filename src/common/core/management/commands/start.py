@@ -1,7 +1,9 @@
 from typing import Any, Callable
 
+from django.conf import settings
 from django.core.management import BaseCommand, CommandParser
 from django.utils.module_loading import autodiscover_modules
+from opentelemetry.instrumentation.django import DjangoInstrumentor
 
 from common.gunicorn.utils import add_arguments as add_gunicorn_arguments
 from common.gunicorn.utils import run_server
@@ -37,6 +39,9 @@ class Command(BaseCommand):
         add_task_processor_arguments(task_processor_parser)
 
     def initialise(self) -> None:
+        DjangoInstrumentor().instrument(
+            is_sql_commentor_enabled=settings.OPENTELEMETRY_SQLCOMMENTER_ENABLED
+        )
         autodiscover_modules(
             "metrics",
             "tasks",
