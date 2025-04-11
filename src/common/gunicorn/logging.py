@@ -52,18 +52,27 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
         duration_seconds = (
             request_time.seconds + float(request_time.microseconds) / 10**6
         )
-        labels = {
+        common_labels = {
             # To avoid cardinality explosion, we use a resolved Django route
             # instead of raw path.
             # The Django route is set by `RouteLoggerMiddleware`.
             "route": environ.get(WSGI_DJANGO_ROUTE_ENVIRON_KEY) or "",
             "method": environ.get("REQUEST_METHOD") or "",
-            "response_status": resp.status_code,
         }
-        metrics.flagsmith_http_server_request_duration_seconds.labels(**labels).observe(
-            duration_seconds
+        response_status = resp.status_code
+        metrics.flagsmith_http_server_request_duration_seconds.labels(
+            **common_labels,
+            response_status=response_status,
+        ).observe(duration_seconds)
+        metrics.flagsmith_http_server_requests_total.labels(
+            **common_labels,
+            response_status=response_status,
+        ).inc()
+        metrics.flagsmith_http_server_response_size_bytes.labels(
+            **common_labels,
+        ).observe(
+            resp.response_length or 0,
         )
-        metrics.flagsmith_http_server_requests_total.labels(**labels).inc()
 
 
 class GunicornJsonCapableLogger(PrometheusGunicornLogger):
