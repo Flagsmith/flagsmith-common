@@ -1,5 +1,4 @@
 import logging
-import logging.config
 import os
 from datetime import datetime, timedelta
 
@@ -88,12 +87,13 @@ def test_gunicorn_prometheus_gunicorn_logger__expected_metrics(
     response_mock = mocker.Mock()
     response_mock.status = b"200 OK"
     response_mock.status_code = 200
+    response_mock.response_length = 42
 
     # When
     logger.access(
         response_mock,
         mocker.Mock(),
-        {"wsgi.django_route": "^health", "REQUEST_METHOD": "GET"},
+        {"wsgi.django_route": "/health", "REQUEST_METHOD": "GET"},
         timedelta(milliseconds=101),
     )
 
@@ -101,12 +101,17 @@ def test_gunicorn_prometheus_gunicorn_logger__expected_metrics(
     assert_metric(
         name="flagsmith_http_server_requests_total",
         value=1.0,
-        labels={"method": "GET", "route": "^health", "response_status": "200"},
+        labels={"method": "GET", "route": "/health", "response_status": "200"},
     )
     assert_metric(
         name="flagsmith_http_server_request_duration_seconds_sum",
         value=0.101,
-        labels={"method": "GET", "route": "^health", "response_status": "200"},
+        labels={"method": "GET", "route": "/health", "response_status": "200"},
+    )
+    assert_metric(
+        name="flagsmith_http_server_response_size_bytes_sum",
+        value=42.0,
+        labels={"method": "GET", "route": "/health", "response_status": "200"},
     )
 
 
