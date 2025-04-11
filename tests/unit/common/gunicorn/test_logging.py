@@ -111,7 +111,7 @@ def test_gunicorn_prometheus_gunicorn_logger__expected_metrics(
     assert_metric(
         name="flagsmith_http_server_response_size_bytes_sum",
         value=42.0,
-        labels={"method": "GET", "route": "/health"},
+        labels={"method": "GET", "route": "/health", "response_status": "200"},
     )
 
 

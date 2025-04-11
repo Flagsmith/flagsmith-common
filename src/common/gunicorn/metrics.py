@@ -17,7 +17,7 @@ flagsmith_http_server_request_duration_seconds = Histogram(
 flagsmith_http_server_response_size_bytes = Histogram(
     "flagsmith_http_server_response_size_bytes",
     "HTTP response size in bytes",
-    ["route", "method"],
+    ["route", "method", "response_status"],
     buckets=getattr(
         settings,
         "PROMETHEUS_HTTP_SERVER_RESPONSE_SIZE_HISTOGRAM_BUCKETS",
