@@ -586,7 +586,7 @@ def test_run_tasks__expected_metrics(
 ) -> None:
     # Given
     @register_recurring_task(run_every=timedelta(milliseconds=200))
-    def _dummy_recurring_task() -> None:
+    def _fake_recurring_task() -> None:
         pass
 
     initialise()
