@@ -585,8 +585,18 @@ def test_run_tasks__expected_metrics(
     mocker: MockerFixture,
 ) -> None:
     # Given
+    @register_recurring_task(run_every=timedelta(milliseconds=200))
+    def _fake_recurring_task() -> None:
+        pass
+
+    initialise()
+
     dummy_task_identifier = dummy_task.task_identifier
     raise_exception_task_identifier = raise_exception_task.task_identifier
+    recurring_task_identifier = RecurringTask.objects.latest(
+        "created_at",
+    ).task_identifier
+
     Task.create(
         dummy_task_identifier,
         scheduled_for=timezone.now(),
@@ -600,6 +610,7 @@ def test_run_tasks__expected_metrics(
 
     # When
     run_tasks(2)
+    run_recurring_tasks()
 
     # Then
     assert_metric(
@@ -607,6 +618,7 @@ def test_run_tasks__expected_metrics(
         value=1.0,
         labels={
             "task_identifier": dummy_task_identifier,
+            "task_type": "standard",
             "result": "success",
         },
     )
@@ -615,7 +627,17 @@ def test_run_tasks__expected_metrics(
         value=1.0,
         labels={
             "task_identifier": raise_exception_task_identifier,
+            "task_type": "standard",
             "result": "failure",
+        },
+    )
+    assert_metric(
+        name="flagsmith_task_processor_finished_tasks_total",
+        value=1.0,
+        labels={
+            "task_identifier": recurring_task_identifier,
+            "task_type": "recurring",
+            "result": "success",
         },
     )
     assert_metric(
@@ -623,6 +645,7 @@ def test_run_tasks__expected_metrics(
         value=mocker.ANY,
         labels={
             "task_identifier": dummy_task_identifier,
+            "task_type": "standard",
             "result": "success",
         },
     )
@@ -631,7 +654,17 @@ def test_run_tasks__expected_metrics(
         value=mocker.ANY,
         labels={
             "task_identifier": raise_exception_task_identifier,
+            "task_type": "standard",
             "result": "failure",
+        },
+    )
+    assert_metric(
+        name="flagsmith_task_processor_task_duration_seconds",
+        value=mocker.ANY,
+        labels={
+            "task_identifier": recurring_task_identifier,
+            "task_type": "recurring",
+            "result": "success",
         },
     )
 
