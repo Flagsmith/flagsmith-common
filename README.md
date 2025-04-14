@@ -69,8 +69,8 @@ The following default metrics are exposed:
 
 ##### Task Processor metrics
 
-- `flagsmith_task_processor_finished_tasks_total`: Counter labeled with `task_identifier` and `result` (`"success"`, `"failure"`).
-- `flagsmith_task_processor_task_duration_seconds`: Histogram labeled with `task_identifier` and `result` (`"success"`, `"failure"`).
+- `flagsmith_task_processor_finished_tasks_total`: Counter labeled with `task_identifier`, `task_type` (`"recurring"`, `"standard"`) and `result` (`"success"`, `"failure"`).
+- `flagsmith_task_processor_task_duration_seconds`: Histogram labeled with `task_identifier`, `task_type` (`"recurring"`, `"standard"`) and `result` (`"success"`, `"failure"`).
 
 ##### Guidelines
 
