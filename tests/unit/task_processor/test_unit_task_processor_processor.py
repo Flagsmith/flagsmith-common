@@ -645,6 +645,7 @@ def test_run_tasks__expected_metrics(
         value=mocker.ANY,
         labels={
             "task_identifier": dummy_task_identifier,
+            "task_type": "standard",
             "result": "success",
         },
     )
@@ -653,6 +654,7 @@ def test_run_tasks__expected_metrics(
         value=mocker.ANY,
         labels={
             "task_identifier": raise_exception_task_identifier,
+            "task_type": "standard",
             "result": "failure",
         },
     )
