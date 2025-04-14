@@ -17,6 +17,7 @@ from task_processor.models import (
     TaskResult,
     TaskRun,
 )
+from task_processor.task_registry import get_task
 
 T = typing.TypeVar("T", bound=AbstractBaseTask)
 AnyTaskRun = TaskRun | RecurringTaskRun
@@ -150,17 +151,15 @@ def _run_task(
             exc_info=True,
         )
 
-    result_label_value = result.lower()
+    labels = {
+        "task_identifier": task_identifier,
+        "task_type": get_task(task_identifier).task_type.value.lower(),
+        "result": result.lower(),
+    }
 
-    timer.labels(
-        task_identifier=task_identifier,
-        result=result_label_value,
-    )  # type: ignore[no-untyped-call]
+    timer.labels(**labels)  # type: ignore[no-untyped-call]
     ctx.close()
 
-    metrics.flagsmith_task_processor_finished_tasks_total.labels(
-        task_identifier=task_identifier,
-        result=result_label_value,
-    ).inc()
+    metrics.flagsmith_task_processor_finished_tasks_total.labels(**labels).inc()
 
     return task, task_run
