@@ -64,6 +64,9 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
             duration_seconds
         )
         metrics.flagsmith_http_server_requests_total.labels(**labels).inc()
+        metrics.flagsmith_http_server_response_size_bytes.labels(**labels).observe(
+            resp.response_length or 0,
+        )
 
 
 class GunicornJsonCapableLogger(PrometheusGunicornLogger):
