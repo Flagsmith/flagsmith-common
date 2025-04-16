@@ -3,6 +3,7 @@ import pytest
 
 from common.test_tools import AssertMetricFixture
 from common.test_tools.plugin import assert_metric_impl
+from common.test_tools.utils import edition_printer
 
 
 def test_assert_metrics__asserts_expected(
@@ -39,19 +40,18 @@ def test_assert_metrics__registry_reset_expected(
         )
 
 
+def test_no_marker__oss_edition_expected() -> None:
+    # When & Then
+    assert edition_printer() == "oss!"
+
+
 @pytest.mark.saas_mode
 def test_saas_mode_marker__is_saas_returns_expected() -> None:
-    # Given
-    from common.core.utils import is_saas
-
     # When & Then
-    assert is_saas() is True
+    assert edition_printer() == "saas!"
 
 
 @pytest.mark.enterprise_mode
 def test_enterprise_mode_marker__is_enterprise_returns_expected() -> None:
-    # Given
-    from common.core.utils import is_enterprise
-
     # When & Then
-    assert is_enterprise() is True
+    assert edition_printer() == "enterprise!"

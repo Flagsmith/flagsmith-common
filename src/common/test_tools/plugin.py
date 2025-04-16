@@ -3,7 +3,7 @@ from typing import Generator
 import prometheus_client
 import pytest
 from prometheus_client.metrics import MetricWrapperBase
-from pytest_mock import MockerFixture
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from common.test_tools.types import AssertMetricFixture
 
@@ -36,13 +36,21 @@ assert_metric = pytest.fixture(assert_metric_impl)
 
 
 @pytest.fixture()
-def saas_mode(mocker: MockerFixture) -> None:
-    mocker.patch("common.core.utils.is_saas", return_value=True)
+def saas_mode(fs: FakeFilesystem) -> None:
+    from common.core.utils import is_saas
+
+    is_saas.cache_clear()
+
+    fs.create_file("./SAAS_DEPLOYMENT")
 
 
 @pytest.fixture()
-def enterprise_mode(mocker: MockerFixture) -> None:
-    mocker.patch("common.core.utils.is_enterprise", return_value=True)
+def enterprise_mode(fs: FakeFilesystem) -> None:
+    from common.core.utils import is_enterprise
+
+    is_enterprise.cache_clear()
+
+    fs.create_file("./ENTERPRISE_VERSION")
 
 
 @pytest.fixture(autouse=True)
