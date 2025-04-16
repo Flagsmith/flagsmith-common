@@ -2,10 +2,8 @@ from typing import Literal
 
 from common.core.utils import is_enterprise, is_saas
 
-EditionPrinterReturnValue = Literal["saas!", "enterprise!", "oss!"]
 
-
-def edition_printer() -> EditionPrinterReturnValue:
+def edition_printer() -> Literal["saas!", "enterprise!", "oss!"]:
     if is_saas():
         return "saas!"
     if is_enterprise():
