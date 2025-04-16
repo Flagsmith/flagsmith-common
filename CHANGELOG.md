@@ -2,6 +2,21 @@
 
 <a name="v1.5.2"></a>
 
+## [1.9.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.8.0...v1.9.0) (2025-04-16)
+
+
+### CI
+
+* pre-commit autoupdate ([#46](https://github.com/Flagsmith/flagsmith-common/issues/46)) ([1d35c43](https://github.com/Flagsmith/flagsmith-common/commit/1d35c43870028885373b5ffcbcd07c41c8a94b29))
+* pre-commit autoupdate ([#52](https://github.com/Flagsmith/flagsmith-common/issues/52)) ([e852305](https://github.com/Flagsmith/flagsmith-common/commit/e8523054870215def2489eb7e415116991f00387))
+
+
+### Features
+
+* Add `flagsmith_http_server_response_size_bytes` metric ([#49](https://github.com/Flagsmith/flagsmith-common/issues/49)) ([8e2b042](https://github.com/Flagsmith/flagsmith-common/commit/8e2b042450f8006d894669a5b5d712df35ca1e8d))
+* **task-processor:** Add `task_type` label to task processor metrics ([#51](https://github.com/Flagsmith/flagsmith-common/issues/51)) ([42f7365](https://github.com/Flagsmith/flagsmith-common/commit/42f73657694289865dcf5e2ff25082cbd3ac571d))
+* **test-tools:** SaaS/Enterprise mode markers, update documentation ([#53](https://github.com/Flagsmith/flagsmith-common/issues/53)) ([9f23a7d](https://github.com/Flagsmith/flagsmith-common/commit/9f23a7d5d6e93a490d80f6390d9952232436be96))
+
 ## [1.8.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.7.1...v1.8.0) (2025-04-07)
 
 
