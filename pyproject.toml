@@ -18,6 +18,7 @@ dependencies = [
     "psycopg2-binary (>=2.9,<3)",
     "simplejson (>=3,<4)",
 ]
+optional-dependencies = { test-tools = ["pyfakefs (>=5,<6)"] }
 authors = [
     { name = "Matthew Elwell" },
     { name = "Gagan Trivedi" },
