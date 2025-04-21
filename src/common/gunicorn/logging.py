@@ -69,7 +69,7 @@ class GunicornAccessLogJsonFormatter(JsonFormatter):
             "status": str(args["s"]),
             "user_agent": args["a"],
             "duration_in_ms": args["M"],
-            "response_size_in_bytes": args["b"],
+            "response_size_in_bytes": args["B"] or 0,
             **self._get_extra(args),
         }
 

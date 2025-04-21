@@ -40,7 +40,7 @@ def test_gunicorn_access_log_json_formatter__outputs_expected(
             "{x-log-me-status}o": "acked",
             "{x-log-me}i": "42",
             "a": "requests",
-            "b": 42,
+            "b": "42",
             "B": 42,
             "D": 1000000,
             "f": "-",
