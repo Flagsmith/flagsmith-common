@@ -1,4 +1,3 @@
-WSGI_DJANGO_ROUTE_ENVIRON_KEY = "django.route"
 WSGI_EXTRA_PREFIX = "flagsmith."
 WSGI_EXTRA_SUFFIX_TO_CATEGORY = {
     "i": "request_headers",

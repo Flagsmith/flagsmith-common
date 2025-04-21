@@ -22,7 +22,7 @@ def test_gunicorn_access_log_json_formatter__outputs_expected(
 ) -> None:
     # Given
     settings.ACCESS_LOG_JSON_EXTRA_ITEMS = [
-        "{django.route}e",
+        "{flagsmith.route}e",
         "{X-LOG-ME-STATUS}o",
         "{x-log-me}i",
     ]
@@ -35,7 +35,7 @@ def test_gunicorn_access_log_json_formatter__outputs_expected(
         lineno=1,
         msg=AccessLogFormat.default,
         args={
-            "{django.route}e": "/test/{test_id}",
+            "{flagsmith.route}e": "/test/{test_id}",
             "{wsgi.version}e": (1, 0),
             "{x-log-me-status}o": "acked",
             "{x-log-me}i": "42",
@@ -72,7 +72,7 @@ def test_gunicorn_access_log_json_formatter__outputs_expected(
     assert json_log == {
         "duration_in_ms": 1000,
         "environ_variables": {
-            "django.route": "/test/{test_id}",
+            "flagsmith.route": "/test/{test_id}",
         },
         "levelname": "INFO",
         "logger_name": "gunicorn.access",
@@ -114,7 +114,7 @@ def test_gunicorn_prometheus_gunicorn_logger__expected_metrics(
     logger.access(
         response_mock,
         mocker.Mock(),
-        {"django.route": "/health", "REQUEST_METHOD": "GET"},
+        {"flagsmith.route": "/health", "REQUEST_METHOD": "GET"},
         timedelta(milliseconds=101),
     )
 

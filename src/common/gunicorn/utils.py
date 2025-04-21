@@ -84,7 +84,21 @@ def get_route_template(route: str) -> str:
 def log_extra(
     request: HttpRequest,
     key: str,
-    value: str | int | float,
+    value: Any,
 ) -> None:
+    """
+    Store a value in the WSGI request `environ` using a prefixed key.
+
+    https://peps.python.org/pep-3333/#specification-details
+    "...the application is allowed to modify the dictionary in any way it desires"
+    """
     meta_key = f"{WSGI_EXTRA_PREFIX}{key}"
     request.META[meta_key] = value
+
+
+def get_extra(environ: dict[str, Any], key: str) -> Any:
+    """
+    Retrieve a value from the WSGI request `environ` using a prefixed key.
+    """
+    meta_key = f"{WSGI_EXTRA_PREFIX}{key}"
+    return environ.get(meta_key)

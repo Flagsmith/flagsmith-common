@@ -15,12 +15,13 @@ from gunicorn.instrument.statsd import (  # type: ignore[import-untyped]
 from common.core.logging import JsonFormatter
 from common.gunicorn import metrics
 from common.gunicorn.constants import (
-    WSGI_DJANGO_ROUTE_ENVIRON_KEY,
+    WSGI_EXTRA_PREFIX,
     WSGI_EXTRA_SUFFIX_TO_CATEGORY,
 )
+from common.gunicorn.utils import get_extra
 
 _wsgi_extra_key_regex = re.compile(
-    r"^{(?P<key>[^}]+)}[%s]$" % "".join(WSGI_EXTRA_SUFFIX_TO_CATEGORY)
+    r"^{(?P<key>[^}]+)}(?P<suffix>[%s])$" % "".join(WSGI_EXTRA_SUFFIX_TO_CATEGORY)
 )
 
 
@@ -33,18 +34,18 @@ class GunicornAccessLogJsonFormatter(JsonFormatter):
             # We expect the extra items to be in the form of
             # Gunicorn's access log format string for
             # request headers, response headers and environ variables
-            # without the % prefix, e.g. "{origin}i" or "{wsgi.flagsmith.environment_id}e"
+            # without the % prefix, e.g. "{origin}i" or "{flagsmith.environment_id}e"
             # https://docs.gunicorn.org/en/stable/settings.html#access-log-format
             for extra_key in extra_items_to_log:
                 extra_key_lower = extra_key.lower()
                 if (
                     (extra_value := record_args.get(extra_key_lower))
+                    and (re_match := _wsgi_extra_key_regex.match(extra_key_lower))
                     and (
                         extra_category := WSGI_EXTRA_SUFFIX_TO_CATEGORY.get(
-                            extra_key_lower[-1]
+                            re_match.group("suffix")
                         )
                     )
-                    and (re_match := _wsgi_extra_key_regex.match(extra_key_lower))
                 ):
                     ret.setdefault(extra_category, {})[re_match.group("key")] = (
                         extra_value
@@ -67,7 +68,7 @@ class GunicornAccessLogJsonFormatter(JsonFormatter):
             "time": datetime.strptime(args["t"], "[%d/%b/%Y:%H:%M:%S %z]").isoformat(),
             "path": url,
             "remote_ip": args["h"],
-            "route": args.get(f"{{{WSGI_DJANGO_ROUTE_ENVIRON_KEY}}}e") or "-",
+            "route": args.get(f"{{{WSGI_EXTRA_PREFIX}route}}e") or "-",
             "method": args["m"],
             "status": str(args["s"]),
             "user_agent": args["a"],
@@ -93,7 +94,7 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
             # To avoid cardinality explosion, we use a resolved Django route
             # instead of raw path.
             # The Django route is set by `RouteLoggerMiddleware`.
-            "route": environ.get(WSGI_DJANGO_ROUTE_ENVIRON_KEY) or "",
+            "route": get_extra(environ=environ, key="route") or "-",
             "method": environ.get("REQUEST_METHOD") or "",
             "response_status": resp.status_code,
         }
