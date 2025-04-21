@@ -64,7 +64,7 @@ class GunicornAccessLogJsonFormatter(JsonFormatter):
             "time": datetime.strptime(args["t"], "[%d/%b/%Y:%H:%M:%S %z]").isoformat(),
             "path": url,
             "remote_ip": args["h"],
-            "route": args.get(f"{{{WSGI_EXTRA_PREFIX}route}}e") or "-",
+            "route": args.get(f"{{{WSGI_EXTRA_PREFIX}route}}e") or "",
             "method": args["m"],
             "status": str(args["s"]),
             "user_agent": args["a"],
