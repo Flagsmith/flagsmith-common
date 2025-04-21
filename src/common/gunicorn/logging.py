@@ -30,7 +30,7 @@ class GunicornAccessLogJsonFormatter(JsonFormatter):
         ret: dict[str, dict[str, Any]] = {}
 
         extra_items_to_log: list[str] | None
-        if extra_items_to_log := getattr(settings, "ACCESS_LOG_JSON_EXTRA_ITEMS", None):
+        if extra_items_to_log := getattr(settings, "ACCESS_LOG_EXTRA_ITEMS", None):
             # We expect the extra items to be in the form of
             # Gunicorn's access log format string for
             # request headers, response headers and environ variables

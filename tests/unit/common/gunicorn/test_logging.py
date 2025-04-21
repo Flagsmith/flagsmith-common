@@ -21,7 +21,7 @@ def test_gunicorn_access_log_json_formatter__outputs_expected(
     settings: SettingsWrapper,
 ) -> None:
     # Given
-    settings.ACCESS_LOG_JSON_EXTRA_ITEMS = [
+    settings.ACCESS_LOG_EXTRA_ITEMS = [
         "{flagsmith.route}e",
         "{X-LOG-ME-STATUS}o",
         "{x-log-me}i",
