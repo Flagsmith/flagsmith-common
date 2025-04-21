@@ -1,5 +1,4 @@
 import logging
-import re
 import sys
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
@@ -17,12 +16,9 @@ from common.gunicorn import metrics
 from common.gunicorn.constants import (
     WSGI_EXTRA_PREFIX,
     WSGI_EXTRA_SUFFIX_TO_CATEGORY,
+    wsgi_extra_key_regex,
 )
 from common.gunicorn.utils import get_extra
-
-_wsgi_extra_key_regex = re.compile(
-    r"^{(?P<key>[^}]+)}(?P<suffix>[%s])$" % "".join(WSGI_EXTRA_SUFFIX_TO_CATEGORY)
-)
 
 
 class GunicornAccessLogJsonFormatter(JsonFormatter):
@@ -40,7 +36,7 @@ class GunicornAccessLogJsonFormatter(JsonFormatter):
                 extra_key_lower = extra_key.lower()
                 if (
                     (extra_value := record_args.get(extra_key_lower))
-                    and (re_match := _wsgi_extra_key_regex.match(extra_key_lower))
+                    and (re_match := wsgi_extra_key_regex.match(extra_key_lower))
                     and (
                         extra_category := WSGI_EXTRA_SUFFIX_TO_CATEGORY.get(
                             re_match.group("suffix")

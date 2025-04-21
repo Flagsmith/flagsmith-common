@@ -1,3 +1,5 @@
+import re
+
 WSGI_EXTRA_PREFIX = "flagsmith."
 WSGI_EXTRA_SUFFIX_TO_CATEGORY = {
     "i": "request_headers",
@@ -14,4 +16,8 @@ HTTP_SERVER_RESPONSE_SIZE_DEFAULT_BUCKETS = (
     5 * 1024 * 1024,
     10 * 1024 * 1024,
     float("inf"),
+)
+
+wsgi_extra_key_regex = re.compile(
+    r"^{(?P<key>[^}]+)}(?P<suffix>[%s])$" % "".join(WSGI_EXTRA_SUFFIX_TO_CATEGORY)
 )
