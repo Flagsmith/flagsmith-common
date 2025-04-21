@@ -1,4 +1,5 @@
 import logging
+import re
 import sys
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
@@ -13,10 +14,44 @@ from gunicorn.instrument.statsd import (  # type: ignore[import-untyped]
 
 from common.core.logging import JsonFormatter
 from common.gunicorn import metrics
-from common.gunicorn.constants import WSGI_DJANGO_ROUTE_ENVIRON_KEY
+from common.gunicorn.constants import (
+    WSGI_DJANGO_ROUTE_ENVIRON_KEY,
+    WSGI_EXTRA_SUFFIX_TO_CATEGORY,
+)
+
+_wsgi_extra_key_regex = re.compile(
+    r"^{(?P<key>[^}]+)}[%s]$" % "".join(WSGI_EXTRA_SUFFIX_TO_CATEGORY)
+)
 
 
 class GunicornAccessLogJsonFormatter(JsonFormatter):
+    def _get_extra(self, record_args: dict[str, Any]) -> dict[str, Any]:
+        ret: dict[str, dict[str, Any]] = {}
+
+        extra_items_to_log: list[str] | None
+        if extra_items_to_log := getattr(settings, "ACCESS_LOG_JSON_EXTRA_ITEMS", None):
+            # We expect the extra items to be in the form of
+            # Gunicorn's access log format string for
+            # request headers, response headers and environ variables
+            # without the % prefix, e.g. "{origin}i" or "{wsgi.flagsmith.environment_id}e"
+            # https://docs.gunicorn.org/en/stable/settings.html#access-log-format
+            for extra_key in extra_items_to_log:
+                extra_key_lower = extra_key.lower()
+                if (
+                    (extra_value := record_args.get(extra_key_lower))
+                    and (
+                        extra_category := WSGI_EXTRA_SUFFIX_TO_CATEGORY.get(
+                            extra_key_lower[-1]
+                        )
+                    )
+                    and (re_match := _wsgi_extra_key_regex.match(extra_key_lower))
+                ):
+                    ret.setdefault(extra_category, {})[re_match.group("key")] = (
+                        extra_value
+                    )
+
+        return ret
+
     def get_json_record(self, record: logging.LogRecord) -> dict[str, Any]:
         args = record.args
 
@@ -32,11 +67,13 @@ class GunicornAccessLogJsonFormatter(JsonFormatter):
             "time": datetime.strptime(args["t"], "[%d/%b/%Y:%H:%M:%S %z]").isoformat(),
             "path": url,
             "remote_ip": args["h"],
-            "route": args["R"],
+            "route": args.get(f"{{{WSGI_DJANGO_ROUTE_ENVIRON_KEY}}}e") or "-",
             "method": args["m"],
             "status": str(args["s"]),
             "user_agent": args["a"],
             "duration_in_ms": args["M"],
+            "response_size_in_bytes": args["b"],
+            **self._get_extra(args),
         }
 
 
@@ -65,22 +102,11 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
         )
         metrics.flagsmith_http_server_requests_total.labels(**labels).inc()
         metrics.flagsmith_http_server_response_size_bytes.labels(**labels).observe(
-            resp.response_length or 0,
+            getattr(resp, "sent", 0),
         )
 
 
 class GunicornJsonCapableLogger(PrometheusGunicornLogger):
-    def atoms(
-        self,
-        resp: Response,
-        req: Request,
-        environ: dict[str, Any],
-        request_time: timedelta,
-    ) -> dict[str, str]:
-        atoms: dict[str, str] = super().atoms(resp, req, environ, request_time)
-        atoms["R"] = environ.get(WSGI_DJANGO_ROUTE_ENVIRON_KEY) or "-"
-        return atoms
-
     def setup(self, cfg: Config) -> None:
         super().setup(cfg)
         if getattr(settings, "LOG_FORMAT", None) == "json":

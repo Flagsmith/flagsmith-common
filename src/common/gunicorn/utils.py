@@ -5,12 +5,15 @@ from typing import Any
 
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.wsgi import get_wsgi_application
+from django.http import HttpRequest
 from drf_yasg.generators import EndpointEnumerator  # type: ignore[import-untyped]
 from environs import Env
 from gunicorn.app.wsgiapp import (  # type: ignore[import-untyped]
     WSGIApplication as GunicornWSGIApplication,
 )
 from gunicorn.config import Config  # type: ignore[import-untyped]
+
+from common.gunicorn.constants import WSGI_EXTRA_PREFIX
 
 env = Env()
 
@@ -76,3 +79,12 @@ def get_route_template(route: str) -> str:
     """
     route_template: str = EndpointEnumerator().get_path_from_regex(route)
     return route_template
+
+
+def log_extra(
+    request: HttpRequest,
+    key: str,
+    value: str | int | float,
+) -> None:
+    meta_key = f"{WSGI_EXTRA_PREFIX}{key}"
+    request.META[meta_key] = value
