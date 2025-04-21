@@ -94,7 +94,7 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
             # To avoid cardinality explosion, we use a resolved Django route
             # instead of raw path.
             # The Django route is set by `RouteLoggerMiddleware`.
-            "route": get_extra(environ=environ, key="route") or "-",
+            "route": get_extra(environ=environ, key="route") or "",
             "method": environ.get("REQUEST_METHOD") or "",
             "response_status": resp.status_code,
         }
