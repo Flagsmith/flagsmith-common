@@ -118,7 +118,8 @@ class SegmentSerializer(serializers.ModelSerializer["Segment"], SerializerWithMe
         self._update_or_create_segment_rules(
             rules_data, segment=segment, is_create=True
         )
-        self._update_or_create_metadata(metadata_data, segment=segment)
+        self.update_metadata(segment, metadata_data)
+        segment.refresh_from_db()
         return segment
 
     def update(
@@ -139,7 +140,7 @@ class SegmentSerializer(serializers.ModelSerializer["Segment"], SerializerWithMe
 
         try:
             self._update_segment_rules(rules_data, segment=instance)
-            self._update_or_create_metadata(metadata_data, segment=instance)
+            self.update_metadata(instance, metadata_data)
 
             # remove rules from validated data to prevent error trying to create segment with nested rules
             del validated_data["rules"]
@@ -250,32 +251,6 @@ class SegmentSerializer(serializers.ModelSerializer["Segment"], SerializerWithMe
                 child_rules, rule=child_rule, is_create=is_create
             )
 
-    def _update_or_create_metadata(
-        self,
-        metadata_data: list[dict[str, Any]],
-        segment: "Segment | None" = None,
-    ) -> None:
-        Metadata = apps.get_model("metadata", "Metadata")
-        Segment = apps.get_model("segments", "Segment")
-        assert segment
-        if len(metadata_data) == 0:
-            Metadata.objects.filter(object_id=segment.id).delete()
-            return
-        if metadata_data is not None:
-            for metadata_item in metadata_data:
-                metadata_model_field = metadata_item.pop("model_field", None)
-                if metadata_item.get("delete"):
-                    Metadata.objects.filter(model_field=metadata_model_field).delete()
-                    continue
-
-                Metadata.objects.update_or_create(
-                    model_field=metadata_model_field,
-                    defaults={
-                        **metadata_item,
-                        "content_type": ContentType.objects.get_for_model(Segment),
-                        "object_id": segment.id,
-                    },
-                )
 
     @staticmethod
     def _update_or_create_segment_rule(
