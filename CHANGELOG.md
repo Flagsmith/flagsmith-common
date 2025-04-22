@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [1.10.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.9.0...v1.10.0) (2025-04-22)
+
+
+### Features
+
+* Ability to log WSGI `environ` in JSON logs, `log_extra` utility ([#55](https://github.com/Flagsmith/flagsmith-common/issues/55)) ([bf48843](https://github.com/Flagsmith/flagsmith-common/commit/bf48843c86214f4b57eeed956ca700e520ab7bba))
+
 ## [1.9.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.8.0...v1.9.0) (2025-04-16)
 
 
