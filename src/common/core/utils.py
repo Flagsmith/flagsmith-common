@@ -55,7 +55,7 @@ def has_email_provider() -> bool:
 
 
 def get_version_info() -> VersionInfo:
-    """Reads the version info baked into src folder of the docker container"""
+    """Returns the version information for the current deployment"""
     _is_saas = is_saas()
     version_json: VersionInfo = {
         "ci_commit_sha": get_file_contents("./CI_COMMIT_SHA") or UNKNOWN,
@@ -66,10 +66,8 @@ def get_version_info() -> VersionInfo:
         "self_hosted_data": None,
     }
 
-    manifest_versions_content = get_file_contents(VERSIONS_INFO_FILE_LOCATION)
-
-    if manifest_versions_content:
-        manifest_versions = json.loads(manifest_versions_content)
+    manifest_versions = get_versions_from_manifest()
+    if manifest_versions:
         version_json["package_versions"] = manifest_versions
         version_json["image_tag"] = manifest_versions["."]
 
@@ -82,6 +80,17 @@ def get_version_info() -> VersionInfo:
         }
 
     return version_json
+
+
+@lru_cache()
+def get_versions_from_manifest() -> dict[str, str] | None:
+    """Reads the version info baked into the Docker container"""
+    raw_content = get_file_contents(VERSIONS_INFO_FILE_LOCATION)
+    if not raw_content:
+        return None
+    
+    manifest: dict[str, str] = json.loads(raw_content)
+    return manifest
 
 
 @lru_cache()
