@@ -29,8 +29,8 @@ def test_APIResponseVersionHeaderMiddleware__valid_version_info___adds_version_h
     # Then
     assert result == response
     assert response.headers["Flagsmith-Version"] == "v1.2.3"
-    assert get_response.call_args_list == [mocker.call(request)]
-    assert get_versions_from_manifest.call_args_list == [mocker.call()]
+    get_response.assert_called_once_with(request)
+    get_versions_from_manifest.assert_called_once_with()
 
 
 @pytest.mark.parametrize("version_info", [
@@ -57,5 +57,5 @@ def test_APIResponseVersionHeaderMiddleware__invalid_version_info___adds_unknown
     # Then
     assert result == response
     assert response.headers["Flagsmith-Version"] == "unknown"
-    assert get_response.call_args_list == [mocker.call(request)]
-    assert get_versions_from_manifest.call_args_list == [mocker.call()]
+    get_response.assert_called_once_with(request)
+    get_versions_from_manifest.assert_called_once_with()
