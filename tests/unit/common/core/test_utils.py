@@ -8,6 +8,7 @@ from pytest_django.fixtures import SettingsWrapper
 from common.core.utils import (
     get_file_contents,
     get_version_info,
+    get_versions_from_manifest,
     has_email_provider,
     is_enterprise,
     is_oss,
@@ -21,6 +22,7 @@ pytestmark = pytest.mark.django_db
 def clear_lru_caches() -> Generator[None, None, None]:
     yield
     get_file_contents.cache_clear()
+    get_versions_from_manifest.cache_clear()
     has_email_provider.cache_clear()
     is_enterprise.cache_clear()
     is_saas.cache_clear()
