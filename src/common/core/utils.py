@@ -17,6 +17,11 @@ class SelfHostedData(TypedDict):
     has_logins: bool
 
 
+VersionManifest = TypedDict("VersionManifest", {
+    ".": str,  # This key is used to store the version of the package itself
+})
+
+
 class VersionInfo(TypedDict):
     ci_commit_sha: str
     image_tag: str
@@ -24,7 +29,7 @@ class VersionInfo(TypedDict):
     is_enterprise: bool
     is_saas: bool
     self_hosted_data: SelfHostedData | None
-    package_versions: NotRequired[dict[str, str]]
+    package_versions: NotRequired[VersionManifest]
 
 
 @lru_cache()
@@ -67,9 +72,8 @@ def get_version_info() -> VersionInfo:
     }
 
     manifest_versions = get_versions_from_manifest()
-    if manifest_versions:
-        version_json["package_versions"] = manifest_versions
-        version_json["image_tag"] = manifest_versions["."]
+    version_json["package_versions"] = manifest_versions
+    version_json["image_tag"] = manifest_versions["."]
 
     if not _is_saas:
         user_objects: Manager[AbstractBaseUser] = getattr(get_user_model(), "objects")
@@ -83,13 +87,13 @@ def get_version_info() -> VersionInfo:
 
 
 @lru_cache()
-def get_versions_from_manifest() -> dict[str, str] | None:
-    """Reads the version info baked into the Docker container"""
+def get_versions_from_manifest() -> VersionManifest:
+    """Reads the version info from the manifest file"""
     raw_content = get_file_contents(VERSIONS_INFO_FILE_LOCATION)
     if not raw_content:
-        return None
+        return {".": UNKNOWN}
     
-    manifest: dict[str, str] = json.loads(raw_content)
+    manifest: VersionManifest = json.loads(raw_content)
     return manifest
 
 

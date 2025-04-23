@@ -24,7 +24,4 @@ class APIResponseVersionHeaderMiddleware:
     def get_version(self) -> str | None:
         """Obtains the version number from the manifest file"""
         manifest_versions = get_versions_from_manifest()
-        if not manifest_versions:
-            return None
-        version: str | None = manifest_versions.get(".")
-        return version
+        return manifest_versions["."]
