@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any
 
 from django.apps import apps
 from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from flag_engine.segments.constants import PERCENTAGE_SPLIT
 from rest_framework import serializers
@@ -250,7 +249,6 @@ class SegmentSerializer(serializers.ModelSerializer["Segment"], SerializerWithMe
             self._update_or_create_segment_rules(
                 child_rules, rule=child_rule, is_create=is_create
             )
-
 
     @staticmethod
     def _update_or_create_segment_rule(

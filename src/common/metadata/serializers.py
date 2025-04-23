@@ -56,7 +56,6 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
             )
         return instance
 
-
     def update_metadata(
         self,
         instance: models.Model,
@@ -91,7 +90,6 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
                         **metadata_item,
                     },
                 )
-
 
     def validate_required_metadata(
         self,
