@@ -1,7 +1,13 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from common.core import middleware as middleware_module
+from common.core import middleware as middleware_module, utils
+
+
+@pytest.fixture(autouse=True)
+def clear_lru_caches() -> None:
+    utils.get_file_contents.cache_clear()
+    utils.get_versions_from_manifest.cache_clear()
 
 
 def test_APIResponseVersionHeaderMiddleware__valid_version_info___adds_version_header(
@@ -28,8 +34,8 @@ def test_APIResponseVersionHeaderMiddleware__valid_version_info___adds_version_h
 
 
 @pytest.mark.parametrize("version_info", [
+    {"foo": "bar"},
     {},
-    None,
 ])
 def test_APIResponseVersionHeaderMiddleware__invalid_version_info___adds_unknown_header(
     mocker: MockerFixture,
