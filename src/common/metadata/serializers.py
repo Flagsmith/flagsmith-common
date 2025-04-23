@@ -69,7 +69,7 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
 
         assert instance
         if len(metadata_data) == 0:
-            Metadata.objects.filter(object_id=instance.id,
+            Metadata.objects.filter(object_id=instance.pk,
                 content_type=content_type).delete()
             return
         if metadata_data is not None:
@@ -78,7 +78,7 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
                 if metadata_item.get("delete"):
                     Metadata.objects.filter(
                         model_field=metadata_model_field,
-                        object_id=instance.id,
+                        object_id=instance.pk,
                         content_type=content_type
                     ).delete()
                     continue
@@ -86,7 +86,7 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
                 Metadata.objects.update_or_create(
                     model_field=metadata_model_field,
                     content_type=content_type,
-                    object_id=instance.id,
+                    object_id=instance.pk,
                     defaults={
                         **metadata_item,
                     },
