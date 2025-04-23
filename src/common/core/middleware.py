@@ -18,7 +18,7 @@ class APIResponseVersionHeaderMiddleware:
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         response = self.get_response(request)
-        response.headers["X-Flagsmith-Version"] = self.get_version()
+        response.headers["Flagsmith-Version"] = self.get_version()
         return response
     
     def get_version(self) -> str:
