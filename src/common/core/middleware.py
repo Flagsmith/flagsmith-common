@@ -20,7 +20,7 @@ class APIResponseVersionHeaderMiddleware:
         response = self.get_response(request)
         response.headers["Flagsmith-Version"] = self.get_version()
         return response
-    
+
     def get_version(self) -> str:
         """Obtains the version number from the manifest file"""
         manifest_versions = get_versions_from_manifest()

@@ -91,7 +91,7 @@ def test_get_version_info_with_missing_files(fs: FakeFilesystem) -> None:
         "has_email_provider": False,
         "is_enterprise": True,
         "is_saas": False,
-        'package_versions': {'.': 'unknown'},
+        "package_versions": {".": "unknown"},
         "self_hosted_data": {
             "has_logins": False,
             "has_users": False,

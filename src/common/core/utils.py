@@ -17,9 +17,12 @@ class SelfHostedData(TypedDict):
     has_logins: bool
 
 
-VersionManifest = TypedDict("VersionManifest", {
-    ".": str,  # This key is used to store the version of the package itself
-})
+VersionManifest = TypedDict(
+    "VersionManifest",
+    {
+        ".": str,  # This key is used to store the version of the package itself
+    },
+)
 
 
 class VersionInfo(TypedDict):
@@ -92,7 +95,7 @@ def get_versions_from_manifest() -> VersionManifest:
     raw_content = get_file_contents(VERSIONS_INFO_FILE_LOCATION)
     if not raw_content:
         return {".": UNKNOWN}
-    
+
     manifest: VersionManifest = json.loads(raw_content)
     return manifest
 

@@ -1,7 +1,8 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from common.core import middleware as middleware_module, utils
+from common.core import middleware as middleware_module
+from common.core import utils
 
 
 @pytest.fixture(autouse=True)
@@ -19,7 +20,8 @@ def test_APIResponseVersionHeaderMiddleware__valid_version_info___adds_version_h
     get_response = mocker.Mock(return_value=response)
     middleware = middleware_module.APIResponseVersionHeaderMiddleware(get_response)
     get_versions_from_manifest = mocker.patch.object(
-        middleware_module, "get_versions_from_manifest",
+        middleware_module,
+        "get_versions_from_manifest",
         return_value={".": "v1.2.3"},
     )
 
@@ -33,10 +35,13 @@ def test_APIResponseVersionHeaderMiddleware__valid_version_info___adds_version_h
     get_versions_from_manifest.assert_called_once_with()
 
 
-@pytest.mark.parametrize("version_info", [
-    {"foo": "bar"},
-    {},
-])
+@pytest.mark.parametrize(
+    "version_info",
+    [
+        {"foo": "bar"},
+        {},
+    ],
+)
 def test_APIResponseVersionHeaderMiddleware__invalid_version_info___adds_unknown_header(
     mocker: MockerFixture,
     version_info: dict[str, str] | None,
@@ -47,7 +52,8 @@ def test_APIResponseVersionHeaderMiddleware__invalid_version_info___adds_unknown
     get_response = mocker.Mock(return_value=response)
     middleware = middleware_module.APIResponseVersionHeaderMiddleware(get_response)
     get_versions_from_manifest = mocker.patch.object(
-        middleware_module, "get_versions_from_manifest",
+        middleware_module,
+        "get_versions_from_manifest",
         return_value=version_info,
     )
 
