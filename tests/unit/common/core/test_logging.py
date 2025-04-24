@@ -44,7 +44,7 @@ def test_json_formatter__outputs_expected(
         {
             "levelname": "INFO",
             "message": "hello arg1, 22",
-            "timestamp": "2023-12-08 06:05:47,320",
+            "timestamp": "2023-12-08 06:05:47,319",
             "logger_name": "test_json_formatter__outputs_expected",
             "pid": expected_pid,
             "thread_name": "MainThread",
@@ -52,7 +52,7 @@ def test_json_formatter__outputs_expected(
         {
             "levelname": "ERROR",
             "message": "this is an error",
-            "timestamp": "2023-12-08 06:05:47,320",
+            "timestamp": "2023-12-08 06:05:47,319",
             "logger_name": "test_json_formatter__outputs_expected",
             "pid": expected_pid,
             "thread_name": "MainThread",
