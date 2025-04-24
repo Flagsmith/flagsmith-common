@@ -65,6 +65,9 @@ def execute_from_command_line(argv: list[str]) -> None:
         subcommand = argv[1]
         subcommand_main = {
             "healthcheck": healthcheck.main,
+            # Backwards compatibility for task-processor health checks
+            # See https://github.com/Flagsmith/flagsmith-task-processor/issues/24
+            "checktaskprocessorthreadhealth": healthcheck.main,
         }[subcommand]
     except (IndexError, KeyError):
         django_execute_from_command_line(argv)
