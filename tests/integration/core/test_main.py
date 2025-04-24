@@ -39,10 +39,7 @@ def test_main__healthcheck__no_server__runs_expected(
 
     # Then
     assert exc_info.value.code == 1
-    assert (
-        capsys.readouterr().out[:-1]
-        == "Failed: [Errno 61] Connection refused args.port=8000"
-    )
+    assert "Connection refused args.port=8000" in capsys.readouterr().out
 
 
 def test_main__healtcheck__server__runs_expected(
