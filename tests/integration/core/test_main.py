@@ -11,7 +11,7 @@ from common.core.main import main
 @pytest.mark.parametrize(
     "argv, expected_out",
     (
-        [["flagsmith"], ManagementUtility().main_help_text()],
+        [["flagsmith"], ManagementUtility(["flagsmith"]).main_help_text()],
         [["flagsmith", "version"], django.get_version()],
     ),
 )
