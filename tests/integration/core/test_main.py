@@ -84,3 +84,17 @@ def test_main__healthcheck_http__server__runs_expected(
 
     # When & Then
     main(argv)
+
+
+def test_main__healthcheck_http__server_invalid_response__runs_expected(
+    unused_tcp_port: int,
+    http_server: HTTPServer,
+) -> None:
+    # Given
+    argv = ["flagsmith", "healthcheck", "http", "--port", str(unused_tcp_port)]
+
+    http_server.expect_request("/health/liveness").respond_with_data(status=500)
+
+    # When & Then
+    with pytest.raises(Exception):
+        main(argv)
