@@ -28,7 +28,7 @@ def main(argv: list[str]) -> None:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(args.timeout)
     try:
-        sock.connect(("localhost", args.port))
+        sock.connect(("127.0.0.1", args.port))
     except socket.error as e:
         sock.close()
         print(f"Failed: {e} {args.port=}")
