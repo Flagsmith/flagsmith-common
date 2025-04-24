@@ -1,9 +1,7 @@
-import io
-import subprocess
-
 import django
 import pytest
 from django.core.management import ManagementUtility
+from pytest_httpserver import HTTPServer
 
 from common.core.main import main
 
@@ -44,18 +42,10 @@ def test_main__healthcheck__no_server__runs_expected(
 
 def test_main__healtcheck__server__runs_expected(
     unused_tcp_port: int,
+    http_server: HTTPServer,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     # Given
-    process = subprocess.Popen(
-        ["flagsmith", "start", "-b", f"0.0.0.0:{unused_tcp_port}", "api"],
-        stderr=subprocess.PIPE,
-    )
-    assert process.stderr
-    for line in io.TextIOWrapper(process.stderr, "utf-8"):
-        if "Listening" in line:
-            break
-
     argv = ["flagsmith", "healthcheck", "--port", str(unused_tcp_port)]
 
     # When
