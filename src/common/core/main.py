@@ -5,7 +5,11 @@ import sys
 import tempfile
 import typing
 
-from django.core.management import execute_from_command_line
+from django.core.management import (
+    execute_from_command_line as django_execute_from_command_line,
+)
+
+from common.core.cli import healthcheck
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +60,19 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
         yield
 
 
-def main() -> None:
+def execute_from_command_line(argv: list[str]) -> None:
+    try:
+        subcommand = argv[1]
+        subcommand_main = {
+            "healthcheck": healthcheck.main,
+        }[subcommand]
+    except (IndexError, KeyError):
+        django_execute_from_command_line(argv)
+    else:
+        subcommand_main(argv[2:])
+
+
+def main(argv: list[str] = sys.argv) -> None:
     """
     The main entry point to the Flagsmith application.
 
@@ -72,5 +88,5 @@ def main() -> None:
     `flagsmith <command> [options]`
     """
     with ensure_cli_env():
-        # Run Django
-        execute_from_command_line(sys.argv)
+        # Run own commands and Django
+        execute_from_command_line(argv)
