@@ -53,5 +53,4 @@ def test_main__healtcheck__server__runs_expected(
         main(argv)
 
     # Then
-    assert capsys.readouterr().out[:-1] == "OK"
     assert exc_info.value.code == 0

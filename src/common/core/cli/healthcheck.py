@@ -30,10 +30,9 @@ def main(argv: list[str]) -> None:
     try:
         sock.connect(("127.0.0.1", args.port))
     except socket.error as e:
-        sock.close()
         print(f"Failed: {e} {args.port=}")
         exit(1)
     else:
-        sock.close()
-        print("OK")
         exit(0)
+    finally:
+        sock.close()
