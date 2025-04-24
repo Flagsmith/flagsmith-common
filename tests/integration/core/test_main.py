@@ -55,9 +55,7 @@ def test_main__healtcheck_tcp__server__runs_expected(
     assert exc_info.value.code == 0
 
 
-def test_main__healtcheck_http__no_server__runs_expected(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
+def test_main__healtcheck_http__no_server__runs_expected() -> None:
     # Given
     argv = ["flagsmith", "healthcheck", "http"]
 
