@@ -89,6 +89,12 @@ def get_version_info() -> VersionInfo:
     return version_json
 
 
+def get_version_number() -> str:
+    """Returns the version number of the current deployment"""
+    manifest_versions = get_versions_from_manifest()
+    return manifest_versions.get(".", UNKNOWN)
+
+
 @lru_cache()
 def get_versions_from_manifest() -> VersionManifest:
     """Reads the version info from the manifest file"""

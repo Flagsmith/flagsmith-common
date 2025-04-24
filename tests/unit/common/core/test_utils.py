@@ -8,6 +8,7 @@ from pytest_django.fixtures import SettingsWrapper
 from common.core.utils import (
     get_file_contents,
     get_version_info,
+    get_version_number,
     get_versions_from_manifest,
     has_email_provider,
     is_enterprise,
@@ -148,3 +149,37 @@ def test_get_version_info__email_config_disabled__return_expected(
 
     # Then
     assert result["has_email_provider"] is False
+
+
+def test_get_version_number__valid_file_contents__returns_version_number(
+    fs: FakeFilesystem,
+) -> None:
+    # Given
+    fs.create_file("./.versions.json", contents='{".": "v1.2.3"}')
+
+    # When
+    result = get_version_number()
+
+    # Then
+    assert result == "v1.2.3"
+
+
+@pytest.mark.parametrize(
+    "manifest_contents",
+    [
+        '{"foo": "bar"}',
+        "",
+    ],
+)
+def test_get_version_number__invalid_file_contents__returns_unknown(
+    fs: FakeFilesystem,
+    manifest_contents: str,
+) -> None:
+    # Given
+    fs.create_file("./.versions.json", contents=manifest_contents)
+
+    # When
+    result = get_version_number()
+
+    # Then
+    assert result == "unknown"

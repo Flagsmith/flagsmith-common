@@ -2,7 +2,7 @@ from typing import Callable
 
 from django.http import HttpRequest, HttpResponse
 
-from common.core.utils import UNKNOWN, get_versions_from_manifest
+from common.core.utils import get_version_number
 
 
 class APIResponseVersionHeaderMiddleware:
@@ -18,11 +18,5 @@ class APIResponseVersionHeaderMiddleware:
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         response = self.get_response(request)
-        response.headers["Flagsmith-Version"] = self.get_version()
+        response.headers["Flagsmith-Version"] = get_version_number()
         return response
-
-    def get_version(self) -> str:
-        """Obtains the version number from the manifest file"""
-        manifest_versions = get_versions_from_manifest()
-        version: str = manifest_versions.get(".") or UNKNOWN
-        return version
