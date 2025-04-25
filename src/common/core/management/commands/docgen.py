@@ -24,8 +24,6 @@ class Command(BaseCommand):
         metric_parser.set_defaults(handle_method=self.handle_metrics)
 
     def initialise(self) -> None:
-        from common.gunicorn import metrics
-
         autodiscover_modules(
             "metrics",
         )
