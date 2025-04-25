@@ -2,6 +2,24 @@
 
 <a name="v1.5.2"></a>
 
+## [1.11.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.10.0...v1.11.0) (2025-04-25)
+
+
+### CI
+
+* pre-commit autoupdate ([#54](https://github.com/Flagsmith/flagsmith-common/issues/54)) ([49268aa](https://github.com/Flagsmith/flagsmith-common/commit/49268aaf600cba1411ca6000f8936e3afb11d743))
+
+
+### Features
+
+* Add `flagsmith healthcheck` command ([#60](https://github.com/Flagsmith/flagsmith-common/issues/60)) ([1eb58f3](https://github.com/Flagsmith/flagsmith-common/commit/1eb58f3bd07b19fb6875fbd82a547eca1f24ea1a))
+* Deliver the deployed API version to an HTTP response header ([#59](https://github.com/Flagsmith/flagsmith-common/issues/59)) ([64037d3](https://github.com/Flagsmith/flagsmith-common/commit/64037d31ae59af26449e17f6fb36a0f3bcb3e26a))
+
+
+### Bug Fixes
+
+* **tests:** Inaccurate`freeze_time` for a certain timestamp ([#63](https://github.com/Flagsmith/flagsmith-common/issues/63)) ([74c73b4](https://github.com/Flagsmith/flagsmith-common/commit/74c73b49b908897308dedf2f05400ba7dd65111b))
+
 ## [1.10.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.9.0...v1.10.0) (2025-04-22)
 
 
