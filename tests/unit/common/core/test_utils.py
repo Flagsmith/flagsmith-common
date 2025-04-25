@@ -7,7 +7,9 @@ from pytest_django.fixtures import SettingsWrapper
 
 from common.core.utils import (
     get_file_contents,
+    get_version,
     get_version_info,
+    get_versions_from_manifest,
     has_email_provider,
     is_enterprise,
     is_oss,
@@ -21,6 +23,7 @@ pytestmark = pytest.mark.django_db
 def clear_lru_caches() -> Generator[None, None, None]:
     yield
     get_file_contents.cache_clear()
+    get_versions_from_manifest.cache_clear()
     has_email_provider.cache_clear()
     is_enterprise.cache_clear()
     is_saas.cache_clear()
@@ -89,6 +92,7 @@ def test_get_version_info_with_missing_files(fs: FakeFilesystem) -> None:
         "has_email_provider": False,
         "is_enterprise": True,
         "is_saas": False,
+        "package_versions": {".": "unknown"},
         "self_hosted_data": {
             "has_logins": False,
             "has_users": False,
@@ -145,3 +149,37 @@ def test_get_version_info__email_config_disabled__return_expected(
 
     # Then
     assert result["has_email_provider"] is False
+
+
+def test_get_version__valid_file_contents__returns_version_number(
+    fs: FakeFilesystem,
+) -> None:
+    # Given
+    fs.create_file("./.versions.json", contents='{".": "v1.2.3"}')
+
+    # When
+    result = get_version()
+
+    # Then
+    assert result == "v1.2.3"
+
+
+@pytest.mark.parametrize(
+    "manifest_contents",
+    [
+        '{"foo": "bar"}',
+        "",
+    ],
+)
+def test_get_version__invalid_file_contents__returns_unknown(
+    fs: FakeFilesystem,
+    manifest_contents: str,
+) -> None:
+    # Given
+    fs.create_file("./.versions.json", contents=manifest_contents)
+
+    # When
+    result = get_version()
+
+    # Then
+    assert result == "unknown"
