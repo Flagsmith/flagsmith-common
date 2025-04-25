@@ -14,7 +14,10 @@ def get_args(
     prog: str,
 ) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Health checks",
+        description=(
+            "Perform health checks. "
+            f"If ran without subcommand, defaults to a TCP check of port {DEFAULT_PORT}."
+        ),
         prog=prog,
     )
     subcommands = parser.add_subparsers(dest="subcommand")
