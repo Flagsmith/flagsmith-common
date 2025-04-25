@@ -25,13 +25,18 @@ def test_main__non_overridden_args__defaults_to_django(
     assert capsys.readouterr().out[:-1] == expected_out
 
 
+@pytest.mark.parametrize(
+    "argv",
+    (
+        ["flagsmith", "healthcheck"],
+        ["flagsmith", "healthcheck", "tcp"],
+    ),
+)
 def test_main__healthcheck_tcp__no_server__runs_expected(
+    argv: list[str],
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    # Given
-    argv = ["flagsmith", "healthcheck", "tcp"]
-
-    # When
+    # Given & When
     with pytest.raises(SystemExit) as exc_info:
         main(argv)
 
@@ -40,7 +45,7 @@ def test_main__healthcheck_tcp__no_server__runs_expected(
     assert exc_info.value.code == 1
 
 
-def test_main__healtcheck_tcp__server__runs_expected(
+def test_main__healthcheck_tcp__server__runs_expected(
     unused_tcp_port: int,
     http_server: HTTPServer,
 ) -> None:
@@ -55,7 +60,7 @@ def test_main__healtcheck_tcp__server__runs_expected(
     assert exc_info.value.code == 0
 
 
-def test_main__healtcheck_http__no_server__runs_expected() -> None:
+def test_main__healthcheck_http__no_server__runs_expected() -> None:
     # Given
     argv = ["flagsmith", "healthcheck", "http"]
 
