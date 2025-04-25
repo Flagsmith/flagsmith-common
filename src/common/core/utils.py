@@ -90,7 +90,7 @@ def get_version_info() -> VersionInfo:
 
 
 def get_version() -> str:
-    """Returns the version number of the current deployment"""
+    """Return the version number of the current deployment"""
     manifest_versions = get_versions_from_manifest()
     return manifest_versions.get(".", UNKNOWN)
 
