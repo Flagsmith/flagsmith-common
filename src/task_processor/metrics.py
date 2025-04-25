@@ -9,7 +9,7 @@ flagsmith_task_processor_enqueued_tasks_total = prometheus_client.Counter(
     ["task_identifier"],
 )
 
-if settings.TASK_PROCESSOR_MODE:
+if settings.DOCGEN_MODE or settings.TASK_PROCESSOR_MODE:
     flagsmith_task_processor_finished_tasks_total = prometheus_client.Counter(
         "flagsmith_task_processor_finished_tasks_total",
         "Total number of finished tasks",
