@@ -29,6 +29,7 @@ def test_main__non_overridden_args__defaults_to_django(
     "argv",
     (
         ["flagsmith", "healthcheck"],
+        ["flagsmith", "checktaskprocessorthreadhealth"],
         ["flagsmith", "healthcheck", "tcp"],
     ),
 )
