@@ -19,7 +19,7 @@ class Command(BaseCommand):
 
         metric_parser = subparsers.add_parser(
             "metrics",
-            help="Start the Metrics service.",
+            help="Generate metrics documentation.",
         )
         metric_parser.set_defaults(handle_method=self.handle_metrics)
 
