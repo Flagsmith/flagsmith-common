@@ -2,7 +2,7 @@ from typing import Callable
 
 from django.http import HttpRequest, HttpResponse
 
-from common.core.utils import get_version_number
+from common.core.utils import get_version
 
 
 class APIResponseVersionHeaderMiddleware:
@@ -18,5 +18,5 @@ class APIResponseVersionHeaderMiddleware:
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         response = self.get_response(request)
-        response.headers["Flagsmith-Version"] = get_version_number()
+        response.headers["Flagsmith-Version"] = get_version()
         return response
