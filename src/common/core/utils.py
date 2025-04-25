@@ -97,7 +97,7 @@ def get_version() -> str:
 
 @lru_cache()
 def get_versions_from_manifest() -> VersionManifest:
-    """Reads the version info from the manifest file"""
+    """Read the version info from the manifest file"""
     raw_content = get_file_contents(VERSIONS_INFO_FILE_LOCATION)
     if not raw_content:
         return {".": UNKNOWN}
