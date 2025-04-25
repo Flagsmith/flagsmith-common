@@ -4,28 +4,37 @@ import urllib.parse
 
 import requests
 
+DEFAULT_PORT = 8000
+DEFAULT_TIMEOUT_SECONDS = 1
 
-def get_args(argv: list[str]) -> argparse.Namespace:
+
+def get_args(
+    argv: list[str],
+    *,
+    prog: str,
+) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Health checks",
+        prog=prog,
     )
-    subcommands = parser.add_subparsers(dest="subcommand", required=True)
+    subcommands = parser.add_subparsers(dest="subcommand")
     tcp_parser = subcommands.add_parser(
-        "tcp", help="Check if the API is able to accept local TCP connections"
+        "tcp",
+        help="Check if the API is able to accept local TCP connections",
     )
     tcp_parser.add_argument(
         "--port",
         "-p",
         type=int,
-        default=8000,
-        help="Port to check the API on (default: 8000)",
+        default=DEFAULT_PORT,
+        help=f"Port to check the API on (default: {DEFAULT_PORT})",
     )
     tcp_parser.add_argument(
         "--timeout",
         "-t",
         type=int,
-        default=1,
-        help="Socket timeout for the connection attempt in seconds (default: 1)",
+        default=DEFAULT_TIMEOUT_SECONDS,
+        help=f"Socket timeout for the connection attempt in seconds (default: {DEFAULT_TIMEOUT_SECONDS})",
     )
     http_parser = subcommands.add_parser(
         "http", help="Check if the API is able to serve HTTP requests"
@@ -34,15 +43,15 @@ def get_args(argv: list[str]) -> argparse.Namespace:
         "--port",
         "-p",
         type=int,
-        default=8000,
-        help="Port to check the API on (default: 8000)",
+        default=DEFAULT_PORT,
+        help=f"Port to check the API on (default: {DEFAULT_PORT})",
     )
     http_parser.add_argument(
         "--timeout",
         "-t",
         type=int,
-        default=1,
-        help="Request timeout in seconds (default: 1)",
+        default=DEFAULT_TIMEOUT_SECONDS,
+        help=f"Request timeout in seconds (default: {DEFAULT_TIMEOUT_SECONDS})",
     )
     http_parser.add_argument(
         "path",
@@ -83,9 +92,18 @@ def check_http_response(
     ).raise_for_status()
 
 
-def main(argv: list[str]) -> None:
-    args = get_args(argv)
+def main(
+    argv: list[str],
+    *,
+    prog: str,
+) -> None:
+    args = get_args(argv, prog=prog)
     match args.subcommand:
+        case None:
+            check_tcp_connection(
+                port=DEFAULT_PORT,
+                timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
+            )
         case "tcp":
             check_tcp_connection(
                 port=args.port,

@@ -72,7 +72,10 @@ def execute_from_command_line(argv: list[str]) -> None:
     except (IndexError, KeyError):
         django_execute_from_command_line(argv)
     else:
-        subcommand_main(argv[2:])
+        subcommand_main(
+            argv[2:],
+            prog=f"{os.path.basename(argv[0])} {subcommand}",
+        )
 
 
 def main(argv: list[str] = sys.argv) -> None:
