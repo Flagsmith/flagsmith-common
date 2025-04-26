@@ -21,14 +21,14 @@ class SnapshotFixture(Protocol):
 class Snapshot:
     def __init__(self, path: Path, for_update: bool) -> None:
         self.path = path
-        self.content = open(path).read()
+        self.content = open(path, encoding="utf-8").read()
         self.for_update = for_update
 
     def __eq__(self, other: object) -> bool:
         if self.content == other:
             return True
         if self.for_update and isinstance(other, str):
-            with open(self.path, "w") as f:
+            with open(self.path, "w", encoding="utf-8") as f:
                 f.write(other)
             pytest.xfail(reason=f"Snapshot updated: {self.path}")
         return False
