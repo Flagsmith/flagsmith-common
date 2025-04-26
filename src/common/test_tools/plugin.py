@@ -5,7 +5,16 @@ import pytest
 from prometheus_client.metrics import MetricWrapperBase
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-from common.test_tools.types import AssertMetricFixture, SnapshotFixture
+from common.test_tools.types import AssertMetricFixture, Snapshot, SnapshotFixture
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    group = parser.getgroup("snapshot")
+    group.addoption(
+        "--snapshot-update",
+        action="store_true",
+        help="Update snapshot files instead of testing against them.",
+    )
 
 
 def assert_metric_impl() -> Generator[AssertMetricFixture, None, None]:
@@ -72,10 +81,11 @@ def flagsmith_markers_marked(
 
 @pytest.fixture
 def snapshot(request: pytest.FixtureRequest) -> SnapshotFixture:
-    def _get_snapshot(name: str = "") -> str:
+    for_update = request.config.getoption("--snapshot-update")
+
+    def _get_snapshot(name: str = "") -> Snapshot:
         snapshot_name = name or f"{request.node.name}.txt"
-        return open(
-            request.path.parent / f"snapshots/{snapshot_name}",
-        ).read()
+        snapshot_path = request.path.parent / f"snapshots/{snapshot_name}"
+        return Snapshot(snapshot_path, for_update=for_update)
 
     return _get_snapshot
