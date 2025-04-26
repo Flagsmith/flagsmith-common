@@ -9,3 +9,7 @@ class AssertMetricFixture(Protocol):
         labels: dict[str, str],
         value: float | int,
     ) -> None: ...
+
+
+class SnapshotFixture(Protocol):
+    def __call__(self, name: str = "") -> str: ...

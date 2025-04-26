@@ -5,7 +5,7 @@ import pytest
 from prometheus_client.metrics import MetricWrapperBase
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-from common.test_tools.types import AssertMetricFixture
+from common.test_tools.types import AssertMetricFixture, SnapshotFixture
 
 
 def assert_metric_impl() -> Generator[AssertMetricFixture, None, None]:
@@ -68,3 +68,14 @@ def flagsmith_markers_marked(
             request.getfixturevalue("saas_mode")
         if marker.name == "enterprise_mode":
             request.getfixturevalue("enterprise_mode")
+
+
+@pytest.fixture
+def snapshot(request: pytest.FixtureRequest) -> SnapshotFixture:
+    def _get_snapshot(name: str = "") -> str:
+        snapshot_name = name or f"{request.node.name}.txt"
+        return open(
+            request.path.parent / f"snapshots/{snapshot_name}",
+        ).read()
+
+    return _get_snapshot
