@@ -1,4 +1,5 @@
 import prometheus_client
+from django.conf import settings
 
 from common.core.utils import get_version_info
 
@@ -20,4 +21,5 @@ def advertise() -> None:
     ).set(1)
 
 
-advertise()
+if not settings.DOCGEN_MODE:
+    advertise()
