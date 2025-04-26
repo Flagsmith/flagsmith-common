@@ -25,12 +25,13 @@ class Snapshot:
         self.for_update = for_update
 
     def __eq__(self, other: object) -> bool:
-        eq = self.content == other
-        if not eq and isinstance(other, str) and self.for_update:
+        if self.content == other:
+            return True
+        if self.for_update and isinstance(other, str):
             with open(self.path, "w") as f:
                 f.write(other)
-                pytest.xfail(reason=f"Snapshot updated: {self.path}")
-        return eq
+            pytest.xfail(reason=f"Snapshot updated: {self.path}")
+        return False
 
     def __str__(self) -> str:
         return self.content
