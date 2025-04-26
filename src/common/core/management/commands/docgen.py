@@ -52,7 +52,6 @@ class Command(BaseCommand):
                 }
                 for collector in prometheus_client.REGISTRY._collector_to_names
                 if isinstance(collector, MetricWrapperBase)
-                and collector._name.startswith("flagsmith")
             ),
             key=itemgetter("name"),
         )
