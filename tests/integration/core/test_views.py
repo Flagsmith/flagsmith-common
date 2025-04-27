@@ -1,4 +1,5 @@
 import prometheus_client
+import pytest
 from rest_framework.test import APIClient
 
 
@@ -10,6 +11,7 @@ def test_liveness_probe__return_expected(
     assert response.json() == {"status": "ok"}
 
 
+@pytest.mark.prometheus_multiprocess_mode
 def test_metrics__return_expected(
     test_metric: prometheus_client.Counter,
     client: APIClient,
