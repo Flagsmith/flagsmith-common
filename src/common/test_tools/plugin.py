@@ -82,10 +82,12 @@ def flagsmith_markers_marked(
 @pytest.fixture
 def snapshot(request: pytest.FixtureRequest) -> SnapshotFixture:
     for_update = request.config.getoption("--snapshot-update")
+    snapshot_dir = request.path.parent / "snapshots"
+    snapshot_dir.mkdir(exist_ok=True)
 
     def _get_snapshot(name: str = "") -> Snapshot:
         snapshot_name = name or f"{request.node.name}.txt"
-        snapshot_path = request.path.parent / f"snapshots/{snapshot_name}"
+        snapshot_path = snapshot_dir / snapshot_name
         return Snapshot(snapshot_path, for_update=for_update)
 
     return _get_snapshot
