@@ -2,6 +2,8 @@ import prometheus_client
 import pytest
 from rest_framework.test import APIClient
 
+from common.test_tools import SnapshotFixture
+
 
 def test_liveness_probe__return_expected(
     client: APIClient,
@@ -15,6 +17,7 @@ def test_liveness_probe__return_expected(
 def test_metrics__return_expected(
     test_metric: prometheus_client.Counter,
     client: APIClient,
+    snapshot: SnapshotFixture,
 ) -> None:
     # Arrange
     test_metric.labels(test_name="test_metrics__return_expected").inc()
@@ -24,13 +27,4 @@ def test_metrics__return_expected(
 
     # Assert
     assert response.status_code == 200
-    assert response.content == (
-        "\n".join(
-            [
-                "# HELP pytest_tests_run_total Total number of tests run by pytest",
-                "# TYPE pytest_tests_run_total counter",
-                'pytest_tests_run_total{test_name="test_metrics__return_expected"} 1.0',
-                "",
-            ]
-        ).encode()
-    )
+    assert response.content.decode() == snapshot()
