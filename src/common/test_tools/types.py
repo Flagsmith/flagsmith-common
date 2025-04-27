@@ -21,7 +21,8 @@ class SnapshotFixture(Protocol):
 class Snapshot:
     def __init__(self, path: Path, for_update: bool) -> None:
         self.path = path
-        self.content = open(path, encoding="utf-8").read()
+        mode = "r" if not for_update else "w+"
+        self.content = open(path, encoding="utf-8", mode=mode).read()
         self.for_update = for_update
 
     def __eq__(self, other: object) -> bool:
