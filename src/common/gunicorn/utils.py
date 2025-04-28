@@ -5,12 +5,15 @@ from typing import Any
 
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.wsgi import get_wsgi_application
+from django.http import HttpRequest
 from drf_yasg.generators import EndpointEnumerator  # type: ignore[import-untyped]
 from environs import Env
 from gunicorn.app.wsgiapp import (  # type: ignore[import-untyped]
     WSGIApplication as GunicornWSGIApplication,
 )
 from gunicorn.config import Config  # type: ignore[import-untyped]
+
+from common.gunicorn.constants import WSGI_EXTRA_PREFIX
 
 env = Env()
 
@@ -76,3 +79,26 @@ def get_route_template(route: str) -> str:
     """
     route_template: str = EndpointEnumerator().get_path_from_regex(route)
     return route_template
+
+
+def log_extra(
+    request: HttpRequest,
+    key: str,
+    value: Any,
+) -> None:
+    """
+    Store a value in the WSGI request `environ` using a prefixed key.
+
+    https://peps.python.org/pep-3333/#specification-details
+    "...the application is allowed to modify the dictionary in any way it desires"
+    """
+    meta_key = f"{WSGI_EXTRA_PREFIX}{key}"
+    request.META[meta_key] = value
+
+
+def get_extra(environ: dict[str, Any], key: str) -> Any:
+    """
+    Retrieve a value from the WSGI request `environ` using a prefixed key.
+    """
+    meta_key = f"{WSGI_EXTRA_PREFIX}{key}"
+    return environ.get(meta_key)
