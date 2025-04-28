@@ -66,31 +66,30 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
 
         content_type = ContentType.objects.get_for_model(instance.__class__)
 
-        assert instance
         if len(metadata_data) == 0:
             Metadata.objects.filter(
                 object_id=instance.pk, content_type=content_type
             ).delete()
             return
-        if metadata_data is not None:
-            for metadata_item in metadata_data:
-                metadata_model_field = metadata_item.pop("model_field", None)
-                if metadata_item.get("delete"):
-                    Metadata.objects.filter(
-                        model_field=metadata_model_field,
-                        object_id=instance.pk,
-                        content_type=content_type,
-                    ).delete()
-                    continue
 
-                Metadata.objects.update_or_create(
+        for metadata_item in metadata_data:
+            metadata_model_field = metadata_item.pop("model_field", None)
+            if metadata_item.get("delete"):
+                Metadata.objects.filter(
                     model_field=metadata_model_field,
-                    content_type=content_type,
                     object_id=instance.pk,
-                    defaults={
-                        **metadata_item,
-                    },
-                )
+                    content_type=content_type,
+                ).delete()
+                continue
+
+            Metadata.objects.update_or_create(
+                model_field=metadata_model_field,
+                content_type=content_type,
+                object_id=instance.pk,
+                defaults={
+                    **metadata_item,
+                },
+            )
 
     def validate_required_metadata(
         self,
