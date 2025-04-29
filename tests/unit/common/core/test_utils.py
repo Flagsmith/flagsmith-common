@@ -1,5 +1,4 @@
 import json
-from typing import Generator
 
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
@@ -20,13 +19,12 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture(autouse=True)
-def clear_lru_caches() -> Generator[None, None, None]:
+def clear_lru_caches() -> None:
     get_file_contents.cache_clear()
     get_versions_from_manifest.cache_clear()
     has_email_provider.cache_clear()
     is_enterprise.cache_clear()
     is_saas.cache_clear()
-    yield
 
 
 def test__is_oss_for_enterprise_returns_false(fs: FakeFilesystem) -> None:
