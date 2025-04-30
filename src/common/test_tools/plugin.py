@@ -81,6 +81,18 @@ def flagsmith_markers_marked(
 
 @pytest.fixture
 def snapshot(request: pytest.FixtureRequest) -> SnapshotFixture:
+    """
+    Retrieve a `Snapshot` object getter for the current test.
+    The snapshot is stored in the `snapshots` directory next to the test file.
+
+    Snapshot files are named after the test function name (+ ".txt") by default.
+    If a name is provided to the getter, the snapshot will be stored in a file with that name.
+    The name is relative to the `snapshots` directory.
+
+    When `--snapshot-update` is provided to `pytest`:
+    - The snapshot will be created if it does not exist.
+    - The snapshot will be updated with the string it's being compared to in the test.
+    """
     for_update = request.config.getoption("--snapshot-update")
     snapshot_dir = request.path.parent / "snapshots"
     snapshot_dir.mkdir(exist_ok=True)

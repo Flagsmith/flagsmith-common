@@ -19,6 +19,12 @@ class SnapshotFixture(Protocol):
 
 
 class Snapshot:
+    """
+    Read contents of `path` and make them available for comparison via the `==` operator.
+    If the contents are different, and `Snapshot` initialised in update mode,
+    (e.g. by running `pytest` with `--snapshot-update`), write the new contents to `path`.
+    """
+
     def __init__(self, path: Path, for_update: bool) -> None:
         self.path = path
         mode = "r" if not for_update else "w+"
