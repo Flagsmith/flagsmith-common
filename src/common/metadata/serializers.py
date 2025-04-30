@@ -73,9 +73,7 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
             return
 
         incoming_updated_fields = {
-            item["model_field"].id
-            for item in metadata_data
-            if not item.get("delete")
+            item["model_field"].id for item in metadata_data if not item.get("delete")
         }
 
         Metadata.objects.filter(
@@ -93,7 +91,7 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
                     defaults={
                         **metadata_item,
                     },
-            )
+                )
 
     def validate_required_metadata(
         self,
