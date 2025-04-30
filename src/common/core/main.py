@@ -52,6 +52,9 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
         )
         os.environ["PROMETHEUS_MULTIPROC_DIR"] = prometheus_multiproc_dir_name
 
+    if "docgen" in sys.argv:
+        os.environ["DOCGEN_MODE"] = "true"
+
     if "task-processor" in sys.argv:
         # A hacky way to signal we're not running the API
         os.environ["RUN_BY_PROCESSOR"] = "true"
