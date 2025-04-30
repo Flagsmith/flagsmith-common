@@ -4,7 +4,7 @@ title: Metrics
 
 ## Prometheus
 
-To enable the Prometheus `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `true`. 
+To enable the Prometheus `/metrics` endpoint, set the `PROMETHEUS_ENABLED` environment variable to `true`. 
 
 The metrics provided by Flagsmith are described below.
 
