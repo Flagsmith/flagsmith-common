@@ -2,6 +2,24 @@
 
 <a name="v1.5.2"></a>
 
+## [1.12.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.11.0...v1.12.0) (2025-04-30)
+
+
+### CI
+
+* pre-commit autoupdate ([#66](https://github.com/Flagsmith/flagsmith-common/issues/66)) ([9c38998](https://github.com/Flagsmith/flagsmith-common/commit/9c38998f405ce59bf67b3db7790ec83a0a9abdd9))
+
+
+### Features
+
+* Generate metrics documentation ([#65](https://github.com/Flagsmith/flagsmith-common/issues/65)) ([c9c4935](https://github.com/Flagsmith/flagsmith-common/commit/c9c4935afd12f24665779c0a0a7b98f3e9da7dc3))
+* **test-tools:** Add `snapshot` fixture for snapshot testing ([c9c4935](https://github.com/Flagsmith/flagsmith-common/commit/c9c4935afd12f24665779c0a0a7b98f3e9da7dc3))
+
+
+### Bug Fixes
+
+* **tests:** `clear_lru_caches` fixture conflicts with `saas_mode`/`enterprise_mode` pytest markers ([c9c4935](https://github.com/Flagsmith/flagsmith-common/commit/c9c4935afd12f24665779c0a0a7b98f3e9da7dc3))
+
 ## [1.11.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.10.0...v1.11.0) (2025-04-25)
 
 

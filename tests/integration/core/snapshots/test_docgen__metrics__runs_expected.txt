@@ -1,0 +1,72 @@
+---
+title: Metrics
+---
+
+## Prometheus
+
+To enable the Prometheus `/metrics` endpoint, set the `PROMETHEUS_ENABLED` environment variable to `true`. 
+
+The metrics provided by Flagsmith are described below.
+
+
+### `flagsmith_build_info`
+
+Gauge.
+
+Flagsmith version and build information.
+
+Labels:
+ - `ci_commit_sha`
+ - `version`
+
+### `flagsmith_http_server_request_duration_seconds`
+
+Histogram.
+
+HTTP request duration in seconds.
+
+Labels:
+ - `route`
+ - `method`
+ - `response_status`
+
+### `flagsmith_http_server_requests`
+
+Counter.
+
+Total number of HTTP requests.
+
+Labels:
+ - `route`
+ - `method`
+ - `response_status`
+
+### `flagsmith_http_server_response_size_bytes`
+
+Histogram.
+
+HTTP response size in bytes.
+
+Labels:
+ - `route`
+ - `method`
+ - `response_status`
+
+### `flagsmith_task_processor_enqueued_tasks`
+
+Counter.
+
+Total number of enqueued tasks.
+
+Labels:
+ - `task_identifier`
+
+### `pytest_tests_run`
+
+Counter.
+
+Total number of tests run by pytest.
+
+Labels:
+ - `test_name`
+
