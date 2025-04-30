@@ -4,7 +4,10 @@ title: Metrics
 
 ## Prometheus
 
-Flagsmith exports Prometheus metrics described below.
+To enable the Prometheus `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `true`. 
+
+The metrics provided by Flagsmith are described below.
+
 
 ### `flagsmith_build_info`
 
@@ -62,7 +65,7 @@ Labels:
 
 Counter.
 
-Total number of tests run by pytest
+Total number of tests run by pytest.
 
 Labels:
  - `test_name`

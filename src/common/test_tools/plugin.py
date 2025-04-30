@@ -91,7 +91,8 @@ def snapshot(request: pytest.FixtureRequest) -> SnapshotFixture:
 
     When `--snapshot-update` is provided to `pytest`:
     - The snapshot will be created if it does not exist.
-    - The snapshot will be updated with the string it's being compared to in the test.
+    - If the comparison is false, the snapshot will be updated with the string it's being compared to in the test,
+    and the test will be marked as expected to fail.
     """
     for_update = request.config.getoption("--snapshot-update")
     snapshot_dir = request.path.parent / "snapshots"

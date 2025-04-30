@@ -47,6 +47,6 @@ def prometheus_multiprocess_mode_marked(request: pytest.FixtureRequest) -> None:
 def test_metric() -> prometheus_client.Counter:
     return prometheus_client.Counter(
         "pytest_tests_run_total",
-        "Total number of tests run by pytest",
+        "Total number of tests run by pytest.",
         ["test_name"],
     )
