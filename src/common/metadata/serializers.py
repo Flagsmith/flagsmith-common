@@ -15,20 +15,13 @@ if typing.TYPE_CHECKING:
 
 
 class MetadataSerializer(serializers.ModelSerializer["Metadata"]):
-    field_value = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True
-    )
-
     class Meta:
         model = apps.get_model("metadata", "Metadata")
         fields = ("id", "model_field", "field_value")
 
     def validate(self, data: dict[str, typing.Any]) -> dict[str, typing.Any]:
         data = super().validate(data)
-        field_value = data.get("field_value")
-        if field_value and not data["model_field"].field.is_field_value_valid(
-            field_value
-        ):
+        if not data["model_field"].field.is_field_value_valid(data["field_value"]):
             raise serializers.ValidationError(
                 f"Invalid value for field {data['model_field'].field.name}"
             )
@@ -79,23 +72,27 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
             ).delete()
             return
 
+        incoming_updated_fields = {
+            item["model_field"].id
+            for item in metadata_data
+            if not item.get("delete")
+        }
+
+        Metadata.objects.filter(
+            object_id=instance.pk,
+            content_type=content_type,
+        ).exclude(model_field__id__in=incoming_updated_fields).delete()
+
         for metadata_item in metadata_data:
             metadata_model_field = metadata_item.pop("model_field", None)
-            if metadata_item.get("delete") or not metadata_item.get("field_value"):
-                Metadata.objects.filter(
+            if metadata_model_field.id is not None:
+                Metadata.objects.update_or_create(
                     model_field=metadata_model_field,
-                    object_id=instance.pk,
                     content_type=content_type,
-                ).delete()
-                continue
-
-            Metadata.objects.update_or_create(
-                model_field=metadata_model_field,
-                content_type=content_type,
-                object_id=instance.pk,
-                defaults={
-                    **metadata_item,
-                },
+                    object_id=instance.pk,
+                    defaults={
+                        **metadata_item,
+                    },
             )
 
     def validate_required_metadata(
@@ -121,7 +118,6 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
                 if not any(
                     [
                         field["model_field"] == requirement.model_field
-                        and field.get("field_value") not in [None, ""]
                         for field in metadata
                     ]
                 ):
