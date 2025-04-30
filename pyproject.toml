@@ -27,6 +27,8 @@ authors = [
     { name = "Zach Aysan" },
     { name = "Francesco Lo Franco" },
     { name = "Rodrigo López Dato" },
+    { name = "Evandro Myller" },
+    { name = "Wadii Zaim" },
 ]
 maintainers = [{ name = "Flagsmith Team", email = "support@flagsmith.com" }]
 license = "BSD-3-Clause"
