@@ -1,8 +1,9 @@
-from typing import TypedDict, Any, NotRequired, Protocol
-from django.contrib.contenttypes.models import ContentType
+from typing import Any, NotRequired, Protocol, TypedDict
+
 
 class HasId(Protocol):
-    id: int 
+    id: int
+
 
 class MetadataItem(TypedDict, total=False):
     model_field: HasId
