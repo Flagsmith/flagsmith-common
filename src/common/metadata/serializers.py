@@ -5,6 +5,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from rest_framework import serializers
 
+from common.metadata.types import MetadataItem
+
 if typing.TYPE_CHECKING:
     from common.types import (
         Metadata,  # noqa: F401
@@ -59,7 +61,7 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
     def update_metadata(
         self,
         instance: models.Model,
-        metadata_data: list[dict[str, typing.Any]],
+        metadata_data: list[MetadataItem],
     ) -> None:
         Metadata = apps.get_model("metadata", "Metadata")
         ContentType = apps.get_model("contenttypes", "ContentType")
@@ -83,7 +85,7 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
 
         for metadata_item in metadata_data:
             metadata_model_field = metadata_item.pop("model_field", None)
-            if metadata_model_field.id is not None:
+            if metadata_model_field is not None and metadata_model_field.id is not None:
                 Metadata.objects.update_or_create(
                     model_field=metadata_model_field,
                     content_type=content_type,
