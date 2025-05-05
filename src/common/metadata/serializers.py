@@ -68,7 +68,7 @@ class SerializerWithMetadata(serializers.Serializer[models.Model]):
 
         content_type = ContentType.objects.get_for_model(instance.__class__)
 
-        if metadata_data:
+        if not metadata_data:
             Metadata.objects.filter(
                 object_id=instance.pk, content_type=content_type
             ).delete()
