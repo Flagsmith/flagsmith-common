@@ -1,6 +1,6 @@
 [project]
 name = "flagsmith-common"
-version = "1.12.0"
+version = "1.12.1"
 description = "Flagsmith's common library"
 requires-python = ">=3.11,<4.0"
 dependencies = [

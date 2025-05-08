@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [1.12.1](https://github.com/Flagsmith/flagsmith-common/compare/v1.12.0...v1.12.1) (2025-05-06)
+
+
+### Bug Fixes
+
+* metadata-incorrectly-linked-to-entity ([#57](https://github.com/Flagsmith/flagsmith-common/issues/57)) ([707496d](https://github.com/Flagsmith/flagsmith-common/commit/707496da2e3599a8067c2637d8c10566a64d800d))
+
 ## [1.12.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.11.0...v1.12.0) (2025-04-30)
 
 
