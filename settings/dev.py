@@ -62,3 +62,5 @@ TASK_RUN_METHOD = TaskRunMethod.TASK_PROCESSOR
 
 # Avoid models.W042 warnings
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+TASK_PROCESSOR_DATABASES = ["default"]

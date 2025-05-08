@@ -31,8 +31,7 @@ def run_tasks(database: str, num_tasks: int = 1) -> list[TaskRun]:
     if num_tasks < 1:
         raise ValueError("Number of tasks to process must be at least one")
 
-    tasks = list(Task.objects.get_tasks_to_process(database, num_tasks))
-
+    tasks = Task.objects.get_tasks_to_process(database, num_tasks)
     if tasks:
         logger.debug(f"Running {len(tasks)} task(s) from database '{database}'")
 
@@ -55,7 +54,7 @@ def run_tasks(database: str, num_tasks: int = 1) -> list[TaskRun]:
         if task_runs:
             TaskRun.objects.bulk_create(task_runs)
             logger.debug(
-                f"Finished running {len(task_runs)} task(s) from database '{database}'",
+                f"Finished running {len(task_runs)} task(s) from database '{database}'"
             )
 
         return task_runs
@@ -69,9 +68,7 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
     # a problem for now, but we should be mindful of this limitation
     tasks = RecurringTask.objects.get_tasks_to_process(database)
     if tasks:
-        logger.debug(
-            f"Running {len(tasks)} recurring task(s) from database '{database}'",
-        )
+        logger.debug(f"Running {len(tasks)} recurring task(s)")
 
         task_runs = []
 
@@ -99,9 +96,7 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
 
         if task_runs:
             RecurringTaskRun.objects.bulk_create(task_runs)
-            logger.debug(
-                f"Finished running {len(task_runs)} recurring task(s) from database '{database}'",
-            )
+            logger.debug(f"Finished running {len(task_runs)} recurring task(s)")
 
         return task_runs
 

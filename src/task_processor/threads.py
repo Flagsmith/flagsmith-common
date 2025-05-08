@@ -4,6 +4,7 @@ import typing
 from datetime import datetime, timedelta
 from threading import Thread
 
+from django.conf import settings
 from django.db import close_old_connections
 from django.utils import timezone
 
@@ -95,23 +96,33 @@ class TaskRunner(Thread):
             time.sleep(self.sleep_interval_millis / 1000)
 
     def run_iteration(self) -> None:
-        for database in ["default", "task_processor"]:
+        """
+        Consume and execute tasks from the queue, and run recurring tasks
+
+        This method tries to consume tasks from multiple databases as to ensure
+        that any remaining tasks are processed after opting in or out of a
+        separate database setup.
+        """
+        database_is_separate = "task_processor" in settings.TASK_PROCESSOR_DATABASES
+        for database in settings.TASK_PROCESSOR_DATABASES:
             try:
                 run_tasks(database, self.queue_pop_size)
-                run_recurring_tasks(database)
+
+                # Recurring tasks are only run on one database
+                if (database == "default") ^ database_is_separate:
+                    run_recurring_tasks(database)
             except Exception as exception:
                 # To prevent task threads from dying if they get an error retrieving the tasks from the
                 # database this will allow the thread to continue trying to retrieve tasks if it can
                 # successfully re-establish a connection to the database.
                 # TODO: is this also what is causing tasks to get stuck as locked? Can we unlock
                 #  tasks here?
-
+                exception_repr = f"{exception.__class__.__module__}.{repr(exception)}"
                 logger.error(
-                    "Received error retrieving tasks from database '%s': %s.",
-                    database,
-                    repr(exception),
+                    f"Error handling tasks from database '{database}': {exception_repr}",
                     exc_info=exception,
                 )
+
                 close_old_connections()
 
     def stop(self) -> None:

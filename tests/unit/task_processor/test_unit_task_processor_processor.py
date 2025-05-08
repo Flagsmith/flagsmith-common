@@ -432,7 +432,7 @@ def test_run_task_runs_task_and_creates_task_run_object_when_failure(
     assert not task.completed
 
     expected_log_records = [
-        ("DEBUG", "Running 1 task(s)"),
+        ("DEBUG", "Running 1 task(s) from database 'default'"),
         (
             "DEBUG",
             f"Running task {task.task_identifier} id={task.id} args={task.args} kwargs={task.kwargs}",
@@ -441,7 +441,7 @@ def test_run_task_runs_task_and_creates_task_run_object_when_failure(
             "ERROR",
             f"Failed to execute task '{task.task_identifier}', with id {task.id}. Exception: {msg}",
         ),
-        ("DEBUG", "Finished running 1 task(s)"),
+        ("DEBUG", "Finished running 1 task(s) from database 'default'"),
     ]
 
     assert expected_log_records == [
@@ -698,7 +698,7 @@ def test_run_tasks_skips_locked_tasks(
 
     # When
     # we spawn a new thread to run the first task (configured to just sleep)
-    task_runner_thread = Thread(target=run_tasks)
+    task_runner_thread = Thread(target=run_tasks, args=("default",))
     task_runner_thread.start()
 
     # and subsequently attempt to run another task in the main thread
