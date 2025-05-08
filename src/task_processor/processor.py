@@ -27,14 +27,14 @@ logger = logging.getLogger(__name__)
 UNREGISTERED_RECURRING_TASK_GRACE_PERIOD = timedelta(minutes=30)
 
 
-def run_tasks(num_tasks: int = 1) -> list[TaskRun]:
+def run_tasks(database: str, num_tasks: int = 1) -> list[TaskRun]:
     if num_tasks < 1:
         raise ValueError("Number of tasks to process must be at least one")
 
-    tasks = list(Task.objects.get_tasks_to_process(num_tasks))
+    tasks = list(Task.objects.get_tasks_to_process(database, num_tasks))
 
     if tasks:
-        logger.debug(f"Running {len(tasks)} task(s)")
+        logger.debug(f"Running {len(tasks)} task(s) from database '{database}'")
 
         executed_tasks = []
         task_runs = []
@@ -54,20 +54,24 @@ def run_tasks(num_tasks: int = 1) -> list[TaskRun]:
 
         if task_runs:
             TaskRun.objects.bulk_create(task_runs)
-            logger.debug(f"Finished running {len(task_runs)} task(s)")
+            logger.debug(
+                f"Finished running {len(task_runs)} task(s) from database '{database}'",
+            )
 
         return task_runs
 
     return []
 
 
-def run_recurring_tasks() -> list[RecurringTaskRun]:
+def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
     # NOTE: We will probably see a lot of delay in the execution of recurring tasks
     # if the tasks take longer then `run_every` to execute. This is not
     # a problem for now, but we should be mindful of this limitation
-    tasks = RecurringTask.objects.get_tasks_to_process()
+    tasks = RecurringTask.objects.get_tasks_to_process(database)
     if tasks:
-        logger.debug(f"Running {len(tasks)} recurring task(s)")
+        logger.debug(
+            f"Running {len(tasks)} recurring task(s) from database '{database}'",
+        )
 
         task_runs = []
 
@@ -95,7 +99,9 @@ def run_recurring_tasks() -> list[RecurringTaskRun]:
 
         if task_runs:
             RecurringTaskRun.objects.bulk_create(task_runs)
-            logger.debug(f"Finished running {len(task_runs)} recurring task(s)")
+            logger.debug(
+                f"Finished running {len(task_runs)} recurring task(s) from database '{database}'",
+            )
 
         return task_runs
 

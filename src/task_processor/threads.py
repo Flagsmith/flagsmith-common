@@ -95,18 +95,24 @@ class TaskRunner(Thread):
             time.sleep(self.sleep_interval_millis / 1000)
 
     def run_iteration(self) -> None:
-        try:
-            run_tasks(self.queue_pop_size)
-            run_recurring_tasks()
-        except Exception as e:
-            # To prevent task threads from dying if they get an error retrieving the tasks from the
-            # database this will allow the thread to continue trying to retrieve tasks if it can
-            # successfully re-establish a connection to the database.
-            # TODO: is this also what is causing tasks to get stuck as locked? Can we unlock
-            #  tasks here?
+        for database in ["default", "task_processor"]:
+            try:
+                run_tasks(database, self.queue_pop_size)
+                run_recurring_tasks(database)
+            except Exception as exception:
+                # To prevent task threads from dying if they get an error retrieving the tasks from the
+                # database this will allow the thread to continue trying to retrieve tasks if it can
+                # successfully re-establish a connection to the database.
+                # TODO: is this also what is causing tasks to get stuck as locked? Can we unlock
+                #  tasks here?
 
-            logger.error("Received error retrieving tasks: %s.", e, exc_info=e)
-            close_old_connections()
+                logger.error(
+                    "Received error retrieving tasks from database '%s': %s.",
+                    database,
+                    repr(exception),
+                    exc_info=exception,
+                )
+                close_old_connections()
 
     def stop(self) -> None:
         self._stopped = True
