@@ -29,9 +29,17 @@ DATABASES = {
         env(
             "DATABASE_URL",
             default="postgresql://postgres:password@localhost:5432/flagsmith",
-        )
-    )
+        ),
+    ),
+    "task_processor": dj_database_url.parse(
+        env(
+            "TASK_PROCESSOR_DATABASE_URL",
+            default="postgresql://postgres@localhost:5433/postgres",
+        ),
+    ),
 }
+DATABASE_ROUTERS = ["task_processor.routers.TaskProcessorRouter"]
+TASK_PROCESSOR_DATABASES = ["default"]
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
