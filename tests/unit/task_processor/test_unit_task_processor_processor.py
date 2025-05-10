@@ -1,6 +1,5 @@
 import logging
 import time
-import typing
 import uuid
 from datetime import timedelta
 from threading import Thread
@@ -9,6 +8,7 @@ import pytest
 from django.core.cache import cache
 from django.utils import timezone
 from freezegun import freeze_time
+from pytest_django.fixtures import SettingsWrapper
 from pytest_mock import MockerFixture
 
 from common.test_tools import AssertMetricFixture
@@ -37,8 +37,7 @@ DEFAULT_CACHE_VALUE = "bar"
 
 
 @pytest.fixture(autouse=True)
-def reset_cache() -> typing.Generator[None, None, None]:
-    yield
+def reset_cache() -> None:
     cache.clear()
 
 
@@ -73,38 +72,49 @@ def sleep_task(db: None) -> TaskHandler[[int]]:
     return _sleep_task
 
 
+@pytest.mark.django_db(databases=["default", "task_processor"])
 @pytest.mark.task_processor_mode
+@pytest.mark.parametrize(
+    "database",
+    ["default", "task_processor"],
+)
 def test_run_task_runs_task_and_creates_task_run_object_when_success(
+    database: str,
     dummy_task: TaskHandler[[str, str]],
 ) -> None:
     # Given
-    task = Task.create(
-        dummy_task.task_identifier,
-        scheduled_for=timezone.now(),
-    )
-    task.save()
+    task = Task.create(dummy_task.task_identifier, scheduled_for=timezone.now())
+    task.save(using=database)
 
     # When
-    task_runs = run_tasks("default")
+    task_runs = run_tasks(database)
 
     # Then
     assert cache.get(DEFAULT_CACHE_KEY)
 
-    assert len(task_runs) == TaskRun.objects.filter(task=task).count() == 1
+    assert (
+        len(task_runs) == TaskRun.objects.using(database).filter(task=task).count() == 1
+    )
     task_run = task_runs[0]
     assert task_run.result == TaskResult.SUCCESS.value
     assert task_run.started_at
     assert task_run.finished_at
     assert task_run.error_details is None
 
-    task.refresh_from_db()
+    task.refresh_from_db(using=database)
     assert task.completed
 
 
+@pytest.mark.django_db(databases=["default", "task_processor"])
 @pytest.mark.task_processor_mode
+@pytest.mark.parametrize(
+    "database",
+    ["default", "task_processor"],
+)
 def test_run_task_kills_task_after_timeout(
-    sleep_task: TaskHandler[[int]],
     caplog: pytest.LogCaptureFixture,
+    database: str,
+    sleep_task: TaskHandler[[int]],
 ) -> None:
     # Given
     task = Task.create(
@@ -113,13 +123,15 @@ def test_run_task_kills_task_after_timeout(
         args=(1,),
         timeout=timedelta(microseconds=1),
     )
-    task.save()
+    task.save(using=database)
 
     # When
-    task_runs = run_tasks("default")
+    task_runs = run_tasks(database)
 
     # Then
-    assert len(task_runs) == TaskRun.objects.filter(task=task).count() == 1
+    assert (
+        len(task_runs) == TaskRun.objects.using(database).filter(task=task).count() == 1
+    )
     task_run = task_runs[0]
     assert task_run.result == TaskResult.FAILURE.value
     assert task_run.started_at
@@ -127,7 +139,7 @@ def test_run_task_kills_task_after_timeout(
     assert task_run.error_details
     assert "TimeoutError" in task_run.error_details
 
-    task.refresh_from_db()
+    task.refresh_from_db(using=database)
 
     assert task.completed is False
     assert task.num_failures == 1
@@ -139,12 +151,20 @@ def test_run_task_kills_task_after_timeout(
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(databases=["default", "task_processor"])
 @pytest.mark.task_processor_mode
+@pytest.mark.parametrize(
+    "database",
+    ["default", "task_processor"],
+)
 def test_run_recurring_task_kills_task_after_timeout(
     caplog: pytest.LogCaptureFixture,
+    database: str,
+    settings: SettingsWrapper,
 ) -> None:
     # Given
+    settings.TASK_PROCESSOR_DATABASES = [database]
+
     @register_recurring_task(
         run_every=timedelta(seconds=1), timeout=timedelta(microseconds=1)
     )
@@ -157,10 +177,14 @@ def test_run_recurring_task_kills_task_after_timeout(
         task_identifier="test_unit_task_processor_processor._dummy_recurring_task",
     )
     # When
-    task_runs = run_recurring_tasks("default")
+    task_runs = run_recurring_tasks(database)
 
     # Then
-    assert len(task_runs) == RecurringTaskRun.objects.filter(task=task).count() == 1
+    assert (
+        len(task_runs)
+        == RecurringTaskRun.objects.using(database).filter(task=task).count()
+        == 1
+    )
     task_run = task_runs[0]
     assert task_run.result == TaskResult.FAILURE.value
     assert task_run.started_at
@@ -168,7 +192,7 @@ def test_run_recurring_task_kills_task_after_timeout(
     assert task_run.error_details
     assert "TimeoutError" in task_run.error_details
 
-    task.refresh_from_db()
+    task.refresh_from_db(using=database)
 
     assert task.locked_at is None
     assert task.is_locked is False
@@ -177,6 +201,9 @@ def test_run_recurring_task_kills_task_after_timeout(
     assert caplog.records[0].message == (
         f"Failed to execute task '{task.task_identifier}', with id {task.id}. Exception: TimeoutError()"
     )
+
+
+# TODO: Need to parametrize all/most tests below to run on both databases
 
 
 @pytest.mark.django_db

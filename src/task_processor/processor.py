@@ -9,6 +9,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from task_processor import metrics
+from task_processor.managers import TaskManager
 from task_processor.models import (
     AbstractBaseTask,
     RecurringTask,
@@ -31,7 +32,8 @@ def run_tasks(database: str, num_tasks: int = 1) -> list[TaskRun]:
     if num_tasks < 1:
         raise ValueError("Number of tasks to process must be at least one")
 
-    tasks = Task.objects.get_tasks_to_process(database, num_tasks)
+    task_manager: TaskManager = Task.objects.db_manager(database)
+    tasks = task_manager.get_tasks_to_process(num_tasks)
     if tasks:
         logger.debug(f"Running {len(tasks)} task(s) from database '{database}'")
 
@@ -46,13 +48,13 @@ def run_tasks(database: str, num_tasks: int = 1) -> list[TaskRun]:
             task_runs.append(task_run)
 
         if executed_tasks:
-            Task.objects.bulk_update(
+            Task.objects.using(database).bulk_update(
                 executed_tasks,
                 fields=["completed", "num_failures", "is_locked"],
             )
 
         if task_runs:
-            TaskRun.objects.bulk_create(task_runs)
+            TaskRun.objects.using(database).bulk_create(task_runs)
             logger.debug(
                 f"Finished running {len(task_runs)} task(s) from database '{database}'"
             )
@@ -66,7 +68,7 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
     # NOTE: We will probably see a lot of delay in the execution of recurring tasks
     # if the tasks take longer then `run_every` to execute. This is not
     # a problem for now, but we should be mindful of this limitation
-    tasks = RecurringTask.objects.get_tasks_to_process(database)
+    tasks = RecurringTask.objects.db_manager(database).get_tasks_to_process()
     if tasks:
         logger.debug(f"Running {len(tasks)} recurring task(s)")
 
