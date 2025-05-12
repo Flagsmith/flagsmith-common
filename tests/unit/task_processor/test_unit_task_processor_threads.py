@@ -104,26 +104,36 @@ def test_task_runner__single_database___consumes_tasks_from_one_databases(
     ],
 )
 @pytest.mark.parametrize(
-    "setup",
+    "setup, expected_error",
     [
-        {  # Missing router and database
-            "DATABASE_ROUTERS": [],
-            "DATABASES": {"default": "exists but not task processor"},
-        },
-        {  # Missing database
-            "DATABASE_ROUTERS": ["task_processor.routers.TaskProcessorRouter"],
-            "DATABASES": {"default": "exists but not task processor"},
-        },
-        {  # Missing router
-            "DATABASE_ROUTERS": [],
-            "DATABASES": {
-                "default": "hooray",
-                "task_processor": "exists",
+        (
+            {  # Missing router and database
+                "DATABASE_ROUTERS": [],
+                "DATABASES": {"default": "exists but not task processor"},
             },
-        },
+            "DATABASE_ROUTERS must include 'task_processor.routers.TaskProcessorRouter' when using a separate task processor database.",
+        ),
+        (
+            {  # Missing router
+                "DATABASE_ROUTERS": [],
+                "DATABASES": {
+                    "default": "hooray",
+                    "task_processor": "exists",
+                },
+            },
+            "DATABASE_ROUTERS must include 'task_processor.routers.TaskProcessorRouter' when using a separate task processor database.",
+        ),
+        (
+            {  # Missing database
+                "DATABASE_ROUTERS": ["task_processor.routers.TaskProcessorRouter"],
+                "DATABASES": {"default": "exists but not task processor"},
+            },
+            "DATABASES must include 'task_processor' when using a separate task processor database.",
+        ),
     ],
 )
 def test_validates_django_settings_are_compatible_with_multi_database_setup(
+    expected_error: str,
     mocker: MockerFixture,
     settings: SettingsWrapper,
     setup: dict[str, typing.Any],
@@ -140,7 +150,4 @@ def test_validates_django_settings_are_compatible_with_multi_database_setup(
         threads.TaskRunner.run_iteration(task_runner)
 
     # Then
-    assert str(excinfo.value) in [
-        "DATABASE_ROUTERS must include 'task_processor.routers.TaskProcessorRouter' when using a separate task processor database.",
-        "DATABASES must include 'task_processor' when using a separate task processor database.",
-    ]
+    assert str(excinfo.value) == expected_error
