@@ -1,32 +1,34 @@
-# A Compose file with minimal dependencies to be able to run Flagsmith, including its test suite, locally (not in Docker).
+# Minimal dependencies to run Flagsmith non-Dockerized, including its test
+# suite. Currently, settings are analogous to CI for compatibility.
+
+# TODO: Use Docker Compose in CI to run tests.
 
 name: flagsmith
 
 volumes:
-  pg_data:
-  task_processor_pg_data:
+  default-database:
+  task-processor-database:
 
 services:
-  db:
+  default-database:
     image: postgres:15.5-alpine
     restart: unless-stopped
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - default-database:/var/lib/postgresql/data
     ports:
       - 5432:5432
     environment:
-      POSTGRES_DB: flagsmith
-      POSTGRES_PASSWORD: password
+      POSTGRES_HOST_AUTH_METHOD: trust
     healthcheck:
       test: pg_isready -Upostgres
       interval: 1s
       timeout: 30s
 
-  task-processor-db:
+  task-processor-database:
     image: postgres:15.5-alpine
     restart: unless-stopped
     volumes:
-      - task_processor_pg_data:/var/lib/postgresql/data
+      - task-processor-database:/var/lib/postgresql/data
     ports:
       - 5433:5432
     environment:

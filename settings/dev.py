@@ -28,7 +28,7 @@ DATABASES = {
     "default": dj_database_url.parse(
         env(
             "DATABASE_URL",
-            default="postgresql://postgres:password@localhost:5432/flagsmith",
+            default="postgresql://postgres@localhost:5432/postgres",
         ),
     ),
     "task_processor": dj_database_url.parse(
