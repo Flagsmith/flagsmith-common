@@ -9,7 +9,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from task_processor import metrics
-from task_processor.managers import TaskManager
+from task_processor.managers import RecurringTaskManager, TaskManager
 from task_processor.models import (
     AbstractBaseTask,
     RecurringTask,
@@ -68,7 +68,8 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
     # NOTE: We will probably see a lot of delay in the execution of recurring tasks
     # if the tasks take longer then `run_every` to execute. This is not
     # a problem for now, but we should be mindful of this limitation
-    tasks = RecurringTask.objects.db_manager(database).get_tasks_to_process()
+    task_manager: RecurringTaskManager = RecurringTask.objects.db_manager(database)
+    tasks = task_manager.get_tasks_to_process()
     if tasks:
         logger.debug(f"Running {len(tasks)} recurring task(s)")
 
