@@ -51,5 +51,8 @@ jobs:
 
       - name: Upload Coverage
         uses: codecov/codecov-action@v5
+        env:
+          PYTHON: ${{ matrix.python-version }}
         with:
           use_oidc: true
+          env_vars: PYTHON
