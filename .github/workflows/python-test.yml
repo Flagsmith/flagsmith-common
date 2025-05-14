@@ -45,4 +45,11 @@ jobs:
         run: make typecheck
 
       - name: Run Tests
+        env:
+          DOTENV_OVERRIDE_FILE: .env-ci
         run: make test
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v5
+        with:
+          use_oidc: true

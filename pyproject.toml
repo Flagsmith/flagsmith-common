@@ -84,6 +84,14 @@ types-simplejson = "^3.20.0.20250326"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_also = [
+    'if TYPE_CHECKING:',
+    'if typing.TYPE_CHECKING:',
+    '@(abc\\.)?abstractmethod',
+]
+
 [tool.pytest.ini_options]
 addopts = ['--ds=settings.dev', '-vvvv', '-p', 'no:warnings']
 console_output_style = 'count'

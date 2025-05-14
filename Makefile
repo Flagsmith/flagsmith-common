@@ -1,9 +1,15 @@
 .EXPORT_ALL_VARIABLES:
 
+DOTENV_OVERRIDE_FILE ?= .env
+
 POETRY_VERSION ?= 2.1.2
 
 COMPOSE_FILE ?= docker/docker-compose.local.yml
 COMPOSE_PROJECT_NAME ?= flagsmith-common
+
+RBAC_REVISION ?= v0.11.2
+
+-include $(DOTENV_OVERRIDE_FILE)
 
 .PHONY: install-pip
 install-pip:
