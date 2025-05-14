@@ -7,6 +7,10 @@ jobs:
   lint-test:
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write
+      contents: read
+
     strategy:
       max-parallel: 2
       matrix:
