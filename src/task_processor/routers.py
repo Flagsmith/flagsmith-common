@@ -15,7 +15,7 @@ class TaskProcessorRouter:
 
     def db_for_read(self, model: type[Model], **hints: None) -> str | None:
         """
-        If enabled, route "task_processor" models to the a se database
+        If enabled, route read operations to the task processor database
         """
         if not self.is_enabled:
             return None
@@ -27,7 +27,7 @@ class TaskProcessorRouter:
 
     def db_for_write(self, model: type[Model], **hints: None) -> str | None:
         """
-        Attempts to write task processor models go to 'task_processor' database.
+        If enabled, route write operations to the task processor database
         """
         if not self.is_enabled:
             return None
@@ -39,8 +39,7 @@ class TaskProcessorRouter:
 
     def allow_relation(self, obj1: Model, obj2: Model, **hints: None) -> bool | None:
         """
-        Relations between objects are allowed if both objects are
-        in the task processor database.
+        If enabled, allow relations between task processor models
         """
         if not self.is_enabled:
             return None
@@ -62,11 +61,16 @@ class TaskProcessorRouter:
         **hints: None,
     ) -> bool | None:
         """
-        Allow migrations for task processor models to run in both databases
+        If enabled, allow migrations to hit both databases
 
-        NOTE: Even if, from a fresh install, the task processor tables are not
-        required in both databases, this is required to allow for easier
-        transition between a single database and a multi-database setup.
+        NOTE: We run migrations on both databases because:
+
+        - The `task_processor` separate database was only introduced later in
+          history, and migrating to it does not delete old data from `default`.
+          We'd rather keep data in `default` consistent across time rather than
+          leaving behind possibly inconsistent data.
+        - We want to make it easier to migrate to the new database, _or back_
+          to a single database setup if needed. Running DDL consistently helps.
         """
         if not self.is_enabled:
             return None
