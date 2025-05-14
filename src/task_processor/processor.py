@@ -80,10 +80,9 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
                 # This is necessary to ensure that old instances of the task processor,
                 # which may still be running during deployment, do not remove tasks added by new instances.
                 # Reference: https://github.com/Flagsmith/flagsmith/issues/2551
-                if (
-                    timezone.now() - task.created_at
-                ) > UNREGISTERED_RECURRING_TASK_GRACE_PERIOD:
-                    task.delete()
+                task_age = timezone.now() - task.created_at
+                if task_age > UNREGISTERED_RECURRING_TASK_GRACE_PERIOD:
+                    task.delete(using=database)
                 continue
 
             if task.should_execute:
@@ -95,10 +94,13 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
 
         # update all tasks that were not deleted
         to_update = [task for task in tasks if task.id]
-        RecurringTask.objects.bulk_update(to_update, fields=["is_locked", "locked_at"])
+        RecurringTask.objects.using(database).bulk_update(
+            to_update,
+            fields=["is_locked", "locked_at"],
+        )
 
         if task_runs:
-            RecurringTaskRun.objects.bulk_create(task_runs)
+            RecurringTaskRun.objects.using(database).bulk_create(task_runs)
             logger.debug(f"Finished running {len(task_runs)} recurring task(s)")
 
         return task_runs
