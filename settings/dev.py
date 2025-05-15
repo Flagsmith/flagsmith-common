@@ -38,7 +38,6 @@ DATABASES = {
         ),
     ),
 }
-DATABASE_ROUTERS = ["task_processor.routers.TaskProcessorRouter"]
 TASK_PROCESSOR_DATABASES = ["default"]
 INSTALLED_APPS = [
     "django.contrib.auth",

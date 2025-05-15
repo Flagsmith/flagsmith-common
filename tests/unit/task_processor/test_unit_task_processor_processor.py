@@ -72,12 +72,8 @@ def sleep_task(db: None) -> TaskHandler[[int]]:
     return _sleep_task
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_task_runs_task_and_creates_task_run_object_when_success(
     database: str,
     dummy_task: TaskHandler[[str, str]],
@@ -105,12 +101,8 @@ def test_run_task_runs_task_and_creates_task_run_object_when_success(
     assert task.completed
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_task_kills_task_after_timeout(
     caplog: pytest.LogCaptureFixture,
     database: str,
@@ -151,12 +143,8 @@ def test_run_task_kills_task_after_timeout(
     )
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_recurring_task_kills_task_after_timeout(
     caplog: pytest.LogCaptureFixture,
     database: str,
@@ -169,7 +157,6 @@ def test_run_recurring_task_kills_task_after_timeout(
     def _dummy_recurring_task() -> None:
         time.sleep(1)
 
-    settings.TASK_PROCESSOR_DATABASES = [database]
     initialise()
 
     task = RecurringTask.objects.using(database).get(
@@ -202,12 +189,8 @@ def test_run_recurring_task_kills_task_after_timeout(
     )
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_recurring_tasks_runs_task_and_creates_recurring_task_run_object_when_success(
     database: str,
     settings: SettingsWrapper,
@@ -217,7 +200,6 @@ def test_run_recurring_tasks_runs_task_and_creates_recurring_task_run_object_whe
     def _dummy_recurring_task() -> None:
         cache.set(DEFAULT_CACHE_KEY, DEFAULT_CACHE_VALUE)
 
-    settings.TASK_PROCESSOR_DATABASES = [database]
     initialise()
 
     task = RecurringTask.objects.using(database).get(
@@ -241,12 +223,8 @@ def test_run_recurring_tasks_runs_task_and_creates_recurring_task_run_object_whe
     assert task_run.error_details is None
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_recurring_tasks_runs_locked_task_after_timeout(
     database: str,
     settings: SettingsWrapper,
@@ -256,7 +234,6 @@ def test_run_recurring_tasks_runs_locked_task_after_timeout(
     def _dummy_recurring_task() -> None:
         cache.set(DEFAULT_CACHE_KEY, DEFAULT_CACHE_VALUE)
 
-    settings.TASK_PROCESSOR_DATABASES = [database]
     initialise()
 
     task = RecurringTask.objects.using(database).get(
@@ -290,12 +267,8 @@ def test_run_recurring_tasks_runs_locked_task_after_timeout(
     assert task.locked_at is None
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"], transaction=True)
+@pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_recurring_tasks_multiple_runs(
     database: str,
     settings: SettingsWrapper,
@@ -306,7 +279,6 @@ def test_run_recurring_tasks_multiple_runs(
         val = cache.get(DEFAULT_CACHE_KEY, 0) + 1
         cache.set(DEFAULT_CACHE_KEY, val)
 
-    settings.TASK_PROCESSOR_DATABASES = [database]
     initialise()
 
     task = RecurringTask.objects.using(database).get(
@@ -347,12 +319,8 @@ def test_run_recurring_tasks_multiple_runs(
         assert task_run.error_details is None
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"], transaction=True)
+@pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_recurring_tasks_loops_over_all_tasks(
     database: str,
     settings: SettingsWrapper,
@@ -370,7 +338,6 @@ def test_run_recurring_tasks_loops_over_all_tasks(
     def _dummy_recurring_task_3() -> None:
         pass
 
-    settings.TASK_PROCESSOR_DATABASES = [database]
     initialise()
 
     # When, we call run_recurring_tasks in a loop few times
@@ -390,12 +357,8 @@ def test_run_recurring_tasks_loops_over_all_tasks(
         )
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_recurring_tasks_only_executes_tasks_after_interval_set_by_run_every(
     database: str,
     settings: SettingsWrapper,
@@ -406,7 +369,6 @@ def test_run_recurring_tasks_only_executes_tasks_after_interval_set_by_run_every
         val = cache.get(DEFAULT_CACHE_KEY, 0) + 1
         cache.set(DEFAULT_CACHE_KEY, val)
 
-    settings.TASK_PROCESSOR_DATABASES = [database]
     initialise()
 
     task = RecurringTask.objects.using(database).get(
@@ -424,12 +386,8 @@ def test_run_recurring_tasks_only_executes_tasks_after_interval_set_by_run_every
     assert RecurringTaskRun.objects.using(database).filter(task=task).count() == 1
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_recurring_tasks_does_nothing_if_unregistered_task_is_new(
     database: str,
     settings: SettingsWrapper,
@@ -441,7 +399,6 @@ def test_run_recurring_tasks_does_nothing_if_unregistered_task_is_new(
     def _a_task() -> None:
         pass
 
-    settings.TASK_PROCESSOR_DATABASES = [database]
     initialise()
 
     # now - remove the task from the registry
@@ -461,12 +418,8 @@ def test_run_recurring_tasks_does_nothing_if_unregistered_task_is_new(
     )
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_recurring_tasks_deletes_the_task_if_unregistered_task_is_old(
     database: str,
     settings: SettingsWrapper,
@@ -483,7 +436,6 @@ def test_run_recurring_tasks_deletes_the_task_if_unregistered_task_is_old(
         def _a_task() -> None:
             pass
 
-        settings.TASK_PROCESSOR_DATABASES = [database]
         initialise()
 
     # now - remove the task from the registry
@@ -501,12 +453,8 @@ def test_run_recurring_tasks_deletes_the_task_if_unregistered_task_is_old(
     )
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_task_runs_task_and_creates_task_run_object_when_failure(
     caplog: pytest.LogCaptureFixture,
     database: str,
@@ -557,12 +505,8 @@ def test_run_task_runs_task_and_creates_task_run_object_when_failure(
     ]
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_task_runs_failed_task_again(
     database: str,
     raise_exception_task: TaskHandler[[str]],
@@ -597,12 +541,8 @@ def test_run_task_runs_failed_task_again(
     assert task.is_locked is False
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_recurring_task_runs_task_and_creates_recurring_task_run_object_when_failure(
     database: str,
 ) -> None:
@@ -618,7 +558,7 @@ def test_run_recurring_task_runs_task_and_creates_recurring_task_run_object_when
     task = RecurringTask.objects.get(task_identifier=task_identifier)
 
     # When
-    task_runs = run_recurring_tasks("default")
+    task_runs = run_recurring_tasks(database)
 
     # Then
     assert len(task_runs) == RecurringTaskRun.objects.filter(task=task).count() == 1
@@ -629,12 +569,8 @@ def test_run_recurring_task_runs_task_and_creates_recurring_task_run_object_when
     assert task_run.error_details is not None
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_task_does_nothing_if_no_tasks(database: str) -> None:
     # Given - no tasks
     pass
@@ -647,12 +583,8 @@ def test_run_task_does_nothing_if_no_tasks(database: str) -> None:
     assert not TaskRun.objects.using(database).exists()
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"], transaction=True)
+@pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_task_runs_tasks_in_correct_priority(
     database: str,
     dummy_task: TaskHandler[[str, str]],
@@ -694,11 +626,7 @@ def test_run_task_runs_tasks_in_correct_priority(
     assert task_runs_3[0].task == task_2
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
+@pytest.mark.multi_database
 def test_run_tasks__fails_if_not_in_task_processor_mode(
     database: str,
     dummy_task: TaskHandler[[str, str]],
@@ -715,12 +643,8 @@ def test_run_tasks__fails_if_not_in_task_processor_mode(
         run_tasks(database)
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"], transaction=True)
+@pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_tasks__expected_metrics(
     assert_metric: AssertMetricFixture,
     database: str,
@@ -734,7 +658,6 @@ def test_run_tasks__expected_metrics(
     def _fake_recurring_task() -> None:
         pass
 
-    settings.TASK_PROCESSOR_DATABASES = [database]
     initialise()
 
     dummy_task_identifier = dummy_task.task_identifier
@@ -815,12 +738,8 @@ def test_run_tasks__expected_metrics(
     )
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"], transaction=True)
+@pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_tasks_skips_locked_tasks(
     database: str,
     dummy_task: TaskHandler[[str, str]],
@@ -863,12 +782,8 @@ def test_run_tasks_skips_locked_tasks(
     task_runner_thread.join()
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_run_more_than_one_task(
     database: str,
     dummy_task: TaskHandler[[str, str]],
@@ -905,12 +820,8 @@ def test_run_more_than_one_task(
         assert task.completed
 
 
-@pytest.mark.django_db(databases=["default", "task_processor"])
+@pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-@pytest.mark.parametrize(
-    "database",
-    ["default", "task_processor"],
-)
 def test_recurring_tasks_are_unlocked_if_picked_up_but_not_executed(
     database: str,
     settings: SettingsWrapper,
@@ -920,7 +831,6 @@ def test_recurring_tasks_are_unlocked_if_picked_up_but_not_executed(
     def my_task() -> None:
         pass
 
-    settings.TASK_PROCESSOR_DATABASES = [database]
     initialise()
 
     recurring_task = RecurringTask.objects.using(database).get(

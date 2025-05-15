@@ -19,6 +19,7 @@ services:
       - 5432:5432
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
+      TZ: UTC
     healthcheck:
       test: pg_isready -Upostgres
       interval: 1s
@@ -33,6 +34,7 @@ services:
       - 5433:5432
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
+      TZ: UTC
     healthcheck:
       test: pg_isready -Upostgres
       interval: 1s

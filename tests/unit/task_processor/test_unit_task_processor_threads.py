@@ -70,14 +70,13 @@ def test_task_runner__multi_database___consumes_tasks_from_multiple_databases(
     ]
 
 
-@pytest.mark.parametrize("database", ["default", "task_processor"])
+@pytest.mark.multi_database
 def test_task_runner__single_database___consumes_tasks_from_one_databases(
     mocker: MockerFixture,
     settings: SettingsWrapper,
     database: str,
 ) -> None:
     # Given
-    settings.TASK_PROCESSOR_DATABASES = [database]
     run_tasks = mocker.patch.object(threads, "run_tasks")
     run_recurring_tasks = mocker.patch.object(threads, "run_recurring_tasks")
     task_runner = mocker.Mock()
