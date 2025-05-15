@@ -2,7 +2,7 @@
 
 DOTENV_OVERRIDE_FILE ?= .env
 
-POETRY_VERSION ?= 2.1.2
+POETRY_VERSION ?= 2.1.3
 
 COMPOSE_FILE ?= docker/docker-compose.local.yml
 COMPOSE_PROJECT_NAME ?= flagsmith-common
