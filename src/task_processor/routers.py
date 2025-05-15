@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Model
 
 
@@ -8,10 +9,17 @@ class TaskProcessorRouter:
 
     route_app_labels = ["task_processor"]
 
+    @property
+    def is_enabled(self) -> bool:
+        return "task_processor" in settings.TASK_PROCESSOR_DATABASES
+
     def db_for_read(self, model: type[Model], **hints: None) -> str | None:
         """
         If enabled, route read operations to the task processor database
         """
+        if not self.is_enabled:
+            return None
+
         if model._meta.app_label in self.route_app_labels:
             return "task_processor"
 
@@ -21,6 +29,9 @@ class TaskProcessorRouter:
         """
         If enabled, route write operations to the task processor database
         """
+        if not self.is_enabled:
+            return None
+
         if model._meta.app_label in self.route_app_labels:
             return "task_processor"
 
@@ -30,6 +41,9 @@ class TaskProcessorRouter:
         """
         If enabled, allow relations between task processor models
         """
+        if not self.is_enabled:
+            return None
+
         both_objects_from_task_processor = (
             obj1._meta.app_label in self.route_app_labels
             and obj2._meta.app_label in self.route_app_labels
@@ -58,6 +72,9 @@ class TaskProcessorRouter:
         - We want to make it easier to migrate to the new database, _or back_
           to a single database setup if needed. Running DDL consistently helps.
         """
+        if not self.is_enabled:
+            return None
+
         if app_label in self.route_app_labels:
             return db in ["default", "task_processor"]
 
