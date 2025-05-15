@@ -1,5 +1,4 @@
 import logging
-import typing
 
 import pytest
 from django.db import DatabaseError
@@ -93,61 +92,3 @@ def test_task_runner__single_database___consumes_tasks_from_one_databases(
     assert run_recurring_tasks.call_args_list == [
         mocker.call(database),
     ]
-
-
-@pytest.mark.parametrize(
-    "task_processor_databases",
-    [
-        ["default", "task_processor"],  # Default mode (try and consume remaining tasks)
-        ["task_processor", "default"],  # Opt-out mode (try and consume remaining tasks)
-        ["task_processor"],  # Single database mode
-    ],
-)
-@pytest.mark.parametrize(
-    "setup, expected_error",
-    [
-        (
-            {  # Missing router and database
-                "DATABASE_ROUTERS": [],
-                "DATABASES": {"default": "exists but not task processor"},
-            },
-            "DATABASE_ROUTERS must include 'task_processor.routers.TaskProcessorRouter' when using a separate task processor database.",
-        ),
-        (
-            {  # Missing router
-                "DATABASE_ROUTERS": [],
-                "DATABASES": {
-                    "default": "hooray",
-                    "task_processor": "exists",
-                },
-            },
-            "DATABASE_ROUTERS must include 'task_processor.routers.TaskProcessorRouter' when using a separate task processor database.",
-        ),
-        (
-            {  # Missing database
-                "DATABASE_ROUTERS": ["task_processor.routers.TaskProcessorRouter"],
-                "DATABASES": {"default": "exists but not task processor"},
-            },
-            "DATABASES must include 'task_processor' when using a separate task processor database.",
-        ),
-    ],
-)
-def test_validates_django_settings_are_compatible_with_multi_database_setup(
-    expected_error: str,
-    mocker: MockerFixture,
-    settings: SettingsWrapper,
-    setup: dict[str, typing.Any],
-    task_processor_databases: list[str],
-) -> None:
-    # Given
-    settings.TASK_PROCESSOR_DATABASES = task_processor_databases
-    settings.DATABASE_ROUTERS = setup["DATABASE_ROUTERS"]
-    settings.DATABASES = setup["DATABASES"]
-    task_runner = mocker.Mock()
-
-    # When
-    with pytest.raises(AssertionError) as excinfo:
-        threads.TaskRunner.run_iteration(task_runner)
-
-    # Then
-    assert str(excinfo.value) == expected_error

@@ -104,17 +104,6 @@ class TaskRunner(Thread):
         separate database setup.
         """
         database_is_separate = "task_processor" in settings.TASK_PROCESSOR_DATABASES
-        if database_is_separate:
-            assert (
-                "task_processor.routers.TaskProcessorRouter"
-                in settings.DATABASE_ROUTERS
-            ), (
-                "DATABASE_ROUTERS must include 'task_processor.routers.TaskProcessorRouter' "
-                "when using a separate task processor database."
-            )  # This is for our own sanity
-            assert "task_processor" in settings.DATABASES, (
-                "DATABASES must include 'task_processor' when using a separate task processor database."
-            )  # ¯\_(ツ)_/¯ One has to read the documentation and fix it: https://docs.flagsmith.com/deployment/configuration/task-processor
 
         for database in settings.TASK_PROCESSOR_DATABASES:
             try:
