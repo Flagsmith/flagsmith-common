@@ -116,8 +116,6 @@ class TaskRunner(Thread):
                 # To prevent task threads from dying if they get an error retrieving the tasks from the
                 # database this will allow the thread to continue trying to retrieve tasks if it can
                 # successfully re-establish a connection to the database.
-                # TODO: is this also what is causing tasks to get stuck as locked? Can we unlock
-                #  tasks here?
                 exception_repr = f"{exception.__class__.__module__}.{repr(exception)}"
                 logger.error(
                     f"Error handling tasks from database '{database}': {exception_repr}",
