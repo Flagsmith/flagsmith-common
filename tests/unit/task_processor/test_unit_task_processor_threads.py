@@ -72,9 +72,9 @@ def test_task_runner__multi_database___consumes_tasks_from_multiple_databases(
 
 @pytest.mark.multi_database
 def test_task_runner__single_database___consumes_tasks_from_one_databases(
+    current_database: str,
     mocker: MockerFixture,
     settings: SettingsWrapper,
-    database: str,
 ) -> None:
     # Given
     run_tasks = mocker.patch.object(threads, "run_tasks")
@@ -86,8 +86,8 @@ def test_task_runner__single_database___consumes_tasks_from_one_databases(
 
     # Then
     assert run_tasks.call_args_list == [
-        mocker.call(database, task_runner.queue_pop_size),
+        mocker.call(current_database, task_runner.queue_pop_size),
     ]
     assert run_recurring_tasks.call_args_list == [
-        mocker.call(database),
+        mocker.call(current_database),
     ]

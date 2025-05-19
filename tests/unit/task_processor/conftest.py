@@ -11,7 +11,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     # Parametrize marked tests to run against both databases
     if marker := metafunc.definition.get_closest_marker("multi_database"):
         metafunc.parametrize(
-            "database",
+            "current_database",
             [
                 pytest.param(
                     database,
@@ -24,7 +24,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 
 
 @pytest.fixture
-def database(
+def current_database(
     request: pytest.FixtureRequest,
     settings: SettingsWrapper,
 ) -> str:
