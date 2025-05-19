@@ -2,6 +2,19 @@
 
 <a name="v1.5.2"></a>
 
+## [1.13.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.12.1...v1.13.0) (2025-05-19)
+
+
+### CI
+
+* Add test coverage ([#73](https://github.com/Flagsmith/flagsmith-common/issues/73)) ([1cac2c9](https://github.com/Flagsmith/flagsmith-common/commit/1cac2c951b3bb57f44251d729d8090114d217758))
+* pre-commit autoupdate ([#69](https://github.com/Flagsmith/flagsmith-common/issues/69)) ([df9f9ee](https://github.com/Flagsmith/flagsmith-common/commit/df9f9ee90e949f99ddc28ada10d7d20e278dd9a3))
+
+
+### Features
+
+* Separate task processor database ([#68](https://github.com/Flagsmith/flagsmith-common/issues/68)) ([fd2373e](https://github.com/Flagsmith/flagsmith-common/commit/fd2373e2043d1131ac5854fb018547784211126a))
+
 ## [1.12.1](https://github.com/Flagsmith/flagsmith-common/compare/v1.12.0...v1.12.1) (2025-05-06)
 
 
