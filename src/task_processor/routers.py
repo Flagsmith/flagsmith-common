@@ -9,27 +9,18 @@ class TaskProcessorRouter:
     route_app_labels = ["task_processor"]
 
     def db_for_read(self, model: type[Model], **hints: None) -> str | None:
-        """
-        If enabled, route read operations to the task processor database
-        """
         if model._meta.app_label in self.route_app_labels:
             return "task_processor"
 
         return None
 
     def db_for_write(self, model: type[Model], **hints: None) -> str | None:
-        """
-        If enabled, route write operations to the task processor database
-        """
         if model._meta.app_label in self.route_app_labels:
             return "task_processor"
 
         return None
 
     def allow_relation(self, obj1: Model, obj2: Model, **hints: None) -> bool | None:
-        """
-        If enabled, allow relations between task processor models
-        """
         both_objects_from_task_processor = (
             obj1._meta.app_label in self.route_app_labels
             and obj2._meta.app_label in self.route_app_labels
@@ -47,7 +38,7 @@ class TaskProcessorRouter:
         **hints: None,
     ) -> bool | None:
         """
-        If enabled, allow migrations to hit both databases
+        Allow migrations to hit BOTH databases
 
         NOTE: We run migrations on both databases because:
 
