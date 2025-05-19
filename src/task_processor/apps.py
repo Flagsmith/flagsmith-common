@@ -10,6 +10,9 @@ class TaskProcessorAppConfig(AppConfig):
     name = "task_processor"
 
     def ready(self) -> None:
+        if settings.TASK_RUN_METHOD != TaskRunMethod.TASK_PROCESSOR:
+            return
+
         self._validate_database_settings()
         self._register_health_check()
 
@@ -20,9 +23,6 @@ class TaskProcessorAppConfig(AppConfig):
         if not settings.ENABLE_TASK_PROCESSOR_HEALTH_CHECK:
             return
 
-        if settings.TASK_RUN_METHOD != TaskRunMethod.TASK_PROCESSOR:
-            return
-
         from .health import TaskProcessorHealthCheckBackend
 
         plugin_dir.register(TaskProcessorHealthCheckBackend)
@@ -31,9 +31,6 @@ class TaskProcessorAppConfig(AppConfig):
         """
         Validate that multi-database is setup correctly
         """
-        if settings.TASK_RUN_METHOD != TaskRunMethod.TASK_PROCESSOR:
-            return
-
         if "task_processor" not in settings.TASK_PROCESSOR_DATABASES:
             return  # Not using a separate database
 
