@@ -39,10 +39,8 @@ class TaskProcessorAppConfig(AppConfig):
                 "DATABASES must include 'task_processor' when using a separate task processor database."
             )
 
-        if (
-            "task_processor.routers.TaskProcessorRouter"
-            not in settings.DATABASE_ROUTERS
-        ):
+        router_name = "task_processor.routers.TaskProcessorRouter"
+        if router_name not in settings.DATABASE_ROUTERS:
             raise ImproperlyConfigured(
                 "DATABASE_ROUTERS must include 'task_processor.routers.TaskProcessorRouter' "
                 "when using a separate task processor database."

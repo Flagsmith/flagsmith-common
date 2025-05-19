@@ -6,6 +6,52 @@ from pytest_django.fixtures import SettingsWrapper
 from pytest_mock import MockerFixture
 
 from task_processor import apps
+from task_processor.health import TaskProcessorHealthCheckBackend
+from task_processor.task_run_method import TaskRunMethod
+
+
+def test_skips_validation_if_task_run_method_is_not_task_processor(
+    mocker: MockerFixture,
+    settings: SettingsWrapper,
+) -> None:
+    # Given
+    settings.TASK_RUN_METHOD = TaskRunMethod.SYNCHRONOUSLY
+    task_processor_app = mocker.Mock()
+
+    # When
+    apps.TaskProcessorAppConfig.ready(task_processor_app)
+
+    # Then
+    task_processor_app._validate_database_settings.assert_not_called()
+    task_processor_app._register_health_check.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "enabled, expected_call",
+    [
+        (True, ((TaskProcessorHealthCheckBackend,), {})),
+        (False, None),
+    ],
+)
+def test_registers_health_check_if_enabled(
+    enabled: bool,
+    mocker: MockerFixture,
+    expected_call: tuple[typing.Any, ...],
+    settings: SettingsWrapper,
+) -> None:
+    # Given
+    settings.TASK_RUN_METHOD = TaskRunMethod.TASK_PROCESSOR
+    settings.ENABLE_TASK_PROCESSOR_HEALTH_CHECK = enabled
+    plugin_dir = mocker.patch.object(apps, "plugin_dir")
+    task_processor_app = mocker.Mock()
+
+    # When
+    apps.TaskProcessorAppConfig.ready(task_processor_app)
+    apps.TaskProcessorAppConfig._register_health_check(task_processor_app)
+
+    # Then
+    task_processor_app._register_health_check.assert_called_once_with()
+    assert plugin_dir.register.call_args == expected_call
 
 
 @pytest.mark.parametrize(
