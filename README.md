@@ -1,4 +1,7 @@
 # flagsmith-common
+
+[![Coverage](https://codecov.io/gh/Flagsmith/flagsmith-common/graph/badge.svg?token=L3OGOXH86K)](https://codecov.io/gh/Flagsmith/flagsmith-common)
+
 Flagsmith's common library
 
 ### Development Setup
