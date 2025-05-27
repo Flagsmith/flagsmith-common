@@ -49,15 +49,15 @@ make install-packages opts="--extras 'feature1 feature2'"
 
 #### Installation
 
-1. To make use of the `test_tools` Pytest plugin, install the packages with the `test-tools` extra, e.g. `pip install flagsmith-common[test-tools]`.
+1. As a dev dependency, install the package with the `test-tools` extra, e.g. `poetry add --G dev flagsmith-common[test-tools]`. This will enable the Pytest fixtures. Skipping this step will make Pytest collection fail due to missing dependencies.
 
 2. Make sure `"common.core"` is in the `INSTALLED_APPS` of your settings module.
 This enables the `manage.py flagsmith` commands.
 
-3. Add `"common.gunicorn.middleware.RouteLoggerMiddleware"` to `MIDDLEWARE` in your settings module.
+1. Add `"common.gunicorn.middleware.RouteLoggerMiddleware"` to `MIDDLEWARE` in your settings module.
 This enables the `route` label for Prometheus HTTP metrics.
 
-4. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
+1. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
 
 #### Test tools
 
