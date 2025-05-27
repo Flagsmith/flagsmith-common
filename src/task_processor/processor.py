@@ -9,6 +9,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from task_processor import metrics
+from task_processor.managers import RecurringTaskManager, TaskManager
 from task_processor.models import (
     AbstractBaseTask,
     RecurringTask,
@@ -27,14 +28,14 @@ logger = logging.getLogger(__name__)
 UNREGISTERED_RECURRING_TASK_GRACE_PERIOD = timedelta(minutes=30)
 
 
-def run_tasks(num_tasks: int = 1) -> list[TaskRun]:
+def run_tasks(database: str, num_tasks: int = 1) -> list[TaskRun]:
     if num_tasks < 1:
         raise ValueError("Number of tasks to process must be at least one")
 
-    tasks = Task.objects.get_tasks_to_process(num_tasks)
-
+    task_manager: TaskManager = Task.objects.db_manager(database)
+    tasks = task_manager.get_tasks_to_process(num_tasks)
     if tasks:
-        logger.debug(f"Running {len(tasks)} task(s)")
+        logger.debug(f"Running {len(tasks)} task(s) from database '{database}'")
 
         executed_tasks = []
         task_runs = []
@@ -47,25 +48,28 @@ def run_tasks(num_tasks: int = 1) -> list[TaskRun]:
             task_runs.append(task_run)
 
         if executed_tasks:
-            Task.objects.bulk_update(
+            Task.objects.using(database).bulk_update(
                 executed_tasks,
                 fields=["completed", "num_failures", "is_locked"],
             )
 
         if task_runs:
-            TaskRun.objects.bulk_create(task_runs)
-            logger.debug(f"Finished running {len(task_runs)} task(s)")
+            TaskRun.objects.using(database).bulk_create(task_runs)
+            logger.debug(
+                f"Finished running {len(task_runs)} task(s) from database '{database}'"
+            )
 
         return task_runs
 
     return []
 
 
-def run_recurring_tasks() -> list[RecurringTaskRun]:
+def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
     # NOTE: We will probably see a lot of delay in the execution of recurring tasks
     # if the tasks take longer then `run_every` to execute. This is not
     # a problem for now, but we should be mindful of this limitation
-    tasks = RecurringTask.objects.get_tasks_to_process()
+    task_manager: RecurringTaskManager = RecurringTask.objects.db_manager(database)
+    tasks = task_manager.get_tasks_to_process()
     if tasks:
         logger.debug(f"Running {len(tasks)} recurring task(s)")
 
@@ -76,10 +80,9 @@ def run_recurring_tasks() -> list[RecurringTaskRun]:
                 # This is necessary to ensure that old instances of the task processor,
                 # which may still be running during deployment, do not remove tasks added by new instances.
                 # Reference: https://github.com/Flagsmith/flagsmith/issues/2551
-                if (
-                    timezone.now() - task.created_at
-                ) > UNREGISTERED_RECURRING_TASK_GRACE_PERIOD:
-                    task.delete()
+                task_age = timezone.now() - task.created_at
+                if task_age > UNREGISTERED_RECURRING_TASK_GRACE_PERIOD:
+                    task.delete(using=database)
                 continue
 
             if task.should_execute:
@@ -91,10 +94,13 @@ def run_recurring_tasks() -> list[RecurringTaskRun]:
 
         # update all tasks that were not deleted
         to_update = [task for task in tasks if task.id]
-        RecurringTask.objects.bulk_update(to_update, fields=["is_locked", "locked_at"])
+        RecurringTask.objects.using(database).bulk_update(
+            to_update,
+            fields=["is_locked", "locked_at"],
+        )
 
         if task_runs:
-            RecurringTaskRun.objects.bulk_create(task_runs)
+            RecurringTaskRun.objects.using(database).bulk_create(task_runs)
             logger.debug(f"Finished running {len(task_runs)} recurring task(s)")
 
         return task_runs

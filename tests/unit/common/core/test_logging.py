@@ -1,6 +1,5 @@
 import json
 import logging
-import logging.config
 import os
 
 import pytest
@@ -8,7 +7,7 @@ import pytest
 from common.core.logging import JsonFormatter
 
 
-@pytest.mark.freeze_time("2023-12-08T06:05:47.320000+00:00")
+@pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
 def test_json_formatter__outputs_expected(
     caplog: pytest.LogCaptureFixture,
     request: pytest.FixtureRequest,
@@ -25,7 +24,7 @@ def test_json_formatter__outputs_expected(
     expected_tb_string = (
         "Traceback (most recent call last):\n"
         f'  File "{expected_module_path}",'
-        " line 34, in _log_traceback\n"
+        " line 33, in _log_traceback\n"
         "    raise Exception()\nException"
     )
 
@@ -44,7 +43,7 @@ def test_json_formatter__outputs_expected(
         {
             "levelname": "INFO",
             "message": "hello arg1, 22",
-            "timestamp": "2023-12-08 06:05:47,319",
+            "timestamp": "2023-12-08 06:05:47,000",
             "logger_name": "test_json_formatter__outputs_expected",
             "pid": expected_pid,
             "thread_name": "MainThread",
@@ -52,7 +51,7 @@ def test_json_formatter__outputs_expected(
         {
             "levelname": "ERROR",
             "message": "this is an error",
-            "timestamp": "2023-12-08 06:05:47,319",
+            "timestamp": "2023-12-08 06:05:47,000",
             "logger_name": "test_json_formatter__outputs_expected",
             "pid": expected_pid,
             "thread_name": "MainThread",
