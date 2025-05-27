@@ -54,10 +54,10 @@ make install-packages opts="--extras 'feature1 feature2'"
 2. Make sure `"common.core"` is in the `INSTALLED_APPS` of your settings module.
 This enables the `manage.py flagsmith` commands.
 
-1. Add `"common.gunicorn.middleware.RouteLoggerMiddleware"` to `MIDDLEWARE` in your settings module.
+3. Add `"common.gunicorn.middleware.RouteLoggerMiddleware"` to `MIDDLEWARE` in your settings module.
 This enables the `route` label for Prometheus HTTP metrics.
 
-1. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
+4. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
 
 #### Test tools
 
