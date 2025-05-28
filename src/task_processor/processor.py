@@ -51,7 +51,7 @@ def run_tasks(database: str, num_tasks: int = 1) -> list[TaskRun]:
         if executed_tasks:
             Task.objects.using(database).bulk_update(
                 executed_tasks,
-                fields=["completed", "num_failures", "is_locked"],
+                fields=["completed", "num_failures", "is_locked", "scheduled_for"],
             )
 
         if task_runs:
@@ -165,18 +165,10 @@ def _run_task(
             )
             if typing.TYPE_CHECKING:
                 assert isinstance(task, Task)
-                assert registered_task.task_handler
             delay_until = e.delay_until or timezone.now() + timedelta(
                 seconds=settings.TASK_BACKOFF_DEFAULT_DELAY_SECONDS,
             )
-            assert registered_task.task_handler, (
-                "Attempt to back off a recurring task (currently not supported)"
-            )
-            registered_task.task_handler.delay(
-                delay_until=delay_until,
-                args=task.args,
-                kwargs=task.kwargs,
-            )
+            task.scheduled_for = delay_until
             logger.info(
                 "Backoff requested. Task '%s' set to retry at %s",
                 task_identifier,

@@ -74,7 +74,7 @@ class AbstractBaseTask(models.Model):
     @property
     def callable(self) -> TaskCallable[typing.Any]:
         task = get_task(self.task_identifier)
-        return task.task_callable
+        return task.task_function
 
 
 class Task(AbstractBaseTask):

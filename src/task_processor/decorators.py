@@ -49,7 +49,7 @@ class TaskHandler(typing.Generic[TaskParameters]):
             f,
             task_name,
         )
-        task_registry.register_task(task_identifier, self)
+        task_registry.register_task(task_identifier, f)
 
     def __call__(
         self,

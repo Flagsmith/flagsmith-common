@@ -684,11 +684,8 @@ def test_run_task__backoff__calls_expected(
     assert [
         record.message for record in caplog.records if record.levelno == logging.INFO
     ] == [expected_log_message]
-    assert Task.objects.using(current_database).count() == 2
-    assert (
-        Task.objects.using(current_database).latest("created_at").scheduled_for
-        == expected_scheduled_for
-    )
+    task.refresh_from_db(using=current_database)
+    assert task.scheduled_for == expected_scheduled_for
 
 
 @pytest.mark.multi_database

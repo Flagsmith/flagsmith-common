@@ -6,9 +6,6 @@ from dataclasses import dataclass
 from task_processor.exceptions import TaskProcessingError
 from task_processor.types import TaskCallable
 
-if typing.TYPE_CHECKING:
-    from task_processor.decorators import TaskHandler  # noqa: F401
-
 logger = logging.getLogger(__name__)
 
 
@@ -20,9 +17,8 @@ class TaskType(enum.Enum):
 @dataclass
 class RegisteredTask:
     task_identifier: str
-    task_callable: TaskCallable[typing.Any]
+    task_function: TaskCallable[typing.Any]
     task_type: TaskType = TaskType.STANDARD
-    task_handler: "TaskHandler[typing.Any] | None" = None
     task_kwargs: dict[str, typing.Any] | None = None
 
 
@@ -60,21 +56,20 @@ def get_task(task_identifier: str) -> RegisteredTask:
 
 def register_task(
     task_identifier: str,
-    task_handler: "TaskHandler[typing.Any]",
+    callable_: TaskCallable[typing.Any],
 ) -> None:
     global registered_tasks
 
     registered_task = RegisteredTask(
         task_identifier=task_identifier,
-        task_handler=task_handler,
-        task_callable=task_handler.unwrapped,
+        task_function=callable_,
     )
     registered_tasks[task_identifier] = registered_task
 
 
 def register_recurring_task(
     task_identifier: str,
-    task_callable: TaskCallable[typing.Any],
+    callable_: TaskCallable[typing.Any],
     **task_kwargs: typing.Any,
 ) -> None:
     global registered_tasks
@@ -83,7 +78,7 @@ def register_recurring_task(
 
     registered_task = RegisteredTask(
         task_identifier=task_identifier,
-        task_callable=task_callable,
+        task_function=callable_,
         task_type=TaskType.RECURRING,
         task_kwargs=task_kwargs,
     )
