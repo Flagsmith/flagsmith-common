@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from datetime import timedelta
 
-from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.utils import timezone
 
@@ -161,7 +160,7 @@ def _run_task(
         )
 
         if isinstance(e, TaskBackoffError):
-            delay_until = e.delay_until or timezone.now() + relativedelta(
+            delay_until = e.delay_until or timezone.now() + timedelta(
                 seconds=settings.TASK_BACKOFF_DEFAULT_DELAY_SECONDS,
             )
             assert registered_task.task_handler, (
