@@ -500,7 +500,7 @@ def test_run_task_runs_task_and_creates_task_run_object_when_failure(
         ),
         (
             logging.DEBUG,
-            f"Running task {task.task_identifier} id={task.id} args=['{msg}'] kwargs={{}}",
+            f"Running task {task.task_identifier} id={task.id} args=('{msg}',) kwargs={{}}",
         ),
         (
             logging.ERROR,
