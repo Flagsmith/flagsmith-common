@@ -652,7 +652,7 @@ def test_run_task_runs_tasks_in_correct_priority(
 @pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_task__backoff__calls_expected(
+def test_run_task__backoff__persists_expected(
     exception: TaskBackoffError,
     expected_scheduled_for: datetime,
     current_database: str,
@@ -708,6 +708,38 @@ def test_run_task__backoff__recurring__raises_expected(
         str(exc_info.value)
         == "Attempt to back off a recurring task (currently not supported)"
     )
+
+
+@pytest.mark.multi_database
+@pytest.mark.task_processor_mode
+def test_run_task__backoff__max_num_failures__noop(
+    current_database: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Given
+    @register_task_handler()
+    def backoff_task() -> None:
+        raise TaskBackoffError()
+
+    expected_scheduled_for = timezone.now()
+    task = Task.create(
+        backoff_task.task_identifier,
+        scheduled_for=expected_scheduled_for,
+        args=(),
+        priority=TaskPriority.HIGH,
+    )
+    task.num_failures = 4
+    task.save(using=current_database)
+
+    caplog.set_level(logging.INFO)
+
+    # When
+    run_tasks(current_database)
+
+    # Then
+    task.refresh_from_db(using=current_database)
+    assert task.scheduled_for == expected_scheduled_for
+    assert not [record for record in caplog.records if record.levelno == logging.INFO]
 
 
 @pytest.mark.multi_database

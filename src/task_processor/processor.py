@@ -165,15 +165,16 @@ def _run_task(
             )
             if typing.TYPE_CHECKING:
                 assert isinstance(task, Task)
-            delay_until = e.delay_until or timezone.now() + timedelta(
-                seconds=settings.TASK_BACKOFF_DEFAULT_DELAY_SECONDS,
-            )
-            task.scheduled_for = delay_until
-            logger.info(
-                "Backoff requested. Task '%s' set to retry at %s",
-                task_identifier,
-                delay_until,
-            )
+            if task.num_failures <= 3:
+                delay_until = e.delay_until or timezone.now() + timedelta(
+                    seconds=settings.TASK_BACKOFF_DEFAULT_DELAY_SECONDS,
+                )
+                task.scheduled_for = delay_until
+                logger.info(
+                    "Backoff requested. Task '%s' set to retry at %s",
+                    task_identifier,
+                    delay_until,
+                )
 
     labels = {
         "task_identifier": task_identifier,
