@@ -3,7 +3,11 @@ import logging
 import typing
 from dataclasses import dataclass
 
+from task_processor.exceptions import TaskProcessingError
 from task_processor.types import TaskCallable
+
+if typing.TYPE_CHECKING:
+    from task_processor.decorators import TaskHandler  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +20,7 @@ class TaskType(enum.Enum):
 @dataclass
 class RegisteredTask:
     task_identifier: str
-    task_function: TaskCallable[typing.Any]
+    task_handler: "TaskHandler"
     task_type: TaskType = TaskType.STANDARD
     task_kwargs: dict[str, typing.Any] | None = None
 
@@ -43,18 +47,25 @@ def initialise() -> None:
 def get_task(task_identifier: str) -> RegisteredTask:
     global registered_tasks
 
-    return registered_tasks[task_identifier]
+    try:
+        return registered_tasks[task_identifier]
+    except KeyError:
+        raise TaskProcessingError(
+            "No task registered with identifier '%s'. Ensure your task is "
+            "decorated with @register_task_handler.",
+            task_identifier,
+        )
 
 
 def register_task(
     task_identifier: str,
-    callable_: TaskCallable[typing.Any],
+    task_handler: "TaskHandler",
 ) -> None:
     global registered_tasks
 
     registered_task = RegisteredTask(
         task_identifier=task_identifier,
-        task_function=callable_,
+        task_handler=task_handler,
     )
     registered_tasks[task_identifier] = registered_task
 

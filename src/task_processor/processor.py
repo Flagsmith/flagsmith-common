@@ -5,10 +5,12 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from datetime import timedelta
 
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.utils import timezone
 
 from task_processor import metrics
+from task_processor.exceptions import TaskBackoffError
 from task_processor.managers import RecurringTaskManager, TaskManager
 from task_processor.models import (
     AbstractBaseTask,
@@ -120,6 +122,7 @@ def _run_task(
     ctx.enter_context(timer)
 
     task_identifier = task.task_identifier
+    registered_task = get_task(task_identifier)
 
     logger.debug(
         f"Running task {task_identifier} id={task.pk} args={task.args} kwargs={task.kwargs}"
@@ -157,9 +160,24 @@ def _run_task(
             exc_info=True,
         )
 
+        if isinstance(e, TaskBackoffError):
+            delay_until = e.delay_until or timezone.now() + relativedelta(
+                seconds=settings.TASK_BACKOFF_DEFAULT_SECONDS,
+            )
+            registered_task.task_handler.delay(
+                delay_until=delay_until,
+                args=task.args,
+                kwargs=task.kwargs,
+            )
+            logger.info(
+                "Backoff requested. Task '%s' set to retry at %s",
+                task_identifier,
+                delay_until,
+            )
+
     labels = {
         "task_identifier": task_identifier,
-        "task_type": get_task(task_identifier).task_type.value.lower(),
+        "task_type": registered_task.task_type.value.lower(),
         "result": result.lower(),
     }
 

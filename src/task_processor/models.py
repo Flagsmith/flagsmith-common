@@ -7,9 +7,9 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils import timezone
 
-from task_processor.exceptions import TaskProcessingError, TaskQueueFullError
+from task_processor.exceptions import TaskQueueFullError
 from task_processor.managers import RecurringTaskManager, TaskManager
-from task_processor.task_registry import registered_tasks
+from task_processor.task_registry import get_task, registered_tasks
 from task_processor.types import TaskCallable
 
 _django_json_encoder_default = DjangoJSONEncoder().default
@@ -75,15 +75,8 @@ class AbstractBaseTask(models.Model):
 
     @property
     def callable(self) -> TaskCallable[typing.Any]:
-        try:
-            task = registered_tasks[self.task_identifier]
-            return task.task_function
-        except KeyError as e:
-            raise TaskProcessingError(
-                "No task registered with identifier '%s'. Ensure your task is "
-                "decorated with @register_task_handler.",
-                self.task_identifier,
-            ) from e
+        task = get_task(self.task_identifier)
+        return task.task_handler.unwrapped
 
 
 class Task(AbstractBaseTask):
