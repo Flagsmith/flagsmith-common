@@ -640,7 +640,7 @@ def test_run_task_runs_tasks_in_correct_priority(
 @pytest.mark.parametrize(
     "exception, expected_scheduled_for",
     [
-        (TaskBackoffError(), datetime.fromisoformat("2023-12-08T06:05:52+00:00")),
+        (TaskBackoffError(), datetime.fromisoformat("2023-12-08T06:05:57+00:00")),
         (
             TaskBackoffError(
                 delay_until=datetime.fromisoformat("2023-12-08T06:15:52+00:00")
@@ -656,9 +656,12 @@ def test_run_task__backoff__calls_expected(
     exception: TaskBackoffError,
     expected_scheduled_for: datetime,
     current_database: str,
+    settings: SettingsWrapper,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     # Given
+    settings.TASK_BACKOFF_DEFAULT_DELAY_SECONDS = 10
+
     @register_task_handler()
     def backoff_task() -> None:
         raise exception

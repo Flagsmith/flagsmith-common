@@ -162,7 +162,7 @@ def _run_task(
 
         if isinstance(e, TaskBackoffError):
             delay_until = e.delay_until or timezone.now() + relativedelta(
-                seconds=settings.TASK_BACKOFF_DEFAULT_SECONDS,
+                seconds=settings.TASK_BACKOFF_DEFAULT_DELAY_SECONDS,
             )
             assert registered_task.task_handler, (
                 "Attempt to back off a recurring task (currently not supported)"
