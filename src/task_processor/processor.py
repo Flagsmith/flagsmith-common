@@ -164,6 +164,9 @@ def _run_task(
             delay_until = e.delay_until or timezone.now() + relativedelta(
                 seconds=settings.TASK_BACKOFF_DEFAULT_SECONDS,
             )
+            assert registered_task.task_handler, (
+                "Trying to back off a recurring task (currently not supported)"
+            )
             registered_task.task_handler.delay(
                 delay_until=delay_until,
                 args=task.args,

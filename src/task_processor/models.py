@@ -36,13 +36,11 @@ class AbstractBaseTask(models.Model):
         abstract = True
 
     @property
-    def args(self) -> typing.List[typing.Any]:
+    def args(self) -> tuple[typing.Any, ...]:
         if self.serialized_args:
             args = self.deserialize_data(self.serialized_args)
-            if typing.TYPE_CHECKING:
-                assert isinstance(args, list)
-            return args
-        return []
+            return tuple(args)
+        return ()
 
     @property
     def kwargs(self) -> typing.Dict[str, typing.Any]:
@@ -76,7 +74,7 @@ class AbstractBaseTask(models.Model):
     @property
     def callable(self) -> TaskCallable[typing.Any]:
         task = get_task(self.task_identifier)
-        return task.task_handler.unwrapped
+        return task.task_callable
 
 
 class Task(AbstractBaseTask):
