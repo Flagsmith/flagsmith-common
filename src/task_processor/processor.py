@@ -19,7 +19,7 @@ from task_processor.models import (
     TaskResult,
     TaskRun,
 )
-from task_processor.task_registry import get_task
+from task_processor.task_registry import TaskType, get_task
 
 T = typing.TypeVar("T", bound=AbstractBaseTask)
 AnyTaskRun = TaskRun | RecurringTaskRun
@@ -160,6 +160,12 @@ def _run_task(
         )
 
         if isinstance(e, TaskBackoffError):
+            assert registered_task.task_type == TaskType.STANDARD, (
+                "Attempt to back off a recurring task (currently not supported)"
+            )
+            if typing.TYPE_CHECKING:
+                assert isinstance(task, Task)
+                assert registered_task.task_handler
             delay_until = e.delay_until or timezone.now() + timedelta(
                 seconds=settings.TASK_BACKOFF_DEFAULT_DELAY_SECONDS,
             )
