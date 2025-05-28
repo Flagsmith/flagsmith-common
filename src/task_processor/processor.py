@@ -165,7 +165,7 @@ def _run_task(
                 seconds=settings.TASK_BACKOFF_DEFAULT_SECONDS,
             )
             assert registered_task.task_handler, (
-                "Trying to back off a recurring task (currently not supported)"
+                "Attempt to back off a recurring task (currently not supported)"
             )
             registered_task.task_handler.delay(
                 delay_until=delay_until,
