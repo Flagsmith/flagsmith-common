@@ -21,7 +21,6 @@ class TaskBackoffError(TaskProcessingError):
         delay_until: datetime | None = None,
     ) -> None:
         super().__init__()
-        delay_until = delay_until
         self.delay_until = delay_until
 
 
