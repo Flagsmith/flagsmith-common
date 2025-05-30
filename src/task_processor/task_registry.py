@@ -3,6 +3,7 @@ import logging
 import typing
 from dataclasses import dataclass
 
+from task_processor.exceptions import TaskProcessingError
 from task_processor.types import TaskCallable
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,14 @@ def initialise() -> None:
 def get_task(task_identifier: str) -> RegisteredTask:
     global registered_tasks
 
-    return registered_tasks[task_identifier]
+    try:
+        return registered_tasks[task_identifier]
+    except KeyError:
+        raise TaskProcessingError(
+            "No task registered with identifier '%s'. Ensure your task is "
+            "decorated with @register_task_handler.",
+            task_identifier,
+        )
 
 
 def register_task(

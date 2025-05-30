@@ -9,6 +9,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from task_processor import metrics
+from task_processor.exceptions import TaskBackoffError
 from task_processor.managers import RecurringTaskManager, TaskManager
 from task_processor.models import (
     AbstractBaseTask,
@@ -18,7 +19,7 @@ from task_processor.models import (
     TaskResult,
     TaskRun,
 )
-from task_processor.task_registry import get_task
+from task_processor.task_registry import TaskType, get_task
 
 T = typing.TypeVar("T", bound=AbstractBaseTask)
 AnyTaskRun = TaskRun | RecurringTaskRun
@@ -50,7 +51,7 @@ def run_tasks(database: str, num_tasks: int = 1) -> list[TaskRun]:
         if executed_tasks:
             Task.objects.using(database).bulk_update(
                 executed_tasks,
-                fields=["completed", "num_failures", "is_locked"],
+                fields=["completed", "num_failures", "is_locked", "scheduled_for"],
             )
 
         if task_runs:
@@ -120,6 +121,7 @@ def _run_task(
     ctx.enter_context(timer)
 
     task_identifier = task.task_identifier
+    registered_task = get_task(task_identifier)
 
     logger.debug(
         f"Running task {task_identifier} id={task.pk} args={task.args} kwargs={task.kwargs}"
@@ -157,9 +159,26 @@ def _run_task(
             exc_info=True,
         )
 
+        if isinstance(e, TaskBackoffError):
+            assert registered_task.task_type == TaskType.STANDARD, (
+                "Attempt to back off a recurring task (currently not supported)"
+            )
+            if typing.TYPE_CHECKING:
+                assert isinstance(task, Task)
+            if task.num_failures <= 3:
+                delay_until = e.delay_until or timezone.now() + timedelta(
+                    seconds=settings.TASK_BACKOFF_DEFAULT_DELAY_SECONDS,
+                )
+                task.scheduled_for = delay_until
+                logger.info(
+                    "Backoff requested. Task '%s' set to retry at %s",
+                    task_identifier,
+                    delay_until,
+                )
+
     labels = {
         "task_identifier": task_identifier,
-        "task_type": get_task(task_identifier).task_type.value.lower(),
+        "task_type": registered_task.task_type.value.lower(),
         "result": result.lower(),
     }
 

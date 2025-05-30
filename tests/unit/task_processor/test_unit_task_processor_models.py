@@ -40,6 +40,17 @@ def test_task_run(mocker: MockerFixture) -> None:
     mock.assert_called_once_with(*args, **kwargs)
 
 
+def test_task_args__no_data__return_expected() -> None:
+    # Given
+    task = Task(
+        task_identifier="test_task",
+        scheduled_for=timezone.now(),
+    )
+
+    # When & Then
+    assert task.args == ()
+
+
 @pytest.mark.parametrize(
     "input, expected_output",
     (

@@ -1,7 +1,7 @@
 import logging
 import time
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 from threading import Thread
 
 import pytest
@@ -11,12 +11,13 @@ from freezegun import freeze_time
 from pytest_django.fixtures import SettingsWrapper
 from pytest_mock import MockerFixture
 
-from common.test_tools import AssertMetricFixture
+from common.test_tools.types import AssertMetricFixture
 from task_processor.decorators import (
     TaskHandler,
     register_recurring_task,
     register_task_handler,
 )
+from task_processor.exceptions import TaskBackoffError
 from task_processor.models import (
     RecurringTask,
     RecurringTaskRun,
@@ -500,7 +501,7 @@ def test_run_task_runs_task_and_creates_task_run_object_when_failure(
         ),
         (
             logging.DEBUG,
-            f"Running task {task.task_identifier} id={task.id} args=['{msg}'] kwargs={{}}",
+            f"Running task {task.task_identifier} id={task.id} args=('{msg}',) kwargs={{}}",
         ),
         (
             logging.ERROR,
@@ -634,6 +635,111 @@ def test_run_task_runs_tasks_in_correct_priority(
     assert task_runs_1[0].task == task_3
     assert task_runs_2[0].task == task_1
     assert task_runs_3[0].task == task_2
+
+
+@pytest.mark.parametrize(
+    "exception, expected_scheduled_for",
+    [
+        (TaskBackoffError(), datetime.fromisoformat("2023-12-08T06:05:57+00:00")),
+        (
+            TaskBackoffError(
+                delay_until=datetime.fromisoformat("2023-12-08T06:15:52+00:00")
+            ),
+            datetime.fromisoformat("2023-12-08T06:15:52+00:00"),
+        ),
+    ],
+)
+@pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
+@pytest.mark.multi_database
+@pytest.mark.task_processor_mode
+def test_run_task__backoff__persists_expected(
+    exception: TaskBackoffError,
+    expected_scheduled_for: datetime,
+    current_database: str,
+    settings: SettingsWrapper,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Given
+    settings.TASK_BACKOFF_DEFAULT_DELAY_SECONDS = 10
+
+    @register_task_handler()
+    def backoff_task() -> None:
+        raise exception
+
+    task = Task.create(
+        backoff_task.task_identifier,
+        scheduled_for=timezone.now(),
+        args=(),
+        priority=TaskPriority.HIGH,
+    )
+    task.save(using=current_database)
+
+    caplog.set_level(logging.INFO)
+    expected_log_message = f"Backoff requested. Task '{backoff_task.task_identifier}' set to retry at {expected_scheduled_for}"
+
+    # When
+    run_tasks(current_database)
+
+    # Then
+    assert [
+        record.message for record in caplog.records if record.levelno == logging.INFO
+    ] == [expected_log_message]
+    task.refresh_from_db(using=current_database)
+    assert task.scheduled_for == expected_scheduled_for
+
+
+@pytest.mark.multi_database
+@pytest.mark.task_processor_mode
+def test_run_task__backoff__recurring__raises_expected(
+    current_database: str,
+) -> None:
+    # Given
+    @register_recurring_task(run_every=timedelta(seconds=1))
+    def backoff_task() -> None:
+        raise TaskBackoffError()
+
+    initialise()
+
+    # When & Then
+    with pytest.raises(AssertionError) as exc_info:
+        run_recurring_tasks(current_database)
+
+    assert (
+        str(exc_info.value)
+        == "Attempt to back off a recurring task (currently not supported)"
+    )
+
+
+@pytest.mark.multi_database
+@pytest.mark.task_processor_mode
+def test_run_task__backoff__max_num_failures__noop(
+    current_database: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Given
+    @register_task_handler()
+    def backoff_task() -> None:
+        raise TaskBackoffError()
+
+    expected_scheduled_for = timezone.now()
+    task = Task.create(
+        backoff_task.task_identifier,
+        scheduled_for=expected_scheduled_for,
+        args=(),
+        priority=TaskPriority.HIGH,
+    )
+    task.num_failures = 4
+    task.save(using=current_database)
+
+    caplog.set_level(logging.INFO)
+
+    # When
+    run_tasks(current_database)
+
+    # Then
+    task.refresh_from_db(using=current_database)
+    assert task.scheduled_for == expected_scheduled_for
+    assert not [record for record in caplog.records if record.levelno == logging.INFO]
 
 
 @pytest.mark.multi_database

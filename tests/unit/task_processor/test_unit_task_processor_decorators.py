@@ -14,7 +14,7 @@ from task_processor.decorators import (
     register_recurring_task,
     register_task_handler,
 )
-from task_processor.exceptions import InvalidArgumentsError
+from task_processor.exceptions import InvalidArgumentsError, TaskProcessingError
 from task_processor.models import RecurringTask, Task, TaskPriority
 from task_processor.task_registry import get_task, initialise
 from task_processor.task_run_method import TaskRunMethod
@@ -143,7 +143,7 @@ def test_register_recurring_task_does_nothing_if_not_run_by_processor() -> None:
 
     # Then
     assert not RecurringTask.objects.filter(task_identifier=task_identifier).exists()
-    with pytest.raises(KeyError):
+    with pytest.raises(TaskProcessingError):
         assert get_task(task_identifier)
 
 
