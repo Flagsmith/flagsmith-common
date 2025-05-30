@@ -2,6 +2,23 @@
 
 <a name="v1.5.2"></a>
 
+## [1.14.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.13.0...v1.14.0) (2025-05-30)
+
+
+### CI
+
+* pre-commit autoupdate ([#76](https://github.com/Flagsmith/flagsmith-common/issues/76)) ([2ac3408](https://github.com/Flagsmith/flagsmith-common/commit/2ac3408eb772fddd6dc06a6750829085121733e4))
+
+
+### Docs
+
+* **test-tools:** Clarify installation instructions ([#80](https://github.com/Flagsmith/flagsmith-common/issues/80)) ([b6a250b](https://github.com/Flagsmith/flagsmith-common/commit/b6a250bd49aba0fc7750a389bcf59f2bdeebce27))
+
+
+### Features
+
+* Support task backoff ([#81](https://github.com/Flagsmith/flagsmith-common/issues/81)) ([a736a68](https://github.com/Flagsmith/flagsmith-common/commit/a736a68cfb8d4cfa9e87601aabe937fbae651b01))
+
 ## [1.13.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.12.1...v1.13.0) (2025-05-19)
 
 
