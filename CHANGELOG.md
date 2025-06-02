@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [1.14.1](https://github.com/Flagsmith/flagsmith-common/compare/v1.14.0...v1.14.1) (2025-06-02)
+
+
+### CI
+
+* pre-commit autoupdate ([#82](https://github.com/Flagsmith/flagsmith-common/issues/82)) ([abec78b](https://github.com/Flagsmith/flagsmith-common/commit/abec78bac928faab977faeb82e3bf3761435a062))
+
 ## [1.14.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.13.0...v1.14.0) (2025-05-30)
 
 
