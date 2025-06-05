@@ -68,5 +68,9 @@ TASK_PROCESSOR_MODE = env.bool("RUN_BY_PROCESSOR", default=False)
 DOCGEN_MODE = env.bool("DOCGEN_MODE", default=False)
 TASK_RUN_METHOD = TaskRunMethod.TASK_PROCESSOR
 
+# To be used by test that depend on task processor to run tasks manually by
+# calling `run_tasks`
+TASK_PROCESSOR_MANUAL_MODE = env.bool("TASK_PROCESSOR_MANUAL_MODE", default=False)
+
 # Avoid models.W042 warnings
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

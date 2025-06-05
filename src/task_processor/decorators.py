@@ -177,7 +177,7 @@ def register_recurring_task(
     first_run_time: time | None = None,
     timeout: timedelta | None = timedelta(minutes=30),
 ) -> typing.Callable[[TaskCallable[TaskParameters]], TaskCallable[TaskParameters]]:
-    if not settings.TASK_PROCESSOR_MODE:
+    if not settings.TASK_PROCESSOR_MODE or settings.TASK_PROCESSOR_MANUAL_MODE:
         # Do not register recurring tasks if not invoked by task processor
         return lambda f: f
 
