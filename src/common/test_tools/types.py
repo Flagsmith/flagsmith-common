@@ -1,7 +1,10 @@
 from pathlib import Path
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 import pytest
+
+if TYPE_CHECKING:
+    from task_processor.models import TaskRun
 
 
 class AssertMetricFixture(Protocol):
@@ -12,6 +15,13 @@ class AssertMetricFixture(Protocol):
         labels: dict[str, str],
         value: float | int,
     ) -> None: ...
+
+
+class RunTasksFixture(Protocol):
+    def __call__(
+        self,
+        num_tasks: int,
+    ) -> "list[TaskRun]": ...
 
 
 class SnapshotFixture(Protocol):
