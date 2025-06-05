@@ -7,7 +7,6 @@ from prometheus_client.metrics import MetricWrapperBase
 from pyfakefs.fake_filesystem import FakeFilesystem
 from pytest_django.fixtures import SettingsWrapper
 
-from common.prometheus.utils import reload_metrics
 from common.test_tools.types import (
     AssertMetricFixture,
     RunTasksFixture,
@@ -81,6 +80,8 @@ def task_processor_mode(settings: SettingsWrapper) -> None:
     settings.TASK_PROCESSOR_MODE = True
     # The setting is supposed to be set before the metrics module is imported,
     # so reload it
+    from common.prometheus.utils import reload_metrics
+
     reload_metrics("task_processor.metrics")
 
 
