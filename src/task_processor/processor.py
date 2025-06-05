@@ -151,9 +151,9 @@ def task_metrics(
 def _run_task(
     task: T,
 ) -> typing.Tuple[T, AnyTaskRun]:
-    assert (
-        settings.TASK_PROCESSOR_MODE or settings.TASK_PROCESSOR_MANUAL_MODE
-    ), "Attempt to run tasks in a non-task-processor environment"
+    assert settings.TASK_PROCESSOR_MODE or settings.TASK_PROCESSOR_MANUAL_MODE, (
+        "Attempt to run tasks in a non-task-processor environment"
+    )
     task_identifier = task.task_identifier
     registered_task = get_task(task_identifier)
 
@@ -193,9 +193,9 @@ def _run_task(
         )
 
         if isinstance(e, TaskBackoffError):
-            assert (
-                registered_task.task_type == TaskType.STANDARD
-            ), "Attempt to back off a recurring task (currently not supported)"
+            assert registered_task.task_type == TaskType.STANDARD, (
+                "Attempt to back off a recurring task (currently not supported)"
+            )
             if typing.TYPE_CHECKING:
                 assert isinstance(task, Task)
             if task.num_failures <= 3:
