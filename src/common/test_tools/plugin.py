@@ -1,11 +1,19 @@
+from functools import partial
 from typing import Generator
 
 import prometheus_client
 import pytest
 from prometheus_client.metrics import MetricWrapperBase
 from pyfakefs.fake_filesystem import FakeFilesystem
+from pytest_django.fixtures import SettingsWrapper
 
-from common.test_tools.types import AssertMetricFixture, Snapshot, SnapshotFixture
+from common.prometheus.utils import reload_metrics
+from common.test_tools.types import (
+    AssertMetricFixture,
+    RunTasksFixture,
+    Snapshot,
+    SnapshotFixture,
+)
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -68,6 +76,14 @@ def enterprise_mode(fs: FakeFilesystem) -> Generator[None, None, None]:
     is_enterprise.cache_clear()
 
 
+@pytest.fixture()
+def task_processor_mode(settings: SettingsWrapper) -> None:
+    settings.TASK_PROCESSOR_MODE = True
+    # The setting is supposed to be set before the metrics module is imported,
+    # so reload it
+    reload_metrics("task_processor.metrics")
+
+
 @pytest.fixture(autouse=True)
 def flagsmith_markers_marked(
     request: pytest.FixtureRequest,
@@ -77,6 +93,21 @@ def flagsmith_markers_marked(
             request.getfixturevalue("saas_mode")
         if marker.name == "enterprise_mode":
             request.getfixturevalue("enterprise_mode")
+        if marker.name == "task_processor_mode":
+            request.getfixturevalue("task_processor_mode")
+
+
+@pytest.fixture(name="run_tasks")
+def run_tasks_impl(
+    settings: SettingsWrapper,
+    db: None,
+    task_processor_mode: None,
+) -> RunTasksFixture:
+    settings.TASK_RUN_METHOD = "TASK_PROCESSOR"
+
+    from task_processor.processor import run_tasks
+
+    return partial(run_tasks, database="default")
 
 
 @pytest.fixture

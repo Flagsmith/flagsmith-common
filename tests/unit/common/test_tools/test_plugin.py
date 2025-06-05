@@ -1,9 +1,10 @@
 import prometheus_client
 import pytest
 
-from common.test_tools import AssertMetricFixture
+from common.test_tools import AssertMetricFixture, RunTasksFixture
 from common.test_tools.plugin import assert_metric_impl
 from common.test_tools.utils import edition_printer
+from task_processor.decorators import register_task_handler
 
 
 def test_assert_metrics__asserts_expected(
@@ -55,3 +56,22 @@ def test_saas_mode_marker__is_saas_returns_expected() -> None:
 def test_enterprise_mode_marker__is_enterprise_returns_expected() -> None:
     # When & Then
     assert edition_printer() == "enterprise!"
+
+
+def test_run_tasks__runs_expected_tasks(
+    run_tasks: RunTasksFixture,
+) -> None:
+    # Given
+    @register_task_handler()
+    def my_task() -> None:
+        return None
+
+    my_task.delay()
+
+    # When
+    task_runs = run_tasks(num_tasks=1)
+
+    # Then
+    assert len(task_runs) == 1
+    assert task_runs[0].task.task_identifier == "test_plugin.my_task"
+    assert task_runs[0].result == "SUCCESS"
