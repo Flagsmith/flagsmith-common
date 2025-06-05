@@ -1,3 +1,4 @@
+import functools
 import logging
 import traceback
 import typing
@@ -109,17 +110,50 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
     return []
 
 
+def task_metrics(
+    func: typing.Callable[[T], typing.Tuple[T, AnyTaskRun]],
+) -> typing.Callable[[T], typing.Tuple[T, AnyTaskRun]]:
+    @functools.wraps(func)
+    def wrapper(
+        task: T, *args: typing.Any, **kwargs: typing.Any
+    ) -> typing.Tuple[T, AnyTaskRun]:
+        # Only collect metrics when TASK_PROCESSOR_MODE is True
+        if not settings.TASK_PROCESSOR_MODE:
+            return func(task, *args, **kwargs)
+
+        ctx = ExitStack()
+        timer = metrics.flagsmith_task_processor_task_duration_seconds.time()
+        ctx.enter_context(timer)
+
+        task_obj, task_run = func(task, *args, **kwargs)
+        result = task_run.result
+
+        # Get task info for labels
+        task_identifier = task.task_identifier
+        registered_task = get_task(task_identifier)
+
+        labels = {
+            "task_identifier": task_identifier,
+            "task_type": registered_task.task_type.value.lower(),
+            "result": result.lower(),
+        }  # type: ignore[union-attr]
+
+        timer.labels(**labels)  # type: ignore[no-untyped-call]
+        ctx.close()
+        metrics.flagsmith_task_processor_finished_tasks_total.labels(**labels).inc()
+
+        return task_obj, task_run
+
+    return wrapper
+
+
+@task_metrics
 def _run_task(
     task: T,
 ) -> typing.Tuple[T, AnyTaskRun]:
-    assert settings.TASK_PROCESSOR_MODE, (
-        "Attempt to run tasks in a non-task-processor environment"
-    )
-
-    ctx = ExitStack()
-    timer = metrics.flagsmith_task_processor_task_duration_seconds.time()
-    ctx.enter_context(timer)
-
+    assert (
+        settings.TASK_PROCESSOR_MODE or settings.TASK_PROCESSOR_MANUAL_MODE
+    ), "Attempt to run tasks in a non-task-processor environment"
     task_identifier = task.task_identifier
     registered_task = get_task(task_identifier)
 
@@ -127,7 +161,6 @@ def _run_task(
         f"Running task {task_identifier} id={task.pk} args={task.args} kwargs={task.kwargs}"
     )
     task_run: AnyTaskRun = task.task_runs.model(started_at=timezone.now(), task=task)  # type: ignore[attr-defined]
-    result: str
 
     try:
         with ThreadPoolExecutor(max_workers=1) as executor:
@@ -135,7 +168,7 @@ def _run_task(
             timeout = task.timeout.total_seconds() if task.timeout else None
             future.result(timeout=timeout)  # Wait for completion or timeout
 
-        task_run.result = result = TaskResult.SUCCESS.value
+        task_run.result = TaskResult.SUCCESS.value
         task_run.finished_at = timezone.now()
         task.mark_success()
 
@@ -148,7 +181,7 @@ def _run_task(
 
         task.mark_failure()
 
-        task_run.result = result = TaskResult.FAILURE.value
+        task_run.result = TaskResult.FAILURE.value
         task_run.error_details = str(traceback.format_exc())
 
         logger.error(
@@ -160,9 +193,9 @@ def _run_task(
         )
 
         if isinstance(e, TaskBackoffError):
-            assert registered_task.task_type == TaskType.STANDARD, (
-                "Attempt to back off a recurring task (currently not supported)"
-            )
+            assert (
+                registered_task.task_type == TaskType.STANDARD
+            ), "Attempt to back off a recurring task (currently not supported)"
             if typing.TYPE_CHECKING:
                 assert isinstance(task, Task)
             if task.num_failures <= 3:
@@ -175,16 +208,5 @@ def _run_task(
                     task_identifier,
                     delay_until,
                 )
-
-    labels = {
-        "task_identifier": task_identifier,
-        "task_type": registered_task.task_type.value.lower(),
-        "result": result.lower(),
-    }
-
-    timer.labels(**labels)  # type: ignore[no-untyped-call]
-    ctx.close()
-
-    metrics.flagsmith_task_processor_finished_tasks_total.labels(**labels).inc()
 
     return task, task_run
