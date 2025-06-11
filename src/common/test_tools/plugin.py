@@ -102,7 +102,7 @@ def flagsmith_markers_marked(
 @pytest.fixture(name="run_tasks")
 def run_tasks_impl(
     settings: SettingsWrapper,
-    db: None,
+    transactional_db: None,
     task_processor_mode: None,
 ) -> RunTasksFixture:
     settings.TASK_RUN_METHOD = TaskRunMethod.TASK_PROCESSOR
