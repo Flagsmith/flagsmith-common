@@ -85,8 +85,7 @@ def test_run_tasks__delay_inside_task__runs_expected(
 ) -> None:
     # Given
     @register_task_handler()
-    def my_task() -> None:
-        return None
+    def my_task() -> None: ...
 
     @register_task_handler()
     def calling_task() -> None:
