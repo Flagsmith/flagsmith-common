@@ -13,6 +13,7 @@ from common.test_tools.types import (
     Snapshot,
     SnapshotFixture,
 )
+from task_processor.task_run_method import TaskRunMethod
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -104,7 +105,7 @@ def run_tasks_impl(
     db: None,
     task_processor_mode: None,
 ) -> RunTasksFixture:
-    settings.TASK_RUN_METHOD = "TASK_PROCESSOR"
+    settings.TASK_RUN_METHOD = TaskRunMethod.TASK_PROCESSOR
 
     from task_processor.processor import run_tasks
 
