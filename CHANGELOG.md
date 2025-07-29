@@ -2,6 +2,68 @@
 
 <a name="v1.5.2"></a>
 
+## [1.16.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.15.1...v1.16.0) (2025-07-29)
+
+
+### CI
+
+* Add release-please, publish to PyPI ([#20](https://github.com/Flagsmith/flagsmith-common/issues/20)) ([6fdfe69](https://github.com/Flagsmith/flagsmith-common/commit/6fdfe698e52b814e9c38531af66b3b21656f3152))
+* Add test coverage ([#73](https://github.com/Flagsmith/flagsmith-common/issues/73)) ([1cac2c9](https://github.com/Flagsmith/flagsmith-common/commit/1cac2c951b3bb57f44251d729d8090114d217758))
+* Hide `chore` commits from release-please ([#25](https://github.com/Flagsmith/flagsmith-common/issues/25)) ([328d1b3](https://github.com/Flagsmith/flagsmith-common/commit/328d1b397c79b8a74ca7d83849f8a63655ff14e9))
+* pre-commit autoupdate ([#34](https://github.com/Flagsmith/flagsmith-common/issues/34)) ([07920e4](https://github.com/Flagsmith/flagsmith-common/commit/07920e49411ef637c388045fb5f62f86df8c9ba5))
+* pre-commit autoupdate ([#46](https://github.com/Flagsmith/flagsmith-common/issues/46)) ([1d35c43](https://github.com/Flagsmith/flagsmith-common/commit/1d35c43870028885373b5ffcbcd07c41c8a94b29))
+* pre-commit autoupdate ([#52](https://github.com/Flagsmith/flagsmith-common/issues/52)) ([e852305](https://github.com/Flagsmith/flagsmith-common/commit/e8523054870215def2489eb7e415116991f00387))
+* pre-commit autoupdate ([#54](https://github.com/Flagsmith/flagsmith-common/issues/54)) ([49268aa](https://github.com/Flagsmith/flagsmith-common/commit/49268aaf600cba1411ca6000f8936e3afb11d743))
+* pre-commit autoupdate ([#66](https://github.com/Flagsmith/flagsmith-common/issues/66)) ([9c38998](https://github.com/Flagsmith/flagsmith-common/commit/9c38998f405ce59bf67b3db7790ec83a0a9abdd9))
+* pre-commit autoupdate ([#69](https://github.com/Flagsmith/flagsmith-common/issues/69)) ([df9f9ee](https://github.com/Flagsmith/flagsmith-common/commit/df9f9ee90e949f99ddc28ada10d7d20e278dd9a3))
+* pre-commit autoupdate ([#76](https://github.com/Flagsmith/flagsmith-common/issues/76)) ([2ac3408](https://github.com/Flagsmith/flagsmith-common/commit/2ac3408eb772fddd6dc06a6750829085121733e4))
+* pre-commit autoupdate ([#82](https://github.com/Flagsmith/flagsmith-common/issues/82)) ([abec78b](https://github.com/Flagsmith/flagsmith-common/commit/abec78bac928faab977faeb82e3bf3761435a062))
+* pre-commit autoupdate ([#86](https://github.com/Flagsmith/flagsmith-common/issues/86)) ([b4d45d9](https://github.com/Flagsmith/flagsmith-common/commit/b4d45d98e57a2f62cb497cde7f128443738ea406))
+* pre-commit autoupdate ([#87](https://github.com/Flagsmith/flagsmith-common/issues/87)) ([d696487](https://github.com/Flagsmith/flagsmith-common/commit/d696487c57803f19651095d5ad60da6c5848e808))
+
+
+### Docs
+
+* Correct metric tags in README.md ([#21](https://github.com/Flagsmith/flagsmith-common/issues/21)) ([e5050d5](https://github.com/Flagsmith/flagsmith-common/commit/e5050d55950e12cd833635893790a0c8ff1fb457))
+* **test-tools:** Clarify installation instructions ([#80](https://github.com/Flagsmith/flagsmith-common/issues/80)) ([b6a250b](https://github.com/Flagsmith/flagsmith-common/commit/b6a250bd49aba0fc7750a389bcf59f2bdeebce27))
+
+
+### Features
+
+* Ability to log WSGI `environ` in JSON logs, `log_extra` utility ([#55](https://github.com/Flagsmith/flagsmith-common/issues/55)) ([bf48843](https://github.com/Flagsmith/flagsmith-common/commit/bf48843c86214f4b57eeed956ca700e520ab7bba))
+* Add `flagsmith healthcheck` command ([#60](https://github.com/Flagsmith/flagsmith-common/issues/60)) ([1eb58f3](https://github.com/Flagsmith/flagsmith-common/commit/1eb58f3bd07b19fb6875fbd82a547eca1f24ea1a))
+* Add `flagsmith_http_server_response_size_bytes` metric ([#49](https://github.com/Flagsmith/flagsmith-common/issues/49)) ([8e2b042](https://github.com/Flagsmith/flagsmith-common/commit/8e2b042450f8006d894669a5b5d712df35ca1e8d))
+* Add common namespace for metrics ([#40](https://github.com/Flagsmith/flagsmith-common/issues/40)) ([7588379](https://github.com/Flagsmith/flagsmith-common/commit/7588379b19e13ff2173bb34221389cb809ac6513))
+* Add Task processor ([#26](https://github.com/Flagsmith/flagsmith-common/issues/26)) ([9e224f1](https://github.com/Flagsmith/flagsmith-common/commit/9e224f121ffbb32d332f648d31b9089cacfce6c7))
+* Add Task Processor metrics ([#27](https://github.com/Flagsmith/flagsmith-common/issues/27)) ([d0ea561](https://github.com/Flagsmith/flagsmith-common/commit/d0ea5619b6e711bccd023655dd2858dfdf33aeef))
+* Deliver the deployed API version to an HTTP response header ([#59](https://github.com/Flagsmith/flagsmith-common/issues/59)) ([64037d3](https://github.com/Flagsmith/flagsmith-common/commit/64037d31ae59af26449e17f6fb36a0f3bcb3e26a))
+* Generate metrics documentation ([#65](https://github.com/Flagsmith/flagsmith-common/issues/65)) ([c9c4935](https://github.com/Flagsmith/flagsmith-common/commit/c9c4935afd12f24665779c0a0a7b98f3e9da7dc3))
+* Provide documented routes as labels ([#33](https://github.com/Flagsmith/flagsmith-common/issues/33)) ([3adfffa](https://github.com/Flagsmith/flagsmith-common/commit/3adfffae866966f2a58c600e66911a3f4446e3ad))
+* Separate task processor database ([#68](https://github.com/Flagsmith/flagsmith-common/issues/68)) ([fd2373e](https://github.com/Flagsmith/flagsmith-common/commit/fd2373e2043d1131ac5854fb018547784211126a))
+* Support task backoff ([#81](https://github.com/Flagsmith/flagsmith-common/issues/81)) ([a736a68](https://github.com/Flagsmith/flagsmith-common/commit/a736a68cfb8d4cfa9e87601aabe937fbae651b01))
+* **task-processor:** Add `task_type` label to task processor metrics ([#51](https://github.com/Flagsmith/flagsmith-common/issues/51)) ([42f7365](https://github.com/Flagsmith/flagsmith-common/commit/42f73657694289865dcf5e2ff25082cbd3ac571d))
+* **test-tools:** Add `run_tasks` fixture ([#85](https://github.com/Flagsmith/flagsmith-common/issues/85)) ([9bd0855](https://github.com/Flagsmith/flagsmith-common/commit/9bd0855b88bc7680a24243664d8e10352644e892))
+* **test-tools:** Add `snapshot` fixture for snapshot testing ([c9c4935](https://github.com/Flagsmith/flagsmith-common/commit/c9c4935afd12f24665779c0a0a7b98f3e9da7dc3))
+* **test-tools:** SaaS/Enterprise mode markers, update documentation ([#53](https://github.com/Flagsmith/flagsmith-common/issues/53)) ([9f23a7d](https://github.com/Flagsmith/flagsmith-common/commit/9f23a7d5d6e93a490d80f6390d9952232436be96))
+* **utils/is_oss:** Add a function to check oss deployment mode ([#44](https://github.com/Flagsmith/flagsmith-common/issues/44)) ([13c2016](https://github.com/Flagsmith/flagsmith-common/commit/13c2016f5b384818e9e796dea226d045d8769094))
+
+
+### Bug Fixes
+
+* `PROMETHEUS_MULTIPROC_DIR` deleted prematurely ([#38](https://github.com/Flagsmith/flagsmith-common/issues/38)) ([ca396df](https://github.com/Flagsmith/flagsmith-common/commit/ca396df49a2b872f0dceca1bde08696f9d45fe43))
+* `psycopg2` dependency causes building from source ([#30](https://github.com/Flagsmith/flagsmith-common/issues/30)) ([63a80ac](https://github.com/Flagsmith/flagsmith-common/commit/63a80ac8470104452e40b8b5b0eaf8849c0e2471))
+* **ci:** `poetry-lock` pre-commit hook is failing in CI ([#23](https://github.com/Flagsmith/flagsmith-common/issues/23)) ([fe86fb4](https://github.com/Flagsmith/flagsmith-common/commit/fe86fb440e4afb52566db1639208171472ca3408))
+* **ci:** Missing release-please manifest ([#22](https://github.com/Flagsmith/flagsmith-common/issues/22)) ([85aca5a](https://github.com/Flagsmith/flagsmith-common/commit/85aca5ad56b641886cf7aa8663ac82e2c63ac569))
+* **docs:** `http_server` metrics not correctly documented in README ([#32](https://github.com/Flagsmith/flagsmith-common/issues/32)) ([16169f8](https://github.com/Flagsmith/flagsmith-common/commit/16169f83a730ff0ece8dc8663b1cccec9de8a0b1))
+* **get_recurringtasks_to_process:** Add last_picked_at ([#37](https://github.com/Flagsmith/flagsmith-common/issues/37)) ([7ac2e3b](https://github.com/Flagsmith/flagsmith-common/commit/7ac2e3b36440e5f63da8bb8420dd115717ef278a))
+* metadata-incorrectly-linked-to-entity ([#57](https://github.com/Flagsmith/flagsmith-common/issues/57)) ([707496d](https://github.com/Flagsmith/flagsmith-common/commit/707496da2e3599a8067c2637d8c10566a64d800d))
+* Regex url paths used as simple url path values ([#41](https://github.com/Flagsmith/flagsmith-common/issues/41)) ([ef1842e](https://github.com/Flagsmith/flagsmith-common/commit/ef1842e6a70d8388d6588e4f1fe290e186719f04))
+* **test-tools:** Registry state is not properly cleared between tests ([5ad6414](https://github.com/Flagsmith/flagsmith-common/commit/5ad64147b5ccb65df0a7db7d030c5b00e1ccb47f))
+* **tests:** `clear_lru_caches` fixture conflicts with `saas_mode`/`enterprise_mode` pytest markers ([c9c4935](https://github.com/Flagsmith/flagsmith-common/commit/c9c4935afd12f24665779c0a0a7b98f3e9da7dc3))
+* **tests:** Inaccurate`freeze_time` for a certain timestamp ([#63](https://github.com/Flagsmith/flagsmith-common/issues/63)) ([74c73b4](https://github.com/Flagsmith/flagsmith-common/commit/74c73b49b908897308dedf2f05400ba7dd65111b))
+* Trailing slash in default routes, add tests for default routes ([#43](https://github.com/Flagsmith/flagsmith-common/issues/43)) ([29b3256](https://github.com/Flagsmith/flagsmith-common/commit/29b32565b676b9210bcb2608b9e51bfaa28d5883))
+* Unnecessary regex path definitions for `/metrics`, `/version`, healthcheck routes ([#36](https://github.com/Flagsmith/flagsmith-common/issues/36)) ([5550108](https://github.com/Flagsmith/flagsmith-common/commit/55501086ca061ee25c3c4e945d86abf6afd94dc0))
+
 ## [1.15.1](https://github.com/Flagsmith/flagsmith-common/compare/v1.15.0...v1.15.1) (2025-07-29)
 
 
