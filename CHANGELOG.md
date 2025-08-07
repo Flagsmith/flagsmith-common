@@ -2,6 +2,17 @@
 
 <a name="v1.5.2"></a>
 
+## [2.0.0](https://github.com/Flagsmith/flagsmith-common/compare/v1.15.1...v2.0.0) (2025-08-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* Move segment and metadata serializers back to core ([#93](https://github.com/Flagsmith/flagsmith-common/issues/93))
+
+### Refactoring
+
+* Move segment and metadata serializers back to core ([#93](https://github.com/Flagsmith/flagsmith-common/issues/93)) ([a6b997b](https://github.com/Flagsmith/flagsmith-common/commit/a6b997b85b2b5987520bd5ceb8a082f169eb1955))
+
 ## [1.15.1](https://github.com/Flagsmith/flagsmith-common/compare/v1.15.0...v1.15.1) (2025-07-29)
 
 
