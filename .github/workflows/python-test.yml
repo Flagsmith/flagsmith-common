@@ -24,14 +24,14 @@ jobs:
         image: postgres:15.5-alpine
         env:
           POSTGRES_HOST_AUTH_METHOD: trust
-        ports: ['5432:5432']
+        ports: ["6543:5432"]
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
       task-processor-database:
         image: postgres:15.5-alpine
         env:
           POSTGRES_HOST_AUTH_METHOD: trust
-        ports: ['5433:5432']
+        ports: ["6544:5432"]
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:

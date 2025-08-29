@@ -25,17 +25,13 @@ PROMETHEUS_ENABLED = True
 # Settings required for tests
 SECRET_KEY = "test"
 DATABASES = {
-    "default": dj_database_url.parse(
-        env(
-            "DATABASE_URL",
-            default="postgresql://postgres@localhost:5432/postgres",
-        ),
+    "default": (
+        default_database_url := dj_database_url.parse(
+            "postgresql://postgres@localhost:6543/postgres",
+        )
     ),
     "task_processor": dj_database_url.parse(
-        env(
-            "TASK_PROCESSOR_DATABASE_URL",
-            default="postgresql://postgres@localhost:5433/postgres",
-        ),
+        "postgresql://postgres@localhost:6544/postgres",
     ),
 }
 TASK_PROCESSOR_DATABASES = ["default"]
