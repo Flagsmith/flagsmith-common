@@ -386,3 +386,33 @@ def test_using_database_replica__sequential__falls_back_to_cross_region_replica(
         using_database_replica(manager).first()
     with django_assert_num_queries(1, using="cross_region_replica_1"):
         using_database_replica(manager).first()
+
+
+@pytest.mark.django_db(databases="__all__")
+@pytest.mark.parametrize("strategy", ["distributed", "sequential"])
+def test_using_database_replica__sequential__raises_if_all_replicas_unavailable(
+    bad_replica: MockType,
+    mocker: MockerFixture,
+    settings: SettingsWrapper,
+    strategy: str,
+) -> None:
+    # Given
+    settings.REPLICA_READ_STRATEGY = strategy
+    manager = get_user_model().objects
+    bad_replica = mocker.Mock()
+    bad_replica.ensure_connection.side_effect = OperationalError("Connection failed")
+    mocker.patch(
+        "common.core.utils.connections",
+        {
+            "default": connections["default"],
+            "replica_1": bad_replica,
+            "replica_2": bad_replica,
+            "replica_3": bad_replica,
+            "cross_region_replica_1": bad_replica,
+            "cross_region_replica_2": bad_replica,
+        },
+    )
+
+    # When / Then
+    with pytest.raises(OperationalError):
+        using_database_replica(manager).first()
