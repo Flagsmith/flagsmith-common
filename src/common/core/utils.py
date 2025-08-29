@@ -1,5 +1,6 @@
 import enum
 import json
+import logging
 import pathlib
 import random
 from functools import lru_cache
@@ -12,6 +13,8 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.db import connections
 from django.db.models import Manager, Model
 from django.db.utils import OperationalError
+
+logger = logging.getLogger(__name__)
 
 UNKNOWN = "unknown"
 VERSIONS_INFO_FILE_LOCATION = ".versions.json"
@@ -138,34 +141,38 @@ def using_database_replica(
     local_replicas = [name for name in connections if name.startswith(replica_prefix)]
 
     if not local_replicas:
+        logger.info("No replicas set up.")
         return manager
 
     chosen_replica = None
 
     if settings.REPLICA_READ_STRATEGY == ReplicaReadStrategy.SEQUENTIAL:
         _sequential_replica_manager.setdefault(replica_prefix, cycle(local_replicas))
-        for attempt in range(len(local_replicas)):
+        for _ in range(len(local_replicas)):
             attempted_replica = next(_sequential_replica_manager[replica_prefix])
             try:
                 connections[attempted_replica].ensure_connection()
                 chosen_replica = attempted_replica
                 break
             except OperationalError:
+                logger.warning(f"Replica '{attempted_replica}' is not available.")
                 continue
 
     if settings.REPLICA_READ_STRATEGY == ReplicaReadStrategy.DISTRIBUTED:
-        for attempt in range(len(local_replicas)):
+        for _ in range(len(local_replicas)):
             attempted_replica = random.choice(local_replicas)
             try:
                 connections[attempted_replica].ensure_connection()
                 chosen_replica = attempted_replica
                 break
             except OperationalError:
+                logger.warning(f"Replica '{attempted_replica}' is not available.")
                 local_replicas.remove(attempted_replica)
                 continue
 
     if not chosen_replica:
         if replica_prefix == "replica_":
+            logger.warning("Falling back to cross-region replicas, if any.")
             return using_database_replica(manager, "cross_region_replica_")
         raise OperationalError("No available replicas")
 
