@@ -37,6 +37,8 @@ DATABASES = {
     "replica_1": default_database_url,
     "replica_2": default_database_url,
     "replica_3": default_database_url,
+    "cross_region_replica_1": default_database_url,
+    "cross_region_replica_2": default_database_url,
 }
 REPLICA_READ_STRATEGY = "distributed"
 TASK_PROCESSOR_DATABASES = ["default"]

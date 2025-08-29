@@ -2,11 +2,14 @@ import json
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.db import connections
+from django.db.utils import OperationalError
 from pyfakefs.fake_filesystem import FakeFilesystem
 from pytest_django.fixtures import DjangoAssertNumQueries, SettingsWrapper
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 
 from common.core.utils import (
+    _sequential_replica_manager,
     get_file_contents,
     get_version,
     get_version_info,
@@ -28,6 +31,20 @@ def clear_lru_caches() -> None:
     has_email_provider.cache_clear()
     is_enterprise.cache_clear()
     is_saas.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def clear_sequential_replica_manager() -> None:
+    """Reset the sequential replica cycle"""
+    _sequential_replica_manager.clear()
+
+
+@pytest.fixture()
+def bad_replica(mocker: MockerFixture) -> MockType:
+    """An unhealthy replica"""
+    replica: MockType = mocker.Mock()
+    replica.ensure_connection.side_effect = OperationalError("Connection failed")
+    return replica
 
 
 def test__is_oss_for_enterprise_returns_false(fs: FakeFilesystem) -> None:
@@ -192,7 +209,7 @@ def test_using_database_replica__no_replicas__points_to_default(
     mocker: MockerFixture,
 ) -> None:
     # Given
-    mocker.patch("common.core.utils.connections", {"default": {}})
+    mocker.patch("common.core.utils.connections", {"default": connections["default"]})
     manager = get_user_model().objects
 
     # When / Then
@@ -201,7 +218,94 @@ def test_using_database_replica__no_replicas__points_to_default(
 
 
 @pytest.mark.django_db(databases="__all__")
-def test_using_database_replica__with_replicas__sequential_strategy__picks_databases_sequentially(
+def test_using_database_replica__distributed__picks_databases_randomly(
+    django_assert_max_num_queries: DjangoAssertNumQueries,
+    settings: SettingsWrapper,
+) -> None:
+    # Given
+    settings.REPLICA_READ_STRATEGY = "distributed"
+    manager = get_user_model().objects
+
+    # When / Then
+    with django_assert_max_num_queries(20, using="replica_1") as captured:
+        for _ in range(20):
+            using_database_replica(manager).first()
+    assert captured.final_queries
+    with django_assert_max_num_queries(20, using="replica_2") as captured:
+        for _ in range(20):
+            using_database_replica(manager).first()
+    assert captured.final_queries
+    with django_assert_max_num_queries(20, using="replica_3") as captured:
+        for _ in range(20):
+            using_database_replica(manager).first()
+    assert captured.final_queries
+
+
+@pytest.mark.django_db(databases="__all__")
+def test_using_database_replica__distributed__skips_unhealthy_replica(
+    bad_replica: MockType,
+    django_assert_num_queries: DjangoAssertNumQueries,
+    mocker: MockerFixture,
+    settings: SettingsWrapper,
+) -> None:
+    # Given
+    settings.REPLICA_READ_STRATEGY = "distributed"
+    manager = get_user_model().objects
+    mocker.patch(
+        "common.core.utils.connections",
+        {
+            "default": connections["default"],
+            "replica_1": bad_replica,
+            "replica_2": connections["replica_2"],
+            "replica_3": connections["replica_3"],
+            "cross_region_replica_1": connections["cross_region_replica_1"],
+            "cross_region_replica_2": connections["cross_region_replica_2"],
+        },
+    )
+
+    # When / Then
+    with django_assert_num_queries(0, using="replica_1"):
+        for _ in range(20):
+            using_database_replica(manager).first()
+
+
+@pytest.mark.django_db(databases="__all__")
+def test_using_database_replica__distributed__falls_back_to_cross_region_replica(
+    bad_replica: MockType,
+    django_assert_max_num_queries: DjangoAssertNumQueries,
+    mocker: MockerFixture,
+    settings: SettingsWrapper,
+) -> None:
+    # Given
+    settings.REPLICA_READ_STRATEGY = "distributed"
+    manager = get_user_model().objects
+    bad_replica = mocker.Mock()
+    bad_replica.ensure_connection.side_effect = OperationalError("Connection failed")
+    mocker.patch(
+        "common.core.utils.connections",
+        {
+            "default": connections["default"],
+            "replica_1": bad_replica,
+            "replica_2": bad_replica,
+            "replica_3": bad_replica,
+            "cross_region_replica_1": connections["cross_region_replica_1"],
+            "cross_region_replica_2": connections["cross_region_replica_2"],
+        },
+    )
+
+    # When / Then
+    with django_assert_max_num_queries(20, using="cross_region_replica_1") as captured:
+        for _ in range(20):
+            using_database_replica(manager).first()
+    assert captured.final_queries
+    with django_assert_max_num_queries(20, using="cross_region_replica_2") as captured:
+        for _ in range(20):
+            using_database_replica(manager).first()
+    assert captured.final_queries
+
+
+@pytest.mark.django_db(databases="__all__")
+def test_using_database_replica__sequential__picks_databases_sequentially(
     django_assert_num_queries: DjangoAssertNumQueries,
     settings: SettingsWrapper,
 ) -> None:
@@ -221,48 +325,64 @@ def test_using_database_replica__with_replicas__sequential_strategy__picks_datab
 
 
 @pytest.mark.django_db(databases="__all__")
-def test_using_database_replica__with_replicas__distributed_strategy__picks_databases_randomly(
-    django_assert_max_num_queries: DjangoAssertNumQueries,
+def test_using_database_replica__sequential__skips_unhealthy_replica(
+    bad_replica: MockType,
+    django_assert_num_queries: DjangoAssertNumQueries,
+    mocker: MockerFixture,
     settings: SettingsWrapper,
 ) -> None:
     # Given
-    settings.REPLICA_READ_STRATEGY = "distributed"
+    settings.REPLICA_READ_STRATEGY = "sequential"
     manager = get_user_model().objects
+    mocker.patch(
+        "common.core.utils.connections",
+        {
+            "default": connections["default"],
+            "replica_1": connections["replica_1"],
+            "replica_2": bad_replica,
+            "replica_3": connections["replica_3"],
+            "cross_region_replica_1": connections["cross_region_replica_1"],
+            "cross_region_replica_2": connections["cross_region_replica_2"],
+        },
+    )
 
     # When / Then
-    with django_assert_max_num_queries(10, using="replica_1") as captured:
+    with django_assert_num_queries(1, using="replica_1"):
         using_database_replica(manager).first()
+    with django_assert_num_queries(1, using="replica_3"):
         using_database_replica(manager).first()
+    with django_assert_num_queries(1, using="replica_1"):
         using_database_replica(manager).first()
+
+
+@pytest.mark.django_db(databases="__all__")
+def test_using_database_replica__sequential__falls_back_to_cross_region_replica(
+    bad_replica: MockType,
+    django_assert_num_queries: DjangoAssertNumQueries,
+    mocker: MockerFixture,
+    settings: SettingsWrapper,
+) -> None:
+    # Given
+    settings.REPLICA_READ_STRATEGY = "sequential"
+    manager = get_user_model().objects
+    bad_replica = mocker.Mock()
+    bad_replica.ensure_connection.side_effect = OperationalError("Connection failed")
+    mocker.patch(
+        "common.core.utils.connections",
+        {
+            "default": connections["default"],
+            "replica_1": bad_replica,
+            "replica_2": bad_replica,
+            "replica_3": bad_replica,
+            "cross_region_replica_1": connections["cross_region_replica_1"],
+            "cross_region_replica_2": connections["cross_region_replica_2"],
+        },
+    )
+
+    # When / Then
+    with django_assert_num_queries(1, using="cross_region_replica_1"):
         using_database_replica(manager).first()
+    with django_assert_num_queries(1, using="cross_region_replica_2"):
         using_database_replica(manager).first()
+    with django_assert_num_queries(1, using="cross_region_replica_1"):
         using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-    assert (captured.final_queries or 0) >= 1
-    with django_assert_max_num_queries(10, using="replica_2") as captured:
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-    assert (captured.final_queries or 0) >= 1
-    with django_assert_max_num_queries(10, using="replica_3") as captured:
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-        using_database_replica(manager).first()
-    assert (captured.final_queries or 0) >= 1
