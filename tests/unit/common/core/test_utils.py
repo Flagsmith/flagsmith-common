@@ -1,8 +1,10 @@
 import json
 
 import pytest
+from django.contrib.auth import get_user_model
 from pyfakefs.fake_filesystem import FakeFilesystem
-from pytest_django.fixtures import SettingsWrapper
+from pytest_django.fixtures import DjangoAssertNumQueries, SettingsWrapper
+from pytest_mock import MockerFixture
 
 from common.core.utils import (
     get_file_contents,
@@ -13,6 +15,7 @@ from common.core.utils import (
     is_enterprise,
     is_oss,
     is_saas,
+    using_database_replica,
 )
 
 pytestmark = pytest.mark.django_db
@@ -181,3 +184,85 @@ def test_get_version__invalid_file_contents__returns_unknown(
 
     # Then
     assert result == "unknown"
+
+
+@pytest.mark.django_db(databases="__all__")
+def test_using_database_replica__no_replicas__points_to_default(
+    django_assert_num_queries: DjangoAssertNumQueries,
+    mocker: MockerFixture,
+) -> None:
+    # Given
+    mocker.patch("common.core.utils.connections", {"default": {}})
+    manager = get_user_model().objects
+
+    # When / Then
+    with django_assert_num_queries(1, using="default"):
+        using_database_replica(manager).first()
+
+
+@pytest.mark.django_db(databases="__all__")
+def test_using_database_replica__with_replicas__sequential_strategy__picks_databases_sequentially(
+    django_assert_num_queries: DjangoAssertNumQueries,
+    settings: SettingsWrapper,
+) -> None:
+    # Given
+    settings.REPLICA_READ_STRATEGY = "sequential"
+    manager = get_user_model().objects
+
+    # When / Then
+    with django_assert_num_queries(1, using="replica_1"):
+        using_database_replica(manager).first()
+    with django_assert_num_queries(1, using="replica_2"):
+        using_database_replica(manager).first()
+    with django_assert_num_queries(1, using="replica_3"):
+        using_database_replica(manager).first()
+    with django_assert_num_queries(1, using="replica_1"):
+        using_database_replica(manager).first()
+
+
+@pytest.mark.django_db(databases="__all__")
+def test_using_database_replica__with_replicas__distributed_strategy__picks_databases_randomly(
+    django_assert_max_num_queries: DjangoAssertNumQueries,
+    settings: SettingsWrapper,
+) -> None:
+    # Given
+    settings.REPLICA_READ_STRATEGY = "distributed"
+    manager = get_user_model().objects
+
+    # When / Then
+    with django_assert_max_num_queries(10, using="replica_1") as captured:
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+    assert (captured.final_queries or 0) >= 1
+    with django_assert_max_num_queries(10, using="replica_2") as captured:
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+    assert (captured.final_queries or 0) >= 1
+    with django_assert_max_num_queries(10, using="replica_3") as captured:
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+        using_database_replica(manager).first()
+    assert (captured.final_queries or 0) >= 1

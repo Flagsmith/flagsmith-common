@@ -1,15 +1,26 @@
+import enum
 import json
 import pathlib
+import random
 from functools import lru_cache
-from typing import NotRequired, TypedDict
+from itertools import cycle
+from typing import NotRequired, TypedDict, TypeVar
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
-from django.db.models import Manager
+from django.db import connections
+from django.db.models import Manager, Model
 
 UNKNOWN = "unknown"
 VERSIONS_INFO_FILE_LOCATION = ".versions.json"
+
+ModelType = TypeVar("ModelType", bound=Model)
+
+
+class ReplicaReadStrategy(enum.StrEnum):
+    DISTRIBUTED = enum.auto()
+    SEQUENTIAL = enum.auto()
 
 
 class SelfHostedData(TypedDict):
@@ -114,3 +125,24 @@ def get_file_contents(file_path: str) -> str | None:
             return f.read().replace("\n", "")
     except FileNotFoundError:
         return None
+
+
+def using_database_replica(manager: Manager[ModelType]) -> Manager[ModelType]:
+    local_replicas = [name for name in connections if name.startswith("replica_")]
+
+    if not local_replicas:
+        return manager
+
+    if settings.REPLICA_READ_STRATEGY == ReplicaReadStrategy.SEQUENTIAL:
+        global _sequential_replica_manager
+        try:
+            isinstance(_sequential_replica_manager, cycle)  # type: ignore[name-defined]
+        except NameError:
+            _sequential_replica_manager = cycle(local_replicas)  # type: ignore[name-defined]
+        finally:
+            return manager.db_manager(next(_sequential_replica_manager))  # type: ignore[name-defined]
+
+    if settings.REPLICA_READ_STRATEGY == ReplicaReadStrategy.DISTRIBUTED:
+        return manager.db_manager(random.choice(local_replicas))
+
+    raise NotImplementedError(f"Unsupported strategy: {settings.REPLICA_READ_STRATEGY}")

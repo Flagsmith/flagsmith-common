@@ -33,7 +33,12 @@ DATABASES = {
     "task_processor": dj_database_url.parse(
         "postgresql://postgres@localhost:6544/postgres",
     ),
+    # Dummy replicas
+    "replica_1": default_database_url,
+    "replica_2": default_database_url,
+    "replica_3": default_database_url,
 }
+REPLICA_READ_STRATEGY = "distributed"
 TASK_PROCESSOR_DATABASES = ["default"]
 INSTALLED_APPS = [
     "django.contrib.auth",
