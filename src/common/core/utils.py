@@ -174,6 +174,8 @@ def using_database_replica(
         if replica_prefix == "replica_":
             logger.warning("Falling back to cross-region replicas, if any.")
             return using_database_replica(manager, "cross_region_replica_")
-        raise OperationalError("No available replicas")
+
+        logger.warning("No replicas available.")
+        return manager
 
     return manager.db_manager(chosen_replica)

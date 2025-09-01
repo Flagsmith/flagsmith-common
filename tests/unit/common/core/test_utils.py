@@ -390,8 +390,10 @@ def test_using_database_replica__sequential__falls_back_to_cross_region_replica(
 
 @pytest.mark.django_db(databases="__all__")
 @pytest.mark.parametrize("strategy", ["distributed", "sequential"])
-def test_using_database_replica__sequential__raises_if_all_replicas_unavailable(
+def test_using_database_replica__all_replicas_unavailable__falls_back_to_default_database(
+    django_assert_num_queries: DjangoAssertNumQueries,
     bad_replica: MockType,
+    caplog: pytest.LogCaptureFixture,
     mocker: MockerFixture,
     settings: SettingsWrapper,
     strategy: str,
@@ -414,5 +416,10 @@ def test_using_database_replica__sequential__raises_if_all_replicas_unavailable(
     )
 
     # When / Then
-    with pytest.raises(OperationalError):
+    with django_assert_num_queries(1, using="default"):
         using_database_replica(manager).first()
+    log = [r for r in caplog.records if r.name == "common.core.utils"][-1]
+    assert (log.levelname, log.message) == (
+        "WARNING",
+        "No replicas available.",
+    )
