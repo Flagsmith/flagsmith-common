@@ -9,7 +9,7 @@ from pytest_django.fixtures import DjangoAssertNumQueries, SettingsWrapper
 from pytest_mock import MockerFixture, MockType
 
 from common.core.utils import (
-    _sequential_replica_manager,
+    _replica_sequential_names_by_prefix,
     get_file_contents,
     get_version,
     get_version_info,
@@ -36,7 +36,7 @@ def clear_lru_caches() -> None:
 @pytest.fixture(autouse=True)
 def clear_sequential_replica_manager() -> None:
     """Reset the sequential replica cycle"""
-    _sequential_replica_manager.clear()
+    _replica_sequential_names_by_prefix.clear()
 
 
 @pytest.fixture()

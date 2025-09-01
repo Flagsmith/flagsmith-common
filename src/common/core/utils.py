@@ -21,7 +21,7 @@ VERSIONS_INFO_FILE_LOCATION = ".versions.json"
 
 ModelType = TypeVar("ModelType", bound=Model)
 
-_sequential_replica_manager: dict[str, Iterator[str]] = {}
+_replica_sequential_names_by_prefix: dict[str, Iterator[str]] = {}
 
 
 class ReplicaReadStrategy(enum.StrEnum):
@@ -147,9 +147,11 @@ def using_database_replica(
     chosen_replica = None
 
     if settings.REPLICA_READ_STRATEGY == ReplicaReadStrategy.SEQUENTIAL:
-        _sequential_replica_manager.setdefault(replica_prefix, cycle(local_replicas))
+        sequence = _replica_sequential_names_by_prefix.setdefault(
+            replica_prefix, cycle(local_replicas)
+        )
         for _ in range(len(local_replicas)):
-            attempted_replica = next(_sequential_replica_manager[replica_prefix])
+            attempted_replica = next(sequence)
             try:
                 connections[attempted_replica].ensure_connection()
                 chosen_replica = attempted_replica
