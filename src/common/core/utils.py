@@ -1,4 +1,3 @@
-import enum
 import json
 import logging
 import pathlib
@@ -14,6 +13,8 @@ from django.db import connections
 from django.db.models import Manager, Model
 from django.db.utils import OperationalError
 
+from common.core import ReplicaReadStrategy
+
 logger = logging.getLogger(__name__)
 
 UNKNOWN = "unknown"
@@ -23,11 +24,6 @@ ModelType = TypeVar("ModelType", bound=Model)
 
 ReplicaNamePrefix = Literal["replica_", "cross_region_replica_"]
 _replica_sequential_names_by_prefix: dict[ReplicaNamePrefix, Iterator[str]] = {}
-
-
-class ReplicaReadStrategy(enum.StrEnum):
-    DISTRIBUTED = enum.auto()
-    SEQUENTIAL = enum.auto()
 
 
 class SelfHostedData(TypedDict):
