@@ -20,6 +20,7 @@ from common.core.utils import (
     is_saas,
     using_database_replica,
 )
+from tests import GetLogsFixture
 
 pytestmark = pytest.mark.django_db
 
@@ -206,6 +207,7 @@ def test_get_version__invalid_file_contents__returns_unknown(
 @pytest.mark.django_db(databases="__all__")
 def test_using_database_replica__no_replicas__points_to_default(
     django_assert_num_queries: DjangoAssertNumQueries,
+    get_logs: GetLogsFixture,
     mocker: MockerFixture,
 ) -> None:
     # Given
@@ -215,6 +217,10 @@ def test_using_database_replica__no_replicas__points_to_default(
     # When / Then
     with django_assert_num_queries(1, using="default"):
         using_database_replica(manager).first()
+
+    assert get_logs("common.core.utils") == [
+        ("INFO", "No replicas set up."),
+    ]
 
 
 @pytest.mark.django_db(databases="__all__")
@@ -245,6 +251,7 @@ def test_using_database_replica__distributed__picks_databases_randomly(
 def test_using_database_replica__distributed__skips_unhealthy_replica(
     bad_replica: MockType,
     django_assert_num_queries: DjangoAssertNumQueries,
+    get_logs: GetLogsFixture,
     mocker: MockerFixture,
     settings: SettingsWrapper,
 ) -> None:
@@ -268,11 +275,16 @@ def test_using_database_replica__distributed__skips_unhealthy_replica(
         for _ in range(20):
             using_database_replica(manager).first()
 
+    assert set(get_logs("common.core.utils")) == {
+        ("ERROR", "Replica 'replica_1' is not available."),
+    }
+
 
 @pytest.mark.django_db(databases="__all__")
 def test_using_database_replica__distributed__falls_back_to_cross_region_replica(
     bad_replica: MockType,
     django_assert_max_num_queries: DjangoAssertNumQueries,
+    get_logs: GetLogsFixture,
     mocker: MockerFixture,
     settings: SettingsWrapper,
 ) -> None:
@@ -303,6 +315,24 @@ def test_using_database_replica__distributed__falls_back_to_cross_region_replica
             using_database_replica(manager).first()
     assert captured.final_queries
 
+    logs = get_logs("common.core.utils")
+    assert (
+        {
+            ("ERROR", "Replica 'replica_1' is not available."),
+            ("ERROR", "Replica 'replica_2' is not available."),
+            ("ERROR", "Replica 'replica_3' is not available."),
+        }
+        == set(logs[0:3])
+        == set(logs[4:7])
+        # ..And so on
+    )
+    assert (
+        ("WARNING", "Falling back to cross-region replicas, if any.")
+        == logs[3]
+        == logs[7]
+        # ...And so on
+    )
+
 
 @pytest.mark.django_db(databases="__all__")
 def test_using_database_replica__sequential__picks_databases_sequentially(
@@ -328,6 +358,7 @@ def test_using_database_replica__sequential__picks_databases_sequentially(
 def test_using_database_replica__sequential__skips_unhealthy_replica(
     bad_replica: MockType,
     django_assert_num_queries: DjangoAssertNumQueries,
+    get_logs: GetLogsFixture,
     mocker: MockerFixture,
     settings: SettingsWrapper,
 ) -> None:
@@ -354,11 +385,16 @@ def test_using_database_replica__sequential__skips_unhealthy_replica(
     with django_assert_num_queries(1, using="replica_1"):
         using_database_replica(manager).first()
 
+    assert get_logs("common.core.utils") == [
+        ("ERROR", "Replica 'replica_2' is not available."),
+    ]
+
 
 @pytest.mark.django_db(databases="__all__")
 def test_using_database_replica__sequential__falls_back_to_cross_region_replica(
     bad_replica: MockType,
     django_assert_num_queries: DjangoAssertNumQueries,
+    get_logs: GetLogsFixture,
     mocker: MockerFixture,
     settings: SettingsWrapper,
 ) -> None:
@@ -387,13 +423,20 @@ def test_using_database_replica__sequential__falls_back_to_cross_region_replica(
     with django_assert_num_queries(1, using="cross_region_replica_1"):
         using_database_replica(manager).first()
 
+    assert get_logs("common.core.utils") == 3 * [
+        ("ERROR", "Replica 'replica_1' is not available."),
+        ("ERROR", "Replica 'replica_2' is not available."),
+        ("ERROR", "Replica 'replica_3' is not available."),
+        ("WARNING", "Falling back to cross-region replicas, if any."),
+    ]
+
 
 @pytest.mark.django_db(databases="__all__")
 @pytest.mark.parametrize("strategy", ["distributed", "sequential"])
 def test_using_database_replica__all_replicas_unavailable__falls_back_to_default_database(
     django_assert_num_queries: DjangoAssertNumQueries,
     bad_replica: MockType,
-    caplog: pytest.LogCaptureFixture,
+    get_logs: GetLogsFixture,
     mocker: MockerFixture,
     settings: SettingsWrapper,
     strategy: str,
@@ -418,8 +461,21 @@ def test_using_database_replica__all_replicas_unavailable__falls_back_to_default
     # When / Then
     with django_assert_num_queries(1, using="default"):
         using_database_replica(manager).first()
-    log = [r for r in caplog.records if r.name == "common.core.utils"][-1]
-    assert (log.levelname, log.message) == (
-        "WARNING",
-        "No replicas available.",
+
+    logs = get_logs("common.core.utils")
+    log_iterator = {"distributed": set, "sequential": list}[strategy]
+    assert log_iterator(logs[0:3]) == log_iterator(
+        [
+            ("ERROR", "Replica 'replica_1' is not available."),
+            ("ERROR", "Replica 'replica_2' is not available."),
+            ("ERROR", "Replica 'replica_3' is not available."),
+        ]
     )
+    assert logs[3] == ("WARNING", "Falling back to cross-region replicas, if any.")
+    assert log_iterator(logs[4:6]) == log_iterator(
+        [
+            ("ERROR", "Replica 'cross_region_replica_1' is not available."),
+            ("ERROR", "Replica 'cross_region_replica_2' is not available."),
+        ]
+    )
+    assert logs[6] == ("WARNING", "No replicas available.")

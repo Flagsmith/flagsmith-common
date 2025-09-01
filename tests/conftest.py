@@ -5,7 +5,19 @@ from typing import Generator
 import prometheus_client
 import pytest
 
+from tests import GetLogsFixture
+
 pytest_plugins = "flagsmith-test-tools"
+
+
+@pytest.fixture()
+def get_logs(caplog: pytest.LogCaptureFixture) -> GetLogsFixture:
+    caplog.set_level("DEBUG")
+
+    def _logs(module: str) -> list[tuple[str, str]]:
+        return [(r.levelname, r.message) for r in caplog.records if r.name == module]
+
+    return _logs
 
 
 @pytest.fixture()

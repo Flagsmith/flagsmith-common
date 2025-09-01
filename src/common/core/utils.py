@@ -157,7 +157,7 @@ def using_database_replica(
                 chosen_replica = attempted_replica
                 break
             except OperationalError:
-                logger.warning(f"Replica '{attempted_replica}' is not available.")
+                logger.exception(f"Replica '{attempted_replica}' is not available.")
                 continue
 
     if settings.REPLICA_READ_STRATEGY == ReplicaReadStrategy.DISTRIBUTED:
@@ -168,7 +168,7 @@ def using_database_replica(
                 chosen_replica = attempted_replica
                 break
             except OperationalError:
-                logger.warning(f"Replica '{attempted_replica}' is not available.")
+                logger.exception(f"Replica '{attempted_replica}' is not available.")
                 local_replicas.remove(attempted_replica)
                 continue
 
