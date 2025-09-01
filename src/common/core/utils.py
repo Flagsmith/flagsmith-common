@@ -5,7 +5,7 @@ import pathlib
 import random
 from functools import lru_cache
 from itertools import cycle
-from typing import Iterator, NotRequired, TypedDict, TypeVar
+from typing import Iterator, Literal, NotRequired, TypedDict, TypeVar
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -21,7 +21,8 @@ VERSIONS_INFO_FILE_LOCATION = ".versions.json"
 
 ModelType = TypeVar("ModelType", bound=Model)
 
-_replica_sequential_names_by_prefix: dict[str, Iterator[str]] = {}
+ReplicaNamePrefix = Literal["replica_", "cross_region_replica_"]
+_replica_sequential_names_by_prefix: dict[ReplicaNamePrefix, Iterator[str]] = {}
 
 
 class ReplicaReadStrategy(enum.StrEnum):
@@ -135,7 +136,7 @@ def get_file_contents(file_path: str) -> str | None:
 
 def using_database_replica(
     manager: Manager[ModelType],
-    replica_prefix: str = "replica_",
+    replica_prefix: ReplicaNamePrefix = "replica_",
 ) -> Manager[ModelType]:
     """Attempts to bind a manager to a healthy database replica"""
     local_replicas = [name for name in connections if name.startswith(replica_prefix)]

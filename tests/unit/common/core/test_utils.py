@@ -43,7 +43,7 @@ def clear_sequential_replica_manager() -> None:
 @pytest.fixture()
 def bad_replica(mocker: MockerFixture) -> MockType:
     """An unhealthy replica"""
-    replica: MockType = mocker.Mock()
+    replica: MockType = mocker.Mock(spec=connections["default"])
     replica.ensure_connection.side_effect = OperationalError("Connection failed")
     return replica
 
