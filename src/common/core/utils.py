@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 UNKNOWN = "unknown"
 VERSIONS_INFO_FILE_LOCATION = ".versions.json"
 
-ModelType = TypeVar("ModelType", bound=Model)
+ManagerType = TypeVar("ManagerType", bound=Manager[Model])
 
 ReplicaNamePrefix = Literal["replica_", "cross_region_replica_"]
 _replica_sequential_names_by_prefix: dict[ReplicaNamePrefix, Iterator[str]] = {}
@@ -131,9 +131,9 @@ def get_file_contents(file_path: str) -> str | None:
 
 
 def using_database_replica(
-    manager: Manager[ModelType],
+    manager: ManagerType,
     replica_prefix: ReplicaNamePrefix = "replica_",
-) -> Manager[ModelType]:
+) -> ManagerType:
     """Attempts to bind a manager to a healthy database replica"""
     local_replicas = [name for name in connections if name.startswith(replica_prefix)]
 
