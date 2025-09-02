@@ -16,7 +16,7 @@ services:
     volumes:
       - default-database:/var/lib/postgresql/data
     ports:
-      - 5432:5432
+      - 6543:5432
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
       TZ: UTC
@@ -31,7 +31,7 @@ services:
     volumes:
       - task-processor-database:/var/lib/postgresql/data
     ports:
-      - 5433:5432
+      - 6544:5432
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
       TZ: UTC

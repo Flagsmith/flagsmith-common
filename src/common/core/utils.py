@@ -1,15 +1,29 @@
 import json
+import logging
 import pathlib
+import random
 from functools import lru_cache
-from typing import NotRequired, TypedDict
+from itertools import cycle
+from typing import Iterator, Literal, NotRequired, TypedDict, TypeVar
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
-from django.db.models import Manager
+from django.db import connections
+from django.db.models import Manager, Model
+from django.db.utils import OperationalError
+
+from common.core import ReplicaReadStrategy
+
+logger = logging.getLogger(__name__)
 
 UNKNOWN = "unknown"
 VERSIONS_INFO_FILE_LOCATION = ".versions.json"
+
+ManagerType = TypeVar("ManagerType", bound=Manager[Model])
+
+ReplicaNamePrefix = Literal["replica_", "cross_region_replica_"]
+_replica_sequential_names_by_prefix: dict[ReplicaNamePrefix, Iterator[str]] = {}
 
 
 class SelfHostedData(TypedDict):
@@ -114,3 +128,53 @@ def get_file_contents(file_path: str) -> str | None:
             return f.read().replace("\n", "")
     except FileNotFoundError:
         return None
+
+
+def using_database_replica(
+    manager: ManagerType,
+    replica_prefix: ReplicaNamePrefix = "replica_",
+) -> ManagerType:
+    """Attempts to bind a manager to a healthy database replica"""
+    local_replicas = [name for name in connections if name.startswith(replica_prefix)]
+
+    if not local_replicas:
+        logger.info("No replicas set up.")
+        return manager
+
+    chosen_replica = None
+
+    if settings.REPLICA_READ_STRATEGY == ReplicaReadStrategy.SEQUENTIAL:
+        sequence = _replica_sequential_names_by_prefix.setdefault(
+            replica_prefix, cycle(local_replicas)
+        )
+        for _ in range(len(local_replicas)):
+            attempted_replica = next(sequence)
+            try:
+                connections[attempted_replica].ensure_connection()
+                chosen_replica = attempted_replica
+                break
+            except OperationalError:
+                logger.exception(f"Replica '{attempted_replica}' is not available.")
+                continue
+
+    if settings.REPLICA_READ_STRATEGY == ReplicaReadStrategy.DISTRIBUTED:
+        for _ in range(len(local_replicas)):
+            attempted_replica = random.choice(local_replicas)
+            try:
+                connections[attempted_replica].ensure_connection()
+                chosen_replica = attempted_replica
+                break
+            except OperationalError:
+                logger.exception(f"Replica '{attempted_replica}' is not available.")
+                local_replicas.remove(attempted_replica)
+                continue
+
+    if not chosen_replica:
+        if replica_prefix == "replica_":
+            logger.warning("Falling back to cross-region replicas, if any.")
+            return using_database_replica(manager, "cross_region_replica_")
+
+        logger.warning("No replicas available.")
+        return manager
+
+    return manager.db_manager(chosen_replica)
