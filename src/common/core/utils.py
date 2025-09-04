@@ -4,7 +4,7 @@ import pathlib
 import random
 from functools import lru_cache
 from itertools import cycle
-from typing import Iterator, Literal, NotRequired, TypedDict, TypeVar
+from typing import Iterator, Literal, NotRequired, TypedDict, TypeVar, get_args
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -128,6 +128,13 @@ def get_file_contents(file_path: str) -> str | None:
             return f.read().replace("\n", "")
     except FileNotFoundError:
         return None
+
+
+def is_database_replica_setup() -> bool:
+    """Checks if any database replica is set up"""
+    return any(
+        name for name in connections if name.startswith(get_args(ReplicaNamePrefix))
+    )
 
 
 def using_database_replica(

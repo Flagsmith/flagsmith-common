@@ -15,6 +15,7 @@ from common.core.utils import (
     get_version_info,
     get_versions_from_manifest,
     has_email_provider,
+    is_database_replica_setup,
     is_enterprise,
     is_oss,
     is_saas,
@@ -202,6 +203,36 @@ def test_get_version__invalid_file_contents__returns_unknown(
 
     # Then
     assert result == "unknown"
+
+
+@pytest.mark.parametrize(
+    ["database_names", "expected"],
+    [
+        ({"default"}, False),
+        ({"default", "another_database_with_'replica'_in_its_name"}, False),
+        ({"default", "task_processor"}, False),
+        ({"default", "replica_1"}, True),
+        ({"default", "replica_1", "replica_2"}, True),
+        ({"default", "cross_region_replica_1"}, True),
+        ({"default", "replica_1", "cross_region_replica_1"}, True),
+    ],
+)
+def test_is_database_replica_setup__tells_whether_any_replica_is_present(
+    database_names: list[str],
+    expected: bool,
+    mocker: MockerFixture,
+) -> None:
+    # Given
+    mocker.patch(
+        "common.core.utils.connections",
+        {name: connections["default"] for name in database_names},
+    )
+
+    # When
+    result = is_database_replica_setup()
+
+    # Then
+    assert result is expected
 
 
 @pytest.mark.django_db(databases="__all__")
