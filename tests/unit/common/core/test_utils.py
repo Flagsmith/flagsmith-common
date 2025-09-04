@@ -223,6 +223,7 @@ def test_is_database_replica_setup__tells_whether_any_replica_is_present(
     mocker: MockerFixture,
 ) -> None:
     # Given
+    is_database_replica_setup.cache_clear()
     mocker.patch(
         "common.core.utils.connections",
         {name: connections["default"] for name in database_names},

@@ -130,6 +130,7 @@ def get_file_contents(file_path: str) -> str | None:
         return None
 
 
+@lru_cache()
 def is_database_replica_setup() -> bool:
     """Checks if any database replica is set up"""
     return any(
