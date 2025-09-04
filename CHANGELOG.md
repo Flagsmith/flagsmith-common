@@ -2,6 +2,18 @@
 
 <a name="v1.5.2"></a>
 
+## [2.2.0](https://github.com/Flagsmith/flagsmith-common/compare/v2.1.0...v2.2.0) (2025-09-04)
+
+
+### CI
+
+* pre-commit autoupdate ([#97](https://github.com/Flagsmith/flagsmith-common/issues/97)) ([a21d125](https://github.com/Flagsmith/flagsmith-common/commit/a21d125e2afade0b3b99cabe6e88a2f258acce10))
+
+
+### Features
+
+* **utils:** New is_database_replica_setup utility ([#100](https://github.com/Flagsmith/flagsmith-common/issues/100)) ([1c6c522](https://github.com/Flagsmith/flagsmith-common/commit/1c6c5222798ec5866b0d55b9bde1379b2cda8b3f))
+
 ## [2.1.0](https://github.com/Flagsmith/flagsmith-common/compare/v2.0.0...v2.1.0) (2025-09-02)
 
 
