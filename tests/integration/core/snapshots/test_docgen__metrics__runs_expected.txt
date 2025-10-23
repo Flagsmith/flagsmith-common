@@ -1,5 +1,7 @@
 ---
 title: Metrics
+sidebar_label: Metrics
+sidebar_position: 20
 ---
 
 ## Prometheus
