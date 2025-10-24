@@ -115,7 +115,7 @@ def test_run_task_kills_task_after_timeout(
     task = Task.create(
         sleep_task.task_identifier,
         scheduled_for=timezone.now(),
-        args=(1,),
+        args=(1000,),
         timeout=timedelta(microseconds=1),
     )
     task.save(using=current_database)
@@ -160,7 +160,7 @@ def test_run_recurring_task_kills_task_after_timeout(
         run_every=timedelta(seconds=1), timeout=timedelta(microseconds=1)
     )
     def _dummy_recurring_task() -> None:
-        time.sleep(1)
+        time.sleep(1000)
 
     initialise()
 
