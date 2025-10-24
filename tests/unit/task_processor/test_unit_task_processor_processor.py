@@ -972,3 +972,46 @@ def test_recurring_tasks_are_unlocked_if_picked_up_but_not_executed(
     # Then
     recurring_task.refresh_from_db(using=current_database)
     assert recurring_task.is_locked is False
+
+
+@pytest.mark.multi_database
+@pytest.mark.task_processor_mode
+def test_run_task_does_not_block_on_timeout(
+    current_database: str,
+    sleep_task: TaskHandler[[int]],
+) -> None:
+    """
+    Verify that when a task times out, the calling thread (TaskRunner)
+    does not block indefinitely waiting for the worker thread to finish.
+
+    """
+    # Given - a task that will take longer than the timeout
+    task = Task.create(
+        sleep_task.task_identifier,
+        scheduled_for=timezone.now(),
+        args=(10,),  # Task will sleep for 10 seconds
+        timeout=timedelta(milliseconds=100),  # But timeout after 100ms
+    )
+    task.save(using=current_database)
+
+    # When - we run the task
+    start_time = time.time()
+    task_runs = run_tasks(current_database)
+    elapsed_time = time.time() - start_time
+
+    # Then - the function should return quickly (within ~1 second)
+    # Not block for 10 seconds waiting for the worker thread
+    assert elapsed_time < 2.0, (
+        f"run_tasks blocked for {elapsed_time:.2f} seconds, "
+        "indicating it's waiting for the worker thread to finish"
+    )
+
+    # And the task should be marked as failed due to timeout
+    assert len(task_runs) == 1
+    task_run = task_runs[0]
+    assert task_run.result == TaskResult.FAILURE.value
+    assert "TimeoutError" in task_run.error_details
+
+    task.refresh_from_db(using=current_database)
+    assert task.completed is False
+    assert task.num_failures == 1
