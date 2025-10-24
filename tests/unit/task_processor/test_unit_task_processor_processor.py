@@ -1010,6 +1010,7 @@ def test_run_task_does_not_block_on_timeout(
     assert len(task_runs) == 1
     task_run = task_runs[0]
     assert task_run.result == TaskResult.FAILURE.value
+    assert task_run.error_details is not None
     assert "TimeoutError" in task_run.error_details
 
     task.refresh_from_db(using=current_database)
