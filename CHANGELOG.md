@@ -2,6 +2,14 @@
 
 <a name="v1.5.2"></a>
 
+## [2.2.2](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.1...v2.2.2) (2025-10-24)
+
+
+### Bug Fixes
+
+* **tests/timeout:** increase sleep duration ([#106](https://github.com/Flagsmith/flagsmith-common/issues/106)) ([92271df](https://github.com/Flagsmith/flagsmith-common/commit/92271df94e5cd5e86534a8f0dd61f4252e42c590))
+* worker thread getting stuck ([#105](https://github.com/Flagsmith/flagsmith-common/issues/105)) ([c0b8dde](https://github.com/Flagsmith/flagsmith-common/commit/c0b8ddeb1419de5d35d717784750070d78a218fa))
+
 ## [2.2.1](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.0...v2.2.1) (2025-10-23)
 
 
