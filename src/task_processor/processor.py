@@ -128,12 +128,17 @@ def _run_task(
     )
     task_run: AnyTaskRun = task.task_runs.model(started_at=timezone.now(), task=task)  # type: ignore[attr-defined]
     result: str
+    executor = None
 
     try:
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(task.run)
-            timeout = task.timeout.total_seconds() if task.timeout else None
-            future.result(timeout=timeout)  # Wait for completion or timeout
+        # Use explicit executor management to avoid blocking on shutdown
+        # when tasks timeout but continue running in worker threads.
+        # The default context manager behavior (wait=True) would block
+        # the TaskRunner thread indefinitely waiting for stuck workers.
+        executor = ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(task.run)
+        timeout = task.timeout.total_seconds() if task.timeout else None
+        future.result(timeout=timeout)  # Wait for completion or timeout
 
         task_run.result = result = TaskResult.SUCCESS.value
         task_run.finished_at = timezone.now()
@@ -175,6 +180,13 @@ def _run_task(
                     task_identifier,
                     delay_until,
                 )
+
+    finally:
+        # Always shutdown the executor without waiting for worker threads.
+        # This prevents the TaskRunner thread from blocking indefinitely
+        # when a task times out but continues running in a worker thread.
+        if executor is not None:
+            executor.shutdown(wait=False)
 
     labels = {
         "task_identifier": task_identifier,
