@@ -1,6 +1,10 @@
+import os
+from pathlib import Path
+
 import django
 import pytest
 from django.core.management import ManagementUtility
+from pyfakefs.fake_filesystem import FakeFilesystem
 from pytest_httpserver import HTTPServer
 
 from common.core.main import main
@@ -104,3 +108,24 @@ def test_main__healthcheck_http__server_invalid_response__runs_expected(
     # When & Then
     with pytest.raises(Exception):
         main(argv)
+
+
+def test_main__prometheus_multiproc_remove_dir_on_exit_default__expected() -> None:
+    # Given & When
+    main(["flagsmith"])
+
+    # Then
+    assert not Path(os.environ["PROMETHEUS_MULTIPROC_DIR"]).exists()
+
+
+def test_main__prometheus_multiproc_remove_dir_on_exit_true__expected(
+    fs: FakeFilesystem,
+) -> None:
+    # Given
+    os.environ["PROMETHEUS_MULTIPROC_DIR_KEEP"] = "true"
+
+    # When
+    main(["flagsmith"])
+
+    # Then
+    assert Path(os.environ["PROMETHEUS_MULTIPROC_DIR"]).exists()
