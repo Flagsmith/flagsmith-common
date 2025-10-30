@@ -203,8 +203,9 @@ if sys.version_info >= (3, 12):
 else:
     from os import PathLike
     from types import TracebackType
+    from typing import Literal
 
-    class TemporaryDirectory(tempfile.TemporaryDirectory):
+    class TemporaryDirectory(tempfile.TemporaryDirectory[str]):
         """
         Python 3.11-compatible TemporaryDirectory with a 3.12-style 'delete' flag.
 
@@ -239,7 +240,7 @@ else:
             exc_type: type[BaseException] | None,
             exc: BaseException | None,
             tb: TracebackType | None,
-        ) -> bool:
+        ) -> Literal[False]:
             """On context exit, only cleanup if delete=True."""
             if self.delete:
                 super().__exit__(exc_type, exc, tb)
@@ -254,4 +255,4 @@ else:
             if not self.delete:
                 return
             # Defer to stdlib implementation for actual removal.
-            return super()._cleanup(name, warn_message)
+            return tempfile.TemporaryDirectory._cleanup(type(self), name, warn_message)
