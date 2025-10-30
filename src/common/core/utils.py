@@ -202,7 +202,6 @@ if sys.version_info >= (3, 12):
     TemporaryDirectory = tempfile.TemporaryDirectory
 else:
     import contextlib
-    import tempfile
     from typing import ContextManager, Generator
 
     def TemporaryDirectory(
