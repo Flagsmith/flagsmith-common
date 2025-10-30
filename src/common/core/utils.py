@@ -201,56 +201,21 @@ if sys.version_info >= (3, 12):
     # Already has the desired behavior; re-export for uniform imports.
     TemporaryDirectory = tempfile.TemporaryDirectory
 else:
-    from os import PathLike
-    from types import TracebackType
-    from typing import Literal
+    import contextlib
+    import tempfile
+    from typing import ContextManager, Generator
 
-    class TemporaryDirectory(tempfile.TemporaryDirectory[str]):
-        """
-        Python 3.11-compatible TemporaryDirectory with a 3.12-style 'delete' flag.
+    def TemporaryDirectory(
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: str | None = None,
+        delete: bool = True,
+    ) -> ContextManager[str]:
+        if delete:
+            return tempfile.TemporaryDirectory(suffix, prefix, dir)
 
-        Args:
-            suffix (str | None): directory name suffix
-            prefix (str | None): directory name prefix
-            dir (str | bytes | os.PathLike | None): parent directory
-            ignore_cleanup_errors (bool): best-effort cleanup (same as 3.11)
-            delete (bool): if False, disable automatic cleanup on context-exit/GC.
-                           Explicit .cleanup() still deletes.
-        """
+        @contextlib.contextmanager
+        def _tmpdir() -> Generator[str, None, None]:
+            yield tempfile.mkdtemp(suffix, prefix, dir)
 
-        def __init__(
-            self,
-            suffix: str | None = None,
-            prefix: str | None = None,
-            dir: str | PathLike[str] | None = None,
-            ignore_cleanup_errors: bool = False,
-            *,
-            delete: bool = True,
-        ) -> None:
-            self.delete = delete
-            super().__init__(
-                suffix=suffix,
-                prefix=prefix,
-                dir=dir,
-                ignore_cleanup_errors=ignore_cleanup_errors,
-            )
-
-        def __exit__(
-            self,
-            exc_type: type[BaseException] | None,
-            exc: BaseException | None,
-            tb: TracebackType | None,
-        ) -> None:
-            """On context exit, only cleanup if delete=True."""
-            if self.delete:
-                super().__exit__(exc_type, exc, tb)
-
-        def _cleanup(self, name: str, warn_message: str) -> None:
-            """
-            Called by the weakref finalizer on GC in 3.11.
-            Respect delete=False by doing nothing in that case.
-            """
-            if not self.delete:
-                return
-            # Defer to stdlib implementation for actual removal.
-            return type(self)._cleanup(self, name, warn_message)
+        return _tmpdir()

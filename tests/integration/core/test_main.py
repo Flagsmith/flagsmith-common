@@ -111,7 +111,10 @@ def test_main__healthcheck_http__server_invalid_response__runs_expected(
 
 
 def test_main__prometheus_multiproc_remove_dir_on_exit_default__expected() -> None:
-    # Given & When
+    # Given
+    os.environ.pop("PROMETHEUS_MULTIPROC_DIR_KEEP", None)
+
+    # When
     main(["flagsmith"])
 
     # Then
@@ -122,6 +125,7 @@ def test_main__prometheus_multiproc_remove_dir_on_exit_true__expected(
     fs: FakeFilesystem,
 ) -> None:
     # Given
+    os.environ.pop("PROMETHEUS_MULTIPROC_DIR", None)
     os.environ["PROMETHEUS_MULTIPROC_DIR_KEEP"] = "true"
 
     # When
