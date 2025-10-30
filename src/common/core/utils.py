@@ -201,6 +201,8 @@ if sys.version_info >= (3, 12):
     # Already has the desired behavior; re-export for uniform imports.
     TemporaryDirectory = tempfile.TemporaryDirectory
 else:
+    from os import PathLike
+    from types import TracebackType
 
     class TemporaryDirectory(tempfile.TemporaryDirectory):
         """
@@ -217,20 +219,34 @@ else:
 
         def __init__(
             self,
-            *args: object,
+            suffix: str | None = None,
+            prefix: str | None = None,
+            dir: str | PathLike[str] | None = None,
+            ignore_cleanup_errors: bool = False,
+            *,
             delete: bool = True,
-        ):
+        ) -> None:
             self.delete = delete
-            super().__init__(*args)
+            super().__init__(
+                suffix=suffix,
+                prefix=prefix,
+                dir=dir,
+                ignore_cleanup_errors=ignore_cleanup_errors,
+            )
 
-        def __exit__(self, exc_type, exc, tb):
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc: BaseException | None,
+            tb: TracebackType | None,
+        ) -> bool:
             """On context exit, only cleanup if delete=True."""
             if self.delete:
                 super().__exit__(exc_type, exc, tb)
             # Return False to propagate exceptions like the stdlib does.
             return False
 
-        def _cleanup(self, name, warn_message):
+        def _cleanup(self, name: str, warn_message: str) -> None:
             """
             Called by the weakref finalizer on GC in 3.11.
             Respect delete=False by doing nothing in that case.
