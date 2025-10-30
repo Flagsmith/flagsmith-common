@@ -2,9 +2,18 @@ import json
 import logging
 import pathlib
 import random
+import sys
+import tempfile
 from functools import lru_cache
 from itertools import cycle
-from typing import Iterator, Literal, NotRequired, TypedDict, TypeVar, get_args
+from typing import (
+    Iterator,
+    Literal,
+    NotRequired,
+    TypedDict,
+    TypeVar,
+    get_args,
+)
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -186,3 +195,47 @@ def using_database_replica(
         return manager
 
     return manager.db_manager(chosen_replica)
+
+
+if sys.version_info >= (3, 12):
+    # Already has the desired behavior; re-export for uniform imports.
+    TemporaryDirectory = tempfile.TemporaryDirectory
+else:
+
+    class TemporaryDirectory(tempfile.TemporaryDirectory):
+        """
+        Python 3.11-compatible TemporaryDirectory with a 3.12-style 'delete' flag.
+
+        Args:
+            suffix (str | None): directory name suffix
+            prefix (str | None): directory name prefix
+            dir (str | bytes | os.PathLike | None): parent directory
+            ignore_cleanup_errors (bool): best-effort cleanup (same as 3.11)
+            delete (bool): if False, disable automatic cleanup on context-exit/GC.
+                           Explicit .cleanup() still deletes.
+        """
+
+        def __init__(
+            self,
+            *args: object,
+            delete: bool = True,
+        ):
+            self.delete = delete
+            super().__init__(*args)
+
+        def __exit__(self, exc_type, exc, tb):
+            """On context exit, only cleanup if delete=True."""
+            if self.delete:
+                super().__exit__(exc_type, exc, tb)
+            # Return False to propagate exceptions like the stdlib does.
+            return False
+
+        def _cleanup(self, name, warn_message):
+            """
+            Called by the weakref finalizer on GC in 3.11.
+            Respect delete=False by doing nothing in that case.
+            """
+            if not self.delete:
+                return
+            # Defer to stdlib implementation for actual removal.
+            return super()._cleanup(name, warn_message)
