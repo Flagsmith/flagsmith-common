@@ -240,12 +240,10 @@ else:
             exc_type: type[BaseException] | None,
             exc: BaseException | None,
             tb: TracebackType | None,
-        ) -> Literal[False]:
+        ) -> None:
             """On context exit, only cleanup if delete=True."""
             if self.delete:
                 super().__exit__(exc_type, exc, tb)
-            # Return False to propagate exceptions like the stdlib does.
-            return False
 
         def _cleanup(self, name: str, warn_message: str) -> None:
             """
@@ -255,4 +253,4 @@ else:
             if not self.delete:
                 return
             # Defer to stdlib implementation for actual removal.
-            return tempfile.TemporaryDirectory._cleanup(type(self), name, warn_message)
+            return type(self)._cleanup(self, name, warn_message)
