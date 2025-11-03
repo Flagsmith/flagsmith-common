@@ -115,7 +115,7 @@ def test_main__prometheus_multiproc_remove_dir_on_exit_default__expected(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     # Given
-    monkeypatch.delenv("PROMETHEUS_MULTIPROC_DIR_KEEP")
+    monkeypatch.delenv("PROMETHEUS_MULTIPROC_DIR_KEEP", raising=False)
 
     # When
     main(["flagsmith"])
