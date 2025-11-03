@@ -208,8 +208,22 @@ else:
         suffix: str | None = None,
         prefix: str | None = None,
         dir: str | None = None,
+        *,
         delete: bool = True,
     ) -> ContextManager[str]:
+        """
+        Create a temporary directory with optional cleanup control.
+
+        This wrapper exists because Python 3.12 changed TemporaryDirectory's behavior
+        by adding a 'delete' parameter, which doesn't exist in Python 3.11. This
+        function provides a consistent API across both versions.
+
+        When delete=True, uses the stdlib's TemporaryDirectory (auto-cleanup).
+        When delete=False, creates a directory with mkdtemp that persists after
+        the context manager exits, matching Python 3.12's delete=False behavior.
+
+        See https://docs.python.org/3.12/library/tempfile.html#tempfile.TemporaryDirectory for usage details.
+        """
         if delete:
             return tempfile.TemporaryDirectory(suffix, prefix, dir)
 
