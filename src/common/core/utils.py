@@ -2,9 +2,18 @@ import json
 import logging
 import pathlib
 import random
+import sys
+import tempfile
 from functools import lru_cache
 from itertools import cycle
-from typing import Iterator, Literal, NotRequired, TypedDict, TypeVar, get_args
+from typing import (
+    Iterator,
+    Literal,
+    NotRequired,
+    TypedDict,
+    TypeVar,
+    get_args,
+)
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -186,3 +195,40 @@ def using_database_replica(
         return manager
 
     return manager.db_manager(chosen_replica)
+
+
+if sys.version_info >= (3, 12):
+    # Already has the desired behavior; re-export for uniform imports.
+    TemporaryDirectory = tempfile.TemporaryDirectory
+else:
+    import contextlib
+    from typing import ContextManager, Generator
+
+    def TemporaryDirectory(
+        suffix: str | None = None,
+        prefix: str | None = None,
+        dir: str | None = None,
+        *,
+        delete: bool = True,
+    ) -> ContextManager[str]:
+        """
+        Create a temporary directory with optional cleanup control.
+
+        This wrapper exists because Python 3.12 changed TemporaryDirectory's behavior
+        by adding a 'delete' parameter, which doesn't exist in Python 3.11. This
+        function provides a consistent API across both versions.
+
+        When delete=True, uses the stdlib's TemporaryDirectory (auto-cleanup).
+        When delete=False, creates a directory with mkdtemp that persists after
+        the context manager exits, matching Python 3.12's delete=False behavior.
+
+        See https://docs.python.org/3.12/library/tempfile.html#tempfile.TemporaryDirectory for usage details.
+        """
+        if delete:
+            return tempfile.TemporaryDirectory(suffix, prefix, dir)
+
+        @contextlib.contextmanager
+        def _tmpdir() -> Generator[str, None, None]:
+            yield tempfile.mkdtemp(suffix, prefix, dir)
+
+        return _tmpdir()

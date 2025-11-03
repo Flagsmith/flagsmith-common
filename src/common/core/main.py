@@ -2,14 +2,15 @@ import contextlib
 import logging
 import os
 import sys
-import tempfile
 import typing
 
 from django.core.management import (
     execute_from_command_line as django_execute_from_command_line,
 )
+from environs import Env
 
 from common.core.cli import healthcheck
+from common.core.utils import TemporaryDirectory
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
         main()
     ```
     """
+    env = Env()
     ctx = contextlib.ExitStack()
 
     # TODO @khvn26 Move logging setup to here
@@ -43,9 +45,11 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.dev")
 
     # Set up Prometheus' multiprocess mode
-    if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
-        prometheus_multiproc_dir_name = tempfile.mkdtemp()
-
+    if not env.str("PROMETHEUS_MULTIPROC_DIR", ""):
+        delete = not env.bool("PROMETHEUS_MULTIPROC_DIR_KEEP", False)
+        prometheus_multiproc_dir_name = ctx.enter_context(
+            TemporaryDirectory(delete=delete)
+        )
         logger.info(
             "Created %s for Prometheus multi-process mode",
             prometheus_multiproc_dir_name,
