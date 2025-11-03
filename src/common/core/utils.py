@@ -7,6 +7,7 @@ import tempfile
 from functools import lru_cache
 from itertools import cycle
 from typing import (
+    TYPE_CHECKING,
     Iterator,
     Literal,
     NotRequired,
@@ -17,19 +18,23 @@ from typing import (
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AbstractBaseUser
 from django.db import connections
-from django.db.models import Manager, Model
 from django.db.utils import OperationalError
 
 from common.core import ReplicaReadStrategy
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import AbstractBaseUser
+    from django.db.models.base import Model
+    from django.db.models.manager import Manager
+
 
 logger = logging.getLogger(__name__)
 
 UNKNOWN = "unknown"
 VERSIONS_INFO_FILE_LOCATION = ".versions.json"
 
-ManagerType = TypeVar("ManagerType", bound=Manager[Model])
+ManagerType = TypeVar("ManagerType", bound="Manager[Model]")
 
 ReplicaNamePrefix = Literal["replica_", "cross_region_replica_"]
 _replica_sequential_names_by_prefix: dict[ReplicaNamePrefix, Iterator[str]] = {}
@@ -102,7 +107,7 @@ def get_version_info() -> VersionInfo:
     version_json["image_tag"] = manifest_versions["."]
 
     if not _is_saas:
-        user_objects: Manager[AbstractBaseUser] = getattr(get_user_model(), "objects")
+        user_objects: "Manager[AbstractBaseUser]" = getattr(get_user_model(), "objects")
 
         version_json["self_hosted_data"] = {
             "has_users": user_objects.exists(),

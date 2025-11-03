@@ -1,4 +1,5 @@
 import os
+import subprocess
 from pathlib import Path
 
 import django
@@ -110,9 +111,11 @@ def test_main__healthcheck_http__server_invalid_response__runs_expected(
         main(argv)
 
 
-def test_main__prometheus_multiproc_remove_dir_on_exit_default__expected() -> None:
+def test_main__prometheus_multiproc_remove_dir_on_exit_default__expected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     # Given
-    os.environ.pop("PROMETHEUS_MULTIPROC_DIR_KEEP", None)
+    monkeypatch.delenv("PROMETHEUS_MULTIPROC_DIR_KEEP", raising=False)
 
     # When
     main(["flagsmith"])
@@ -122,14 +125,28 @@ def test_main__prometheus_multiproc_remove_dir_on_exit_default__expected() -> No
 
 
 def test_main__prometheus_multiproc_remove_dir_on_exit_true__expected(
+    monkeypatch: pytest.MonkeyPatch,
     fs: FakeFilesystem,
 ) -> None:
     # Given
-    os.environ.pop("PROMETHEUS_MULTIPROC_DIR", None)
-    os.environ["PROMETHEUS_MULTIPROC_DIR_KEEP"] = "true"
+    monkeypatch.delenv("PROMETHEUS_MULTIPROC_DIR")
+    monkeypatch.setenv("PROMETHEUS_MULTIPROC_DIR_KEEP", "true")
 
     # When
     main(["flagsmith"])
 
     # Then
     assert Path(os.environ["PROMETHEUS_MULTIPROC_DIR"]).exists()
+
+
+def test_main__no_django_configured__expected_0(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    monkeypatch.delenv("DJANGO_SETTINGS_MODULE")
+
+    # When
+    output = subprocess.run("flagsmith")
+
+    # Then
+    assert output.returncode == 0
