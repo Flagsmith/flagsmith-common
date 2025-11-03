@@ -115,15 +115,23 @@ def test_run_task_kills_task_after_timeout(
     task = Task.create(
         sleep_task.task_identifier,
         scheduled_for=timezone.now(),
-        args=(1000,),
+        args=(10,),  # Sleep for 10 seconds
         timeout=timedelta(microseconds=1),
     )
     task.save(using=current_database)
 
     # When
+    start_time = time.time()
     task_runs = run_tasks(current_database)
+    elapsed_time = time.time() - start_time
 
-    # Then
+    # Then - the function should return quickly (within ~2 seconds)
+    # Not block for 10 seconds waiting for the worker thread
+    assert elapsed_time < 2.0, (
+        f"run_tasks blocked for {elapsed_time:.2f} seconds, "
+        "indicating it's waiting for the worker thread to finish"
+    )
+
     assert (
         len(task_runs)
         == TaskRun.objects.using(current_database).filter(task=task).count()
@@ -160,17 +168,26 @@ def test_run_recurring_task_kills_task_after_timeout(
         run_every=timedelta(seconds=1), timeout=timedelta(microseconds=1)
     )
     def _dummy_recurring_task() -> None:
-        time.sleep(1000)
+        time.sleep(10)  # Sleep for 10 seconds
 
     initialise()
 
     task = RecurringTask.objects.using(current_database).get(
         task_identifier="test_unit_task_processor_processor._dummy_recurring_task",
     )
-    # When
-    task_runs = run_recurring_tasks(current_database)
 
-    # Then
+    # When
+    start_time = time.time()
+    task_runs = run_recurring_tasks(current_database)
+    elapsed_time = time.time() - start_time
+
+    # Then - the function should return quickly (within ~2 seconds)
+    # Not block for 10 seconds waiting for the worker thread
+    assert elapsed_time < 2.0, (
+        f"run_recurring_tasks blocked for {elapsed_time:.2f} seconds, "
+        "indicating it's waiting for the worker thread to finish"
+    )
+
     assert (
         len(task_runs)
         == RecurringTaskRun.objects.using(current_database).filter(task=task).count()
