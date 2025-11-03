@@ -2,6 +2,19 @@
 
 <a name="v1.5.2"></a>
 
+## [2.2.3](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.2...v2.2.3) (2025-11-03)
+
+
+### CI
+
+* pre-commit autoupdate ([#108](https://github.com/Flagsmith/flagsmith-common/issues/108)) ([a2ce926](https://github.com/Flagsmith/flagsmith-common/commit/a2ce926df24968cab57e81e39e77838575f7f17f))
+
+
+### Bug Fixes
+
+* reduce sleep time in timeout tests and add elapsed time checks ([#111](https://github.com/Flagsmith/flagsmith-common/issues/111)) ([630e02f](https://github.com/Flagsmith/flagsmith-common/commit/630e02f0483fa629648beb9402cacde8a5188fa2))
+* Temporary directories are not removed ([#109](https://github.com/Flagsmith/flagsmith-common/issues/109)) ([5e2f66f](https://github.com/Flagsmith/flagsmith-common/commit/5e2f66ff9c4ea4f8dda19a98444d3644396dbcf5))
+
 ## [2.2.2](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.1...v2.2.2) (2025-10-24)
 
 
