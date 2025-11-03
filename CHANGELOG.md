@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [2.2.4](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.3...v2.2.4) (2025-11-03)
+
+
+### Bug Fixes
+
+* `common.core.utils.TemporaryDirectory` dependent on Django settings ([#113](https://github.com/Flagsmith/flagsmith-common/issues/113)) ([7a4b1cb](https://github.com/Flagsmith/flagsmith-common/commit/7a4b1cb2830a2407341a721d75058dfa72eb19f4))
+
 ## [2.2.3](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.2...v2.2.3) (2025-11-03)
 
 
