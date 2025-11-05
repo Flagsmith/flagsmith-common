@@ -11,7 +11,7 @@ from django.core.management import (
 from environs import Env
 
 from common.core.cli import healthcheck
-from common.prometheus.constants import DEFAULT_PROMETHEUS_MULTIPROC_DIR
+from common.core.constants import DEFAULT_PROMETHEUS_MULTIPROC_DIR
 
 logger = logging.getLogger(__name__)
 
