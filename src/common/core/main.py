@@ -1,6 +1,7 @@
 import contextlib
 import logging
 import os
+import shutil
 import sys
 import typing
 
@@ -10,7 +11,7 @@ from django.core.management import (
 from environs import Env
 
 from common.core.cli import healthcheck
-from common.core.utils import TemporaryDirectory
+from common.prometheus.constants import DEFAULT_PROMETHEUS_MULTIPROC_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -45,16 +46,25 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.dev")
 
     # Set up Prometheus' multiprocess mode
-    if not env.str("PROMETHEUS_MULTIPROC_DIR", ""):
-        delete = not env.bool("PROMETHEUS_MULTIPROC_DIR_KEEP", False)
-        prometheus_multiproc_dir_name = ctx.enter_context(
-            TemporaryDirectory(delete=delete)
-        )
+    prometheus_multiproc_dir_name = os.environ.setdefault(
+        "PROMETHEUS_MULTIPROC_DIR",
+        DEFAULT_PROMETHEUS_MULTIPROC_DIR,
+    )
+    prometheus_multiproc_dir_keep = env.bool(
+        "PROMETHEUS_MULTIPROC_DIR_KEEP",
+        default=False,
+    )
+    if not prometheus_multiproc_dir_keep:
+        shutil.rmtree(prometheus_multiproc_dir_name, ignore_errors=True)
         logger.info(
-            "Created %s for Prometheus multi-process mode",
+            "Removed %s to ensure a clean state for Prometheus multi-process mode",
             prometheus_multiproc_dir_name,
         )
-        os.environ["PROMETHEUS_MULTIPROC_DIR"] = prometheus_multiproc_dir_name
+    os.makedirs(prometheus_multiproc_dir_name, exist_ok=True)
+    logger.info(
+        "Created %s for Prometheus multi-process mode",
+        prometheus_multiproc_dir_name,
+    )
 
     if "docgen" in sys.argv:
         os.environ["DOCGEN_MODE"] = "true"
