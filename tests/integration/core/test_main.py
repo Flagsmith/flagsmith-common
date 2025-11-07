@@ -1,6 +1,4 @@
-import os
 import subprocess
-from pathlib import Path
 
 import django
 import pytest
@@ -111,32 +109,23 @@ def test_main__healthcheck_http__server_invalid_response__runs_expected(
         main(argv)
 
 
-def test_main__prometheus_multiproc_remove_dir_on_exit_default__expected(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    # Given
-    monkeypatch.delenv("PROMETHEUS_MULTIPROC_DIR_KEEP", raising=False)
-
-    # When
-    main(["flagsmith"])
-
-    # Then
-    assert not Path(os.environ["PROMETHEUS_MULTIPROC_DIR"]).exists()
-
-
-def test_main__prometheus_multiproc_remove_dir_on_exit_true__expected(
+def test_main__prometheus_multiproc_remove_dir_on_start_default__expected(
     monkeypatch: pytest.MonkeyPatch,
     fs: FakeFilesystem,
 ) -> None:
     # Given
-    monkeypatch.delenv("PROMETHEUS_MULTIPROC_DIR")
-    monkeypatch.setenv("PROMETHEUS_MULTIPROC_DIR_KEEP", "true")
+    monkeypatch.delenv("PROMETHEUS_MULTIPROC_DIR_KEEP", raising=False)
+
+    fs.create_file(
+        "/tmp/flagsmith-prometheus/some_metric_file.db",
+        create_missing_dirs=True,
+    )
 
     # When
     main(["flagsmith"])
 
     # Then
-    assert Path(os.environ["PROMETHEUS_MULTIPROC_DIR"]).exists()
+    assert not fs.exists("/tmp/flagsmith-prometheus/some_metric_file.db")
 
 
 def test_main__no_django_configured__expected_0(
