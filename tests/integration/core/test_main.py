@@ -128,26 +128,6 @@ def test_main__prometheus_multiproc_remove_dir_on_start_default__expected(
     assert not fs.exists("/tmp/flagsmith-prometheus/some_metric_file.db")
 
 
-def test_main__prometheus_multiproc_remove_dir_on_start_true__expected(
-    monkeypatch: pytest.MonkeyPatch,
-    fs: FakeFilesystem,
-) -> None:
-    # Given
-    monkeypatch.delenv("PROMETHEUS_MULTIPROC_DIR", raising=False)
-    monkeypatch.setenv("PROMETHEUS_MULTIPROC_DIR_KEEP", "true")
-
-    fs.create_file(
-        "/tmp/flagsmith-prometheus/some_metric_file.db",
-        create_missing_dirs=True,
-    )
-
-    # When
-    main(["flagsmith"])
-
-    # Then
-    assert fs.exists("/tmp/flagsmith-prometheus/some_metric_file.db")
-
-
 def test_main__no_django_configured__expected_0(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -50,19 +50,10 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
         "PROMETHEUS_MULTIPROC_DIR",
         DEFAULT_PROMETHEUS_MULTIPROC_DIR,
     )
-    prometheus_multiproc_dir_keep = env.bool(
-        "PROMETHEUS_MULTIPROC_DIR_KEEP",
-        default=False,
-    )
-    if not prometheus_multiproc_dir_keep:
-        shutil.rmtree(prometheus_multiproc_dir_name, ignore_errors=True)
-        logger.info(
-            "Removed %s to ensure a clean state for Prometheus multi-process mode",
-            prometheus_multiproc_dir_name,
-        )
+    shutil.rmtree(prometheus_multiproc_dir_name, ignore_errors=True)
     os.makedirs(prometheus_multiproc_dir_name, exist_ok=True)
     logger.info(
-        "Created %s for Prometheus multi-process mode",
+        "Re-created %s for Prometheus multi-process mode",
         prometheus_multiproc_dir_name,
     )
 
