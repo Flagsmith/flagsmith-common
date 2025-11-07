@@ -8,7 +8,6 @@ import typing
 from django.core.management import (
     execute_from_command_line as django_execute_from_command_line,
 )
-from environs import Env
 
 from common.core.cli import healthcheck
 from common.core.constants import DEFAULT_PROMETHEUS_MULTIPROC_DIR
@@ -32,7 +31,6 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
         main()
     ```
     """
-    env = Env()
     ctx = contextlib.ExitStack()
 
     # TODO @khvn26 Move logging setup to here
