@@ -50,7 +50,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     )
 
     if os.path.exists(prometheus_multiproc_dir_name):
-        _clear_subdirs(prometheus_multiproc_dir_name)
+        _clear_temporary_directories(prometheus_multiproc_dir_name)
 
     logger.info(
         "Re-created %s for Prometheus multi-process mode",
@@ -106,11 +106,11 @@ def main(argv: list[str] = sys.argv) -> None:
         execute_from_command_line(argv)
 
 
-def _clear_subdirs(dir_path: str) -> None:
+def _clear_temporary_directories(dir_path: str) -> None:
     for filename in os.listdir(dir_path):
         file_path = os.path.join(dir_path, filename)
         try:
-            if os.path.isdir(file_path):
+            if os.path.isdir(file_path) and filename.startswith("tmp"):
                 shutil.rmtree(file_path)
         except Exception as e:
             logger.info(f"Failed to delete {file_path}. Reason: {e}")
