@@ -49,17 +49,18 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
         DEFAULT_PROMETHEUS_MULTIPROC_DIR,
     )
 
-    # Clear all files and directories inside the multiproc dir,
-    # but not the dir itself.
-    for filename in os.listdir(prometheus_multiproc_dir_name):
-        file_path = os.path.join(prometheus_multiproc_dir_name, filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)  # delete file or symlink
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-        except Exception as e:
-            print(f"Failed to delete {file_path}. Reason: {e}")
+    if os.path.exists(prometheus_multiproc_dir_name):
+        # Clear all files and directories inside the multiproc dir,
+        # but not the dir itself.
+        for filename in os.listdir(prometheus_multiproc_dir_name):
+            file_path = os.path.join(prometheus_multiproc_dir_name, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)  # delete file or symlink
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print(f"Failed to delete {file_path}. Reason: {e}")
 
     logger.info(
         "Re-created %s for Prometheus multi-process mode",
