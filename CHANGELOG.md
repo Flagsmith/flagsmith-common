@@ -2,6 +2,18 @@
 
 <a name="v1.5.2"></a>
 
+## [2.2.5](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.4...v2.2.5) (2025-11-07)
+
+
+### CI
+
+* pre-commit autoupdate ([#115](https://github.com/Flagsmith/flagsmith-common/issues/115)) ([f5ba6db](https://github.com/Flagsmith/flagsmith-common/commit/f5ba6db2053b9c3a90f3960fc7ea523aefdb3da7))
+
+
+### Bug Fixes
+
+* Unstable `PROMETHEUS_MULTIPROC_DIR` ([#116](https://github.com/Flagsmith/flagsmith-common/issues/116)) ([b319fd4](https://github.com/Flagsmith/flagsmith-common/commit/b319fd4cf72cb6af134a447ad47df1736d9d00e8))
+
 ## [2.2.4](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.3...v2.2.4) (2025-11-03)
 
 
