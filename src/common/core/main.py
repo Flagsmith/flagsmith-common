@@ -50,6 +50,11 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     )
     shutil.rmtree(prometheus_multiproc_dir_name, ignore_errors=True)
     os.makedirs(prometheus_multiproc_dir_name, exist_ok=True)
+
+    # Force expected permissions (see here:
+    # https://stackoverflow.com/questions/5231901/permission-problems-when-creating-a-dir-with-os-makedirs-in-python)
+    os.chmod(prometheus_multiproc_dir_name, 0o777)
+
     logger.info(
         "Re-created %s for Prometheus multi-process mode",
         prometheus_multiproc_dir_name,
