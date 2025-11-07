@@ -1,7 +1,6 @@
 import contextlib
 import logging
 import os
-import shutil
 import sys
 import typing
 
@@ -11,6 +10,7 @@ from django.core.management import (
 
 from common.core.cli import healthcheck
 from common.core.constants import DEFAULT_PROMETHEUS_MULTIPROC_DIR
+from task_processor.utils import clear_subdirs
 
 logger = logging.getLogger(__name__)
 
@@ -50,17 +50,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     )
 
     if os.path.exists(prometheus_multiproc_dir_name):
-        # Clear all files and directories inside the multiproc dir,
-        # but not the dir itself.
-        for filename in os.listdir(prometheus_multiproc_dir_name):
-            file_path = os.path.join(prometheus_multiproc_dir_name, filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)  # delete file or symlink
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                print(f"Failed to delete {file_path}. Reason: {e}")
+        clear_subdirs(prometheus_multiproc_dir_name)
 
     logger.info(
         "Re-created %s for Prometheus multi-process mode",
