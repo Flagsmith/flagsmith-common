@@ -1,8 +1,6 @@
 import argparse
 import inspect
 import logging
-import os
-import shutil
 from contextlib import contextmanager
 from typing import Any, Generator
 
@@ -71,13 +69,3 @@ def start_task_processor(
         yield coordinator
     finally:
         coordinator.stop()
-
-
-def clear_subdirs(dir_path: str) -> None:
-    for filename in os.listdir(dir_path):
-        file_path = os.path.join(dir_path, filename)
-        try:
-            if os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-        except Exception as e:
-            logger.info(f"Failed to delete {file_path}. Reason: {e}")
