@@ -49,7 +49,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
         DEFAULT_PROMETHEUS_MULTIPROC_DIR,
     )
     shutil.rmtree(prometheus_multiproc_dir_name, ignore_errors=True)
-    os.makedirs(prometheus_multiproc_dir_name, exist_ok=True)
+    os.makedirs(prometheus_multiproc_dir_name, mode=0o700)
     logger.info(
         "Re-created %s for Prometheus multi-process mode",
         prometheus_multiproc_dir_name,
