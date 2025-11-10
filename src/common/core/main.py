@@ -9,6 +9,7 @@ from django.core.management import (
 )
 
 from common.core.cli import healthcheck
+from common.prometheus.utils import prepare_prom_multiproc_dir
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,9 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     ctx = contextlib.ExitStack()
 
     # TODO @khvn26 Move logging setup to here
+
+    # Prometheus multiproc support
+    prepare_prom_multiproc_dir()
 
     # Currently we don't install Flagsmith modules as a package, so we need to add
     # $CWD to the Python path to be able to import them
