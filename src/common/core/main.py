@@ -48,10 +48,8 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
         "PROMETHEUS_MULTIPROC_DIR",
         DEFAULT_PROMETHEUS_MULTIPROC_DIR,
     )
-
-    if os.path.exists(prometheus_multiproc_dir_name):
-        _clear_temporary_directories(prometheus_multiproc_dir_name)
-
+    shutil.rmtree(prometheus_multiproc_dir_name, ignore_errors=True)
+    os.makedirs(prometheus_multiproc_dir_name, exist_ok=True, mode=0o777)
     logger.info(
         "Re-created %s for Prometheus multi-process mode",
         prometheus_multiproc_dir_name,
@@ -104,13 +102,3 @@ def main(argv: list[str] = sys.argv) -> None:
     with ensure_cli_env():
         # Run own commands and Django
         execute_from_command_line(argv)
-
-
-def _clear_temporary_directories(dir_path: str) -> None:
-    for filename in os.listdir(dir_path):
-        file_path = os.path.join(dir_path, filename)
-        try:
-            if os.path.isdir(file_path) and filename.startswith("tmp"):
-                shutil.rmtree(file_path)
-        except Exception as e:
-            logger.info(f"Failed to delete {file_path}. Reason: {e}")
