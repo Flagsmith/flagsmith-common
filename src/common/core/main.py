@@ -1,15 +1,18 @@
 import contextlib
 import logging
 import os
+import pathlib
 import sys
 import typing
+from tempfile import gettempdir
 
 from django.core.management import (
     execute_from_command_line as django_execute_from_command_line,
 )
 
 from common.core.cli import healthcheck
-from common.prometheus.multiprocessing import prepare_prom_multiproc_dir
+from common.core.constants import DEFAULT_PROMETHEUS_MULTIPROC_DIR_NAME
+from common.core.utils import clear_directory
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +38,22 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     # TODO @khvn26 Move logging setup to here
 
     # Prometheus multiproc support
-    prepare_prom_multiproc_dir()
+    prom_dir = pathlib.Path(
+        os.environ.setdefault(
+            "PROMETHEUS_MULTIPROC_DIR",
+            os.path.join(gettempdir(), DEFAULT_PROMETHEUS_MULTIPROC_DIR_NAME),
+        )
+    )
+
+    if prom_dir.exists():
+        clear_directory(prom_dir)
+
+    prom_dir.mkdir(parents=True, exist_ok=True)
+
+    # While `mkdir` sets mode=0o777 by default, this can be affected by umask resulting in
+    # lesser permissions for other users. This step ensures the directory is writable for
+    # all users.
+    prom_dir.chmod(0o777)
 
     # Currently we don't install Flagsmith modules as a package, so we need to add
     # $CWD to the Python path to be able to import them

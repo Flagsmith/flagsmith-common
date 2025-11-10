@@ -2,6 +2,7 @@ import json
 import logging
 import pathlib
 import random
+import shutil
 from functools import lru_cache
 from itertools import cycle
 from typing import (
@@ -198,3 +199,18 @@ def using_database_replica(
         return manager
 
     return manager.db_manager(chosen_replica)
+
+
+def clear_directory(dir_: pathlib.Path) -> None:
+    """
+    Safely clear a directory including all subdirectories and files.
+    """
+    for p in dir_.rglob("*"):
+        try:
+            # Ensure that the cleanup doesn't silently fail on
+            # files and subdirs created by other users.
+            p.chmod(0o777)
+        except Exception:  # pragma: no cover
+            pass
+
+    shutil.rmtree(dir_, ignore_errors=True)

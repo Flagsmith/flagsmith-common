@@ -194,7 +194,7 @@ def _run_task(
         "result": result.lower(),
     }
 
-    timer.labels(**labels)
+    timer.labels(**labels)  # type: ignore[no-untyped-call]
     ctx.close()
 
     metrics.flagsmith_task_processor_finished_tasks_total.labels(**labels).inc()
