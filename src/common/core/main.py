@@ -1,18 +1,15 @@
 import contextlib
 import logging
 import os
-import shutil
-import stat
 import sys
 import typing
-from pathlib import Path
-from tempfile import gettempdir
 
 from django.core.management import (
     execute_from_command_line as django_execute_from_command_line,
 )
 
 from common.core.cli import healthcheck
+from common.core.utils import prepare_prom_multiproc_dir
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +35,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     # TODO @khvn26 Move logging setup to here
 
     # Prometheus multiproc support
-    _prepare_prom_multiproc_dir()
+    prepare_prom_multiproc_dir()
 
     # Currently we don't install Flagsmith modules as a package, so we need to add
     # $CWD to the Python path to be able to import them
@@ -95,35 +92,3 @@ def main(argv: list[str] = sys.argv) -> None:
     with ensure_cli_env():
         # Run own commands and Django
         execute_from_command_line(argv)
-
-
-def _prepare_prom_multiproc_dir() -> str:
-    # Use env if already provided (e.g. via docker-compose), else default under /tmp
-    prom_dir = Path(
-        os.environ.get(
-            "PROMETHEUS_MULTIPROC_DIR",
-            os.path.join(gettempdir(), "flagsmith-prometheus"),
-        )
-    )
-
-    # Best-effort: if dir exists, make everything writable so rmtree can't fail on perms
-    if prom_dir.exists():
-        for p in prom_dir.rglob("*"):
-            try:
-                p.chmod(p.stat().st_mode | stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-            except Exception:
-                pass
-        shutil.rmtree(prom_dir, ignore_errors=True)
-
-    prom_dir.mkdir(parents=True, exist_ok=True)
-
-    # Ensure the directory is writable by whoever will run the app
-    # Option A (most robust across Docker uid differences): world-writable tmp-style
-    try:
-        prom_dir.chmod(0o777)
-    except Exception:
-        pass
-
-    os.environ["PROMETHEUS_MULTIPROC_DIR"] = str(prom_dir)
-    logger.info("Prepared Prometheus multiprocess dir at %s", prom_dir)
-    return str(prom_dir)
