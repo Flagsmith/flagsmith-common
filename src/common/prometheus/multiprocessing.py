@@ -30,4 +30,7 @@ def prepare_prom_multiproc_dir() -> None:
     # While `mkdir` sets mode=0o777 by default, this can be affected by umask resulting in
     # lesser permissions for other users. This step ensures the directory is writable for
     # all users.
-    prom_dir.chmod(0o777)
+    try:
+        prom_dir.chmod(0o777)
+    except PermissionError:
+        pass
