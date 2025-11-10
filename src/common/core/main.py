@@ -4,13 +4,14 @@ import os
 import shutil
 import sys
 import typing
+from tempfile import gettempdir
 
 from django.core.management import (
     execute_from_command_line as django_execute_from_command_line,
 )
 
 from common.core.cli import healthcheck
-from common.core.constants import DEFAULT_PROMETHEUS_MULTIPROC_DIR
+from common.core.constants import DEFAULT_PROMETHEUS_MULTIPROC_DIR_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     # Set up Prometheus' multiprocess mode
     prometheus_multiproc_dir_name = os.environ.setdefault(
         "PROMETHEUS_MULTIPROC_DIR",
-        DEFAULT_PROMETHEUS_MULTIPROC_DIR,
+        os.path.join(gettempdir(), DEFAULT_PROMETHEUS_MULTIPROC_DIR_NAME),
     )
     shutil.rmtree(prometheus_multiproc_dir_name, ignore_errors=True)
     os.makedirs(prometheus_multiproc_dir_name, exist_ok=True, mode=0o700)
