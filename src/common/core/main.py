@@ -9,7 +9,7 @@ from django.core.management import (
 )
 
 from common.core.cli import healthcheck
-from common.prometheus.utils import prepare_prom_multiproc_dir
+from common.prometheus.multiprocessing import prepare_prom_multiproc_dir
 
 logger = logging.getLogger(__name__)
 
