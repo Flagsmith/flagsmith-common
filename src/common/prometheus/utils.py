@@ -58,7 +58,7 @@ def prepare_prom_multiproc_dir() -> None:
                 # Ensure that the cleanup doesn't silently fail on
                 # files and subdirs created by other users.
                 p.chmod(0o777)
-            except Exception:
+            except Exception:  # pragma: no cover
                 pass
 
         shutil.rmtree(prom_dir, ignore_errors=True)
