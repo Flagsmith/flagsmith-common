@@ -225,5 +225,5 @@ def make_writable_directory(directory_path: str) -> None:
         # resulting in lesser permissions for other users. This step ensures the
         # directory is writable for all users.
         os.chmod(directory_path, 0o777)
-    except PermissionError:
+    except PermissionError:  # pragma: no cover
         pass
