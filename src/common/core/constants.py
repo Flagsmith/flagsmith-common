@@ -1,1 +1,1 @@
-DEFAULT_PROMETHEUS_MULTIPROC_DIR = "/tmp/flagsmith-prometheus"
+DEFAULT_PROMETHEUS_MULTIPROC_DIR_NAME = "flagsmith-prometheus"

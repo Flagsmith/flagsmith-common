@@ -1,16 +1,17 @@
 import contextlib
 import logging
 import os
-import shutil
 import sys
 import typing
+from tempfile import gettempdir
 
 from django.core.management import (
     execute_from_command_line as django_execute_from_command_line,
 )
 
 from common.core.cli import healthcheck
-from common.core.constants import DEFAULT_PROMETHEUS_MULTIPROC_DIR
+from common.core.constants import DEFAULT_PROMETHEUS_MULTIPROC_DIR_NAME
+from common.core.utils import clear_directory, make_writable_directory
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,15 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
 
     # TODO @khvn26 Move logging setup to here
 
+    # Prometheus multiproc support
+    prom_dir = os.environ.setdefault(
+        "PROMETHEUS_MULTIPROC_DIR",
+        os.path.join(gettempdir(), DEFAULT_PROMETHEUS_MULTIPROC_DIR_NAME),
+    )
+    if os.path.exists(prom_dir):
+        clear_directory(prom_dir)
+    make_writable_directory(prom_dir)
+
     # Currently we don't install Flagsmith modules as a package, so we need to add
     # $CWD to the Python path to be able to import them
     sys.path.append(os.getcwd())
@@ -42,18 +52,6 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     # TODO @khvn26 We should find a better way to pre-set the Django settings module
     # without resorting to it being set outside of the application
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.dev")
-
-    # Set up Prometheus' multiprocess mode
-    prometheus_multiproc_dir_name = os.environ.setdefault(
-        "PROMETHEUS_MULTIPROC_DIR",
-        DEFAULT_PROMETHEUS_MULTIPROC_DIR,
-    )
-    shutil.rmtree(prometheus_multiproc_dir_name, ignore_errors=True)
-    os.makedirs(prometheus_multiproc_dir_name, exist_ok=True)
-    logger.info(
-        "Re-created %s for Prometheus multi-process mode",
-        prometheus_multiproc_dir_name,
-    )
 
     if "docgen" in sys.argv:
         os.environ["DOCGEN_MODE"] = "true"
