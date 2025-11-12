@@ -208,9 +208,7 @@ def clear_directory(directory_path: str) -> None:
     """
     for p in pathlib.Path(directory_path).rglob("*"):
         try:
-            # Ensure that the cleanup doesn't silently fail on
-            # files and subdirs created by other users.
-            p.chmod(0o777)
+            p.chmod(0o700)
         except (PermissionError, FileNotFoundError):  # pragma: no cover
             pass
 
@@ -218,12 +216,4 @@ def clear_directory(directory_path: str) -> None:
 
 
 def make_writable_directory(directory_path: str) -> None:
-    os.makedirs(directory_path, exist_ok=True)
-
-    try:
-        # While `mkdir` sets mode=0o777 by default, this can be affected by umask
-        # resulting in lesser permissions for other users. This step ensures the
-        # directory is writable for all users.
-        os.chmod(directory_path, 0o777)
-    except PermissionError:  # pragma: no cover
-        pass
+    os.makedirs(directory_path, exist_ok=True, mode=0o700)
