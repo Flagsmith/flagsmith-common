@@ -3,7 +3,6 @@ import subprocess
 import django
 import pytest
 from django.core.management import ManagementUtility
-from pyfakefs.fake_filesystem import FakeFilesystem
 from pytest_httpserver import HTTPServer
 
 from common.core.main import main
@@ -107,25 +106,6 @@ def test_main__healthcheck_http__server_invalid_response__runs_expected(
     # When & Then
     with pytest.raises(Exception):
         main(argv)
-
-
-def test_main__prometheus_multiproc_remove_dir_on_start_default__expected(
-    monkeypatch: pytest.MonkeyPatch,
-    fs: FakeFilesystem,
-) -> None:
-    # Given
-    monkeypatch.delenv("PROMETHEUS_MULTIPROC_DIR_KEEP", raising=False)
-
-    fs.create_file(
-        "/tmp/flagsmith-prometheus/some_metric_file.db",
-        create_missing_dirs=True,
-    )
-
-    # When
-    main(["flagsmith"])
-
-    # Then
-    assert not fs.exists("/tmp/flagsmith-prometheus/some_metric_file.db")
 
 
 def test_main__no_django_configured__expected_0(

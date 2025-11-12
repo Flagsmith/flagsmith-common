@@ -1,9 +1,7 @@
 import json
 import logging
-import os
 import pathlib
 import random
-import shutil
 from functools import lru_cache
 from itertools import cycle
 from typing import (
@@ -200,20 +198,3 @@ def using_database_replica(
         return manager
 
     return manager.db_manager(chosen_replica)
-
-
-def clear_directory(directory_path: str) -> None:
-    """
-    Safely clear a directory including all subdirectories and files.
-    """
-    for p in pathlib.Path(directory_path).rglob("*"):
-        try:
-            p.chmod(0o700)
-        except (PermissionError, FileNotFoundError):  # pragma: no cover
-            pass
-
-    shutil.rmtree(directory_path, ignore_errors=True)
-
-
-def make_writable_directory(directory_path: str) -> None:
-    os.makedirs(directory_path, exist_ok=True, mode=0o700)
