@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [2.2.7](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.6...v2.2.7) (2025-11-12)
+
+
+### Bug Fixes
+
+* Remove `PROMETHEUS_MULTIPROC_DIR` cleanup logic ([#123](https://github.com/Flagsmith/flagsmith-common/issues/123)) ([0319fd0](https://github.com/Flagsmith/flagsmith-common/commit/0319fd042b85655c730451c187caeea146b3d938))
+
 ## [2.2.6](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.5...v2.2.6) (2025-11-11)
 
 
