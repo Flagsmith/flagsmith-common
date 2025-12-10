@@ -19,9 +19,9 @@ To run linters, run `make lint`.
 
 To run tests, run `make test`.
 
-### Usage
+## Usage
 
-#### Installation
+### Installation
 
 1. Install all runtime packages: `uv add flagsmith-common[common-core,task-processor]`
 
@@ -30,16 +30,16 @@ To run tests, run `make test`.
 3. Make sure `"common.core"` is in the `INSTALLED_APPS` of your settings module.
 This enables the `manage.py flagsmith` commands.
 
-1. Add `"common.gunicorn.middleware.RouteLoggerMiddleware"` to `MIDDLEWARE` in your settings module.
+4. Add `"common.gunicorn.middleware.RouteLoggerMiddleware"` to `MIDDLEWARE` in your settings module.
 This enables the `route` label for Prometheus HTTP metrics.
 
-1. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
+5. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
 
-#### Test tools
+### Test tools
 
-##### Fixtures
+#### Fixtures
 
-###### `assert_metric`
+##### `assert_metric`
 
 To test your metrics using the `assert_metric` fixture:
 
@@ -58,44 +58,44 @@ def test_my_code__expected_metrics(assert_metric: AssertMetricFixture) -> None:
     )
 ```
 
-###### `saas_mode`
+##### `saas_mode`
 
 The `saas_mode` fixture makes all `common.core.utils.is_saas` calls return `True`.
 
-###### `enterprise_mode`
+##### `enterprise_mode`
 
 The `enterprise_mode` fixture makes all `common.core.utils.is_enterprise` calls return `True`.
 
-##### Markers
+#### Markers
 
-###### `pytest.mark.saas_mode`
+##### `pytest.mark.saas_mode`
 
 Use this mark to auto-use the `saas_mode` fixture.
 
-###### `pytest.mark.enterprise_mode`
+##### `pytest.mark.enterprise_mode`
 
 Use this mark to auto-use the `enterprise_mode` fixture.
 
-#### Metrics
+### Metrics
 
 Flagsmith uses Prometheus to track performance metrics.
 
 The following default metrics are exposed:
 
-##### Common metrics
+#### Common metrics
 
 - `flagsmith_build_info`: Has the labels `version` and `ci_commit_sha`.
 - `flagsmith_http_server_request_duration_seconds`: Histogram labeled with `method`, `route`, and `response_status`.
 - `flagsmith_http_server_requests_total`: Counter labeled with `method`, `route`, and `response_status`.
-- `flagsmith_http_server_response_size_bytes`:Histogram labeled with `method`, `route`, and `response_status`.
+- `flagsmith_http_server_response_size_bytes`: Histogram labeled with `method`, `route`, and `response_status`.
 - `flagsmith_task_processor_enqueued_tasks_total`: Counter labeled with `task_identifier`.
 
-##### Task Processor metrics
+#### Task Processor metrics
 
 - `flagsmith_task_processor_finished_tasks_total`: Counter labeled with `task_identifier`, `task_type` (`"recurring"`, `"standard"`) and `result` (`"success"`, `"failure"`).
 - `flagsmith_task_processor_task_duration_seconds`: Histogram labeled with `task_identifier`, `task_type` (`"recurring"`, `"standard"`) and `result` (`"success"`, `"failure"`).
 
-##### Guidelines
+#### Guidelines
 
 Try to come up with meaningful metrics to cover your feature with when developing it. Refer to [Prometheus best practices][1] when naming your metric and labels.
 
