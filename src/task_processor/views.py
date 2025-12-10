@@ -10,7 +10,7 @@ from task_processor.monitoring import get_num_waiting_tasks
 from task_processor.serializers import MonitoringSerializer
 
 
-@swagger_auto_schema(method="GET", responses={200: MonitoringSerializer()})  # type: ignore[misc]
+@swagger_auto_schema(method="GET", responses={200: MonitoringSerializer()})  # type: ignore[untyped-decorator]
 @api_view(http_method_names=["GET"])
 @permission_classes([IsAuthenticated, IsAdminUser])
 def monitoring(request: Request, /, **kwargs: Any) -> Response:

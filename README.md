@@ -4,54 +4,28 @@
 
 Flagsmith's common library
 
-### Development Setup
+## Local development
 
-This project uses [Poetry](https://python-poetry.org/) for dependency management and includes a Makefile to simplify common development tasks.
+The project assumes the following tools installed:
 
-#### Prerequisites
+- [uv](https://github.com/astral-sh/uv)
+- [GNU Make](https://www.gnu.org/software/make/)
 
-- Python >= 3.11
-- Make
+To list available Makefile targets, run `make help`.
 
-#### Installation
+To set up local development environment, run `make install`.
 
-You can set up your development environment using the provided Makefile:
+To run linters, run `make lint`.
 
-```bash
-# Install everything (pip, poetry, and project dependencies)
-make install
+To run tests, run `make test`.
 
-# Individual installation steps are also available
-make install-pip       # Upgrade pip
-make install-poetry    # Install Poetry
-make install-packages  # Install project dependencies
-```
+## Usage
 
-#### Development
+### Installation
 
-Run linting checks using pre-commit:
+1. Install all runtime packages: `uv add flagsmith-common[common-core,task-processor]`
 
-```bash
-make lint
-```
-
-Additional options can be passed to the `install-packages` target:
-
-```bash
-# Install with development dependencies
-make install-packages opts="--with dev"
-
-# Install with specific extras
-make install-packages opts="--extras 'feature1 feature2'"
-```
-
-### Usage
-
-#### Installation
-
-1. `poetry add flagsmith-common`
-
-2. `poetry add --G dev flagsmith-common[test-tools]` — this will enable the Pytest fixtures. Skipping this step will make Pytest collection fail due to missing dependencies.
+2. To enable the Pytest fixtures, run `uv add --G dev flagsmith-common[test-tools]`. Skipping this step will make Pytest collection fail due to missing dependencies.
 
 3. Make sure `"common.core"` is in the `INSTALLED_APPS` of your settings module.
 This enables the `manage.py flagsmith` commands.
@@ -61,11 +35,11 @@ This enables the `route` label for Prometheus HTTP metrics.
 
 5. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
 
-#### Test tools
+### Test tools
 
-##### Fixtures
+#### Fixtures
 
-###### `assert_metric`
+##### `assert_metric`
 
 To test your metrics using the `assert_metric` fixture:
 
@@ -84,44 +58,44 @@ def test_my_code__expected_metrics(assert_metric: AssertMetricFixture) -> None:
     )
 ```
 
-###### `saas_mode`
+##### `saas_mode`
 
 The `saas_mode` fixture makes all `common.core.utils.is_saas` calls return `True`.
 
-###### `enterprise_mode`
+##### `enterprise_mode`
 
 The `enterprise_mode` fixture makes all `common.core.utils.is_enterprise` calls return `True`.
 
-##### Markers
+#### Markers
 
-###### `pytest.mark.saas_mode`
+##### `pytest.mark.saas_mode`
 
 Use this mark to auto-use the `saas_mode` fixture.
 
-###### `pytest.mark.enterprise_mode`
+##### `pytest.mark.enterprise_mode`
 
 Use this mark to auto-use the `enterprise_mode` fixture.
 
-#### Metrics
+### Metrics
 
 Flagsmith uses Prometheus to track performance metrics.
 
 The following default metrics are exposed:
 
-##### Common metrics
+#### Common metrics
 
 - `flagsmith_build_info`: Has the labels `version` and `ci_commit_sha`.
 - `flagsmith_http_server_request_duration_seconds`: Histogram labeled with `method`, `route`, and `response_status`.
 - `flagsmith_http_server_requests_total`: Counter labeled with `method`, `route`, and `response_status`.
-- `flagsmith_http_server_response_size_bytes`:Histogram labeled with `method`, `route`, and `response_status`.
+- `flagsmith_http_server_response_size_bytes`: Histogram labeled with `method`, `route`, and `response_status`.
 - `flagsmith_task_processor_enqueued_tasks_total`: Counter labeled with `task_identifier`.
 
-##### Task Processor metrics
+#### Task Processor metrics
 
 - `flagsmith_task_processor_finished_tasks_total`: Counter labeled with `task_identifier`, `task_type` (`"recurring"`, `"standard"`) and `result` (`"success"`, `"failure"`).
 - `flagsmith_task_processor_task_duration_seconds`: Histogram labeled with `task_identifier`, `task_type` (`"recurring"`, `"standard"`) and `result` (`"success"`, `"failure"`).
 
-##### Guidelines
+#### Guidelines
 
 Try to come up with meaningful metrics to cover your feature with when developing it. Refer to [Prometheus best practices][1] when naming your metric and labels.
 

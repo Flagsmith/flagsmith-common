@@ -19,40 +19,19 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
 
-    services:
-      default-database:
-        image: postgres:15.5-alpine
-        env:
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports: ["6543:5432"]
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-
-      task-processor-database:
-        image: postgres:15.5-alpine
-        env:
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports: ["6544:5432"]
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: astral-sh/setup-uv@v6
         with:
+          enable-cache: true
           python-version: ${{ matrix.python-version }}
-
-      - name: Install Poetry
-        run: pipx install poetry
-
-      - name: Install Dependencies
-        env:
-          opts: --with dev
-        run: make install-packages
 
       - name: Check for missing migrations
         env:
           opts: --no-input --dry-run --check
-        run: make django-make-migrations
+        run: make docker-up django-make-migrations
 
       - name: Check for new typing errors
         run: make typecheck
