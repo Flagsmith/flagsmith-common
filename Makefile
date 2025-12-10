@@ -4,7 +4,6 @@ DOTENV_OVERRIDE_FILE ?= .env
 
 COMPOSE_FILE ?= docker/docker-compose.local.yml
 COMPOSE_PROJECT_NAME ?= flagsmith-common
-UV_ALL_EXTRAS ?= true
 
 -include $(DOTENV_OVERRIDE_FILE)
 
