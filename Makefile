@@ -9,7 +9,7 @@ COMPOSE_PROJECT_NAME ?= flagsmith-common
 
 .PHONY: install-packages
 install-packages: ## Install all required packages
-	uv sync $(opts)
+	uv sync $(or $(opts),'--all-extras')
 
 .PHONY: install-pre-commit ## Install pre-commit hooks
 install-pre-commit:
@@ -24,7 +24,7 @@ install: install-packages install-pre-commit ensure-dotenv ## Ensure the environ
 
 .PHONY: lint
 lint: ## Run linters
-	uv run pre-commit run --all-files
+	uv run --all-extras pre-commit run --all-files
 
 .PHONY: docker-up
 docker-up: ## Start Docker containers
@@ -37,27 +37,26 @@ docker-down: ## Stop Docker containers
 
 .PHONY: test
 test: docker-up ## Run all tests
-	uv run pytest $(opts)
+	uv run --all-extras pytest $(opts)
 
 .PHONY: typecheck
 typecheck: ## Run mypy
-	uv run mypy src tests
-
+	uv run --all-extras mypy src tests
 .PHONY: django-make-migrations
 django-make-migrations:  ## Create new migrations based on the changes detected to your models
-	uv run python manage.py waitfordb
-	uv run python manage.py makemigrations $(opts)
+	uv run --all-extras python manage.py waitfordb
+	uv run --all-extras python manage.py makemigrations $(opts)
 
 .PHONY: django-squash-migrations
 django-squash-migrations:  ## Squash migrations for apps
-	uv run python manage.py waitfordb
-	uv run python manage.py squashmigrations $(opts)
+	uv run --all-extras python manage.py waitfordb
+	uv run --all-extras python manage.py squashmigrations $(opts)
 
 .PHONY: django-migrate
 django-migrate:  ## Apply migrations to the database
-	uv run python manage.py waitfordb
-	uv run python manage.py migrate
-	uv run python manage.py createcachetable
+	uv run --all-extras python manage.py waitfordb
+	uv run --all-extras python manage.py migrate
+	uv run --all-extras python manage.py createcachetable
 
 help:
 	@echo "Usage: make [target]"
