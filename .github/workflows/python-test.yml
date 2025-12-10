@@ -37,17 +37,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: astral-sh/setup-uv@v6
         with:
+          enable-cache: true
           python-version: ${{ matrix.python-version }}
-
-      - name: Install Poetry
-        run: pipx install poetry
-
-      - name: Install Dependencies
-        env:
-          opts: --with dev
-        run: make install-packages
 
       - name: Check for missing migrations
         env:

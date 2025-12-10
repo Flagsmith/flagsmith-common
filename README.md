@@ -4,62 +4,36 @@
 
 Flagsmith's common library
 
-### Development Setup
+## Local development
 
-This project uses [Poetry](https://python-poetry.org/) for dependency management and includes a Makefile to simplify common development tasks.
+The project assumes the following tools installed:
 
-#### Prerequisites
+- [uv](https://github.com/astral-sh/uv)
+- [GNU Make](https://www.gnu.org/software/make/)
 
-- Python >= 3.11
-- Make
+To list available Makefile targets, run `make help`.
 
-#### Installation
+To set up local development environment, run `make install`.
 
-You can set up your development environment using the provided Makefile:
+To run linters, run `make lint`.
 
-```bash
-# Install everything (pip, poetry, and project dependencies)
-make install
-
-# Individual installation steps are also available
-make install-pip       # Upgrade pip
-make install-poetry    # Install Poetry
-make install-packages  # Install project dependencies
-```
-
-#### Development
-
-Run linting checks using pre-commit:
-
-```bash
-make lint
-```
-
-Additional options can be passed to the `install-packages` target:
-
-```bash
-# Install with development dependencies
-make install-packages opts="--with dev"
-
-# Install with specific extras
-make install-packages opts="--extras 'feature1 feature2'"
-```
+To run tests, run `make test`.
 
 ### Usage
 
 #### Installation
 
-1. `poetry add flagsmith-common`
+1. Install all runtime packages: `uv add flagsmith-common[common-core,task-processor]`
 
-2. `poetry add --G dev flagsmith-common[test-tools]` — this will enable the Pytest fixtures. Skipping this step will make Pytest collection fail due to missing dependencies.
+2. To enable the Pytest fixtures, run `uv add --G dev flagsmith-common[test-tools]`. Skipping this step will make Pytest collection fail due to missing dependencies.
 
 3. Make sure `"common.core"` is in the `INSTALLED_APPS` of your settings module.
 This enables the `manage.py flagsmith` commands.
 
-4. Add `"common.gunicorn.middleware.RouteLoggerMiddleware"` to `MIDDLEWARE` in your settings module.
+1. Add `"common.gunicorn.middleware.RouteLoggerMiddleware"` to `MIDDLEWARE` in your settings module.
 This enables the `route` label for Prometheus HTTP metrics.
 
-5. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
+1. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
 
 #### Test tools
 
