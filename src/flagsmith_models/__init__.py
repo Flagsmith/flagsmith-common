@@ -274,7 +274,7 @@ class Environment(TypedDict):
     api_key: str
     """Public client-side API key for the environment. **INDEXED**."""
     name: NotRequired[str]
-    """Environment name."""
+    """Environment name. TODO: Can we drop NotRequired and adjust test data?"""
     updated_at: NotRequired[datetime | None]
     """Last updated timestamp. If not set, current timestamp should be assumed."""
 
