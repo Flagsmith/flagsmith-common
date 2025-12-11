@@ -406,6 +406,9 @@ common-core = [
     { name = "requests" },
     { name = "simplejson" },
 ]
+flagsmith-models = [
+    { name = "typing-extensions" },
+]
 task-processor = [
     { name = "backoff" },
     { name = "django" },
@@ -458,8 +461,9 @@ requires-dist = [
     { name = "pytest-django", marker = "extra == 'test-tools'", specifier = ">=4,<5" },
     { name = "requests", marker = "extra == 'common-core'" },
     { name = "simplejson", marker = "extra == 'common-core'", specifier = ">=3,<4" },
+    { name = "typing-extensions", marker = "extra == 'flagsmith-models'" },
 ]
-provides-extras = ["test-tools", "common-core", "task-processor"]
+provides-extras = ["test-tools", "common-core", "task-processor", "flagsmith-models"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -4,8 +4,10 @@ The schemas are written to DynamoDB documents by Core, and read by Edge.
 """
 
 from datetime import datetime
-from typing import Literal, NotRequired, TypeAlias, TypedDict
+from typing import Literal, TypeAlias
 from uuid import UUID
+
+from typing_extensions import NotRequired, TypedDict
 
 FeatureType = Literal["STANDARD", "MULTIVARIATE"]
 """Represents the type of a Flagsmith feature. Multivariate features include multiple weighted values."""
