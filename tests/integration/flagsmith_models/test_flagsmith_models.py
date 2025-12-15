@@ -3,7 +3,13 @@ from typing import TypeVar
 import pytest
 from pydantic import TypeAdapter
 
-from flagsmith_models import Environment, EnvironmentAPIKey, EnvironmentV2Meta, Identity
+from flagsmith_models import (
+    Environment,
+    EnvironmentAPIKey,
+    EnvironmentV2IdentityOverride,
+    EnvironmentV2Meta,
+    Identity,
+)
 from flagsmith_models.types import DateTimeStr, UUIDStr
 
 T = TypeVar("T")
@@ -467,6 +473,28 @@ T = TypeVar("T")
                 "webhook_config": None,
             },
             id="flagsmith_environments_v2:_META",
+        ),
+        pytest.param(
+            EnvironmentV2IdentityOverride,
+            "flagsmith_environments_v2:identity_override.json",
+            {
+                "environment_id": "65061",
+                "document_key": "identity_override:136660:3018f59c-77a1-43df-a9a8-38723e99e441",
+                "environment_api_key": "pQuzvsMLQoOVAwITrTWDQJ",
+                "feature_state": {
+                    "django_id": None,
+                    "enabled": True,
+                    "feature": {"id": 136660, "name": "test1", "type": "STANDARD"},
+                    "featurestate_uuid": UUIDStr(
+                        "652d8931-37d9-438e-9825-f525b9e83077"
+                    ),
+                    "feature_segment": None,
+                    "feature_state_value": "test_override_value",
+                    "multivariate_feature_state_values": [],
+                },
+                "identifier": "Development_user_123456",
+                "identity_uuid": UUIDStr("3018f59c-77a1-43df-a9a8-38723e99e441"),
+            },
         ),
     ],
 )
