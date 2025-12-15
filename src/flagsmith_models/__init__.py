@@ -3,11 +3,11 @@ Types describing Flagsmith Edge API's data model.
 The schemas are written to DynamoDB documents by Core, and read by Edge.
 """
 
-from datetime import datetime
 from typing import Literal, TypeAlias
-from uuid import UUID
 
 from typing_extensions import NotRequired, TypedDict
+
+from flagsmith_models.types import DateTimeStr, UUIDStr
 
 FeatureType = Literal["STANDARD", "MULTIVARIATE"]
 """Represents the type of a Flagsmith feature. Multivariate features include multiple weighted values."""
@@ -79,7 +79,7 @@ class MultivariateFeatureStateValue(TypedDict):
 
     id: NotRequired[int | None]
     """Unique identifier for the multivariate feature state value in Core. TODO: document why and when this can be `None`."""
-    mv_fs_value_uuid: NotRequired[UUID]
+    mv_fs_value_uuid: NotRequired[UUIDStr]
     """The UUID for this multivariate feature state value. Should be used if `id` is `None`."""
     percentage_allocation: float
     """The percentage allocation for this multivariate feature state value. Should be between or equal to 0 and 100."""
@@ -105,7 +105,7 @@ class FeatureState(TypedDict):
     """The value for this feature state."""
     django_id: NotRequired[int | None]
     """Unique identifier for the feature state in Core. TODO: document why and when this can be `None`."""
-    featurestate_uuid: NotRequired[UUID]
+    featurestate_uuid: NotRequired[UUIDStr]
     """The UUID for this feature state. Should be used if `django_id` is `None`. If not set, should be generated."""
     feature_segment: NotRequired[FeatureSegment | None]
     """Segment override data, if this feature state is for a segment override."""
@@ -193,7 +193,7 @@ class Project(TypedDict):
     """List of feature IDs that are skipped when the SDK API serves flags for a public client-side key."""
     enable_realtime_updates: NotRequired[bool]
     """Whether the SDK API should use real-time updates. Defaults to `False`. Not currently used neither by SDK APIs nor by SDKs themselves."""
-    hide_disabled_flags: NotRequired[bool]
+    hide_disabled_flags: NotRequired[bool | None]
     """Whether the SDK API should hide disabled flags for this project. Defaults to `False`."""
 
 
@@ -222,62 +222,12 @@ class Webhook(TypedDict):
     """Secret used to sign webhook payloads."""
 
 
-### Root document schemas below. Indexed fields are marked as **INDEXED** in the docstrings. ###
+class _EnvironmentFields(TypedDict):
+    """Common fields for Environment documents."""
 
-
-class EnvironmentAPIKey(TypedDict):
-    """Represents a server-side API key for a Flagsmith environment."""
-
-    id: int
-    """Unique identifier for the environment API key in Core. **INDEXED**."""
-    key: str
-    """The server-side API key string, e.g. `"ser.xxxxxxxxxxxxx"`. **INDEXED**."""
-    created_at: datetime
-    """Creation timestamp."""
-    name: str
-    """Name of the API key."""
-    client_api_key: str
-    """The corresponding public client-side API key."""
-    expires_at: NotRequired[datetime | None]
-    """Expiration timestamp. If `None`, the key does not expire."""
-    active: bool
-    """Whether the key is active. Defaults to `True`."""
-
-
-class Identity(TypedDict):
-    """Represents a Flagsmith identity within an environment. Carries traits and feature overrides."""
-
-    identifier: str
-    """Unique identifier for the identity. **INDEXED**."""
-    environment_api_key: str
-    """API key of the environment this identity belongs to. Used to scope the identity within a specific environment. **INDEXED**."""
-    identity_uuid: UUID
-    """The UUID for this identity. **INDEXED**."""
-    composite_key: str
-    """A composite key combining the environment and identifier. **INDEXED**.
-
-    Generated as: `{environment_api_key}_{identifier}`.
-    """
-    created_date: datetime
-    """Creation timestamp."""
-    identity_features: NotRequired[list[FeatureState]]
-    """List of identity overrides for this identity."""
-    identity_traits: list[Trait]
-    """List of traits associated with this identity."""
-    django_id: NotRequired[int | None]
-    """Unique identifier for the identity in Core. TODO: document why and when this can be `None`."""
-
-
-class Environment(TypedDict):
-    """Represents a Flagsmith environment. Carries all necessary data for flag evaluation within the environment."""
-
-    id: int
-    """Unique identifier for the environment in Core. **INDEXED**."""
-    api_key: str
-    """Public client-side API key for the environment. **INDEXED**."""
     name: NotRequired[str]
     """Environment name. TODO: Can we drop NotRequired and adjust test data?"""
-    updated_at: NotRequired[datetime | None]
+    updated_at: NotRequired[DateTimeStr | None]
     """Last updated timestamp. If not set, current timestamp should be assumed."""
 
     project: Project
@@ -289,24 +239,125 @@ class Environment(TypedDict):
     """Whether the SDK API should allow clients to set traits for this environment. Identical to project-level's `persist_trait_data` setting. Defaults to `True`."""
     hide_sensitive_data: NotRequired[bool]
     """Whether the SDK API should hide sensitive data for this environment. Defaults to `False`."""
-    hide_disabled_flags: NotRequired[bool]
+    hide_disabled_flags: NotRequired[bool | None]
     """Whether the SDK API should hide disabled flags for this environment. If `None`, the SDK API should fall back to project-level setting."""
     use_identity_composite_key_for_hashing: NotRequired[bool]
     """Whether the SDK API should set `$.identity.key` in engine evaluation context to identity's composite key. Defaults to `False`."""
     use_identity_overrides_in_local_eval: NotRequired[bool]
     """Whether the SDK API should return identity overrides as part of the environment document. Defaults to `False`."""
 
-    amplitude_config: NotRequired[Integration]
+    amplitude_config: NotRequired[Integration | None]
     """Amplitude integration configuration."""
-    dynatrace_config: NotRequired[DynatraceIntegration]
+    dynatrace_config: NotRequired[DynatraceIntegration | None]
     """Dynatrace integration configuration."""
-    heap_config: NotRequired[Integration]
+    heap_config: NotRequired[Integration | None]
     """Heap integration configuration."""
-    mixpanel_config: NotRequired[Integration]
+    mixpanel_config: NotRequired[Integration | None]
     """Mixpanel integration configuration."""
-    rudderstack_config: NotRequired[Integration]
+    rudderstack_config: NotRequired[Integration | None]
     """RudderStack integration configuration."""
-    segment_config: NotRequired[Integration]
+    segment_config: NotRequired[Integration | None]
     """Segment integration configuration."""
-    webhook_config: NotRequired[Webhook]
+    webhook_config: NotRequired[Webhook | None]
     """Webhook configuration."""
+
+
+### Root document schemas below. Indexed fields are marked as **INDEXED** in the docstrings. ###
+
+
+class EnvironmentAPIKey(TypedDict):
+    """Represents a server-side API key for a Flagsmith environment.
+
+    **DynamoDB table**: `flagsmith_environment_api_key`
+    """
+
+    id: int
+    """Unique identifier for the environment API key in Core. **INDEXED**."""
+    key: str
+    """The server-side API key string, e.g. `"ser.xxxxxxxxxxxxx"`. **INDEXED**."""
+    created_at: DateTimeStr
+    """Creation timestamp."""
+    name: str
+    """Name of the API key."""
+    client_api_key: str
+    """The corresponding public client-side API key."""
+    expires_at: NotRequired[DateTimeStr | None]
+    """Expiration timestamp. If `None`, the key does not expire."""
+    active: bool
+    """Whether the key is active. Defaults to `True`."""
+
+
+class Identity(TypedDict):
+    """Represents a Flagsmith identity within an environment. Carries traits and feature overrides.
+
+    **DynamoDB table**: `flagsmith_identities`
+    """
+
+    identifier: str
+    """Unique identifier for the identity. **INDEXED**."""
+    environment_api_key: str
+    """API key of the environment this identity belongs to. Used to scope the identity within a specific environment. **INDEXED**."""
+    identity_uuid: UUIDStr
+    """The UUID for this identity. **INDEXED**."""
+    composite_key: str
+    """A composite key combining the environment and identifier. **INDEXED**.
+
+    Generated as: `{environment_api_key}_{identifier}`.
+    """
+    created_date: DateTimeStr
+    """Creation timestamp."""
+    identity_features: NotRequired[list[FeatureState]]
+    """List of identity overrides for this identity."""
+    identity_traits: list[Trait]
+    """List of traits associated with this identity."""
+    django_id: NotRequired[int | None]
+    """Unique identifier for the identity in Core. TODO: document why and when this can be `None`."""
+
+
+class Environment(_EnvironmentFields):
+    """Represents a Flagsmith environment. Carries all necessary data for flag evaluation within the environment.
+
+    **DynamoDB table**: `flagsmith_environments`
+    """
+
+    id: int
+    """Unique identifier for the environment in Core. **INDEXED**."""
+    api_key: str
+    """Public client-side API key for the environment. **INDEXED**."""
+
+
+class EnvironmentV2Meta(_EnvironmentFields):
+    """Represents a Flagsmith environment. Carries all necessary data for flag evaluation within the environment.
+
+    **DynamoDB table**: `flagsmith_environments_v2`
+    """
+
+    environment_id: str
+    """Unique identifier for the environment in Core. **INDEXED**."""
+    environment_api_key: str
+    """Public client-side API key for the environment. **INDEXED**."""
+    document_key: Literal["_META"]
+    """The fixed document key for the environment v2 document. Always `"_META"`. **INDEXED**."""
+
+    id: int
+    """Unique identifier for the environment in Core. Exists for compatibility with the API environment document schema."""
+
+
+class EnvironmentV2IdentityOverride(TypedDict):
+    """Represents an identity override.
+
+    **DynamoDB table**: `flagsmith_environments_v2`
+    """
+
+    environment_id: str
+    """Unique identifier for the environment in Core. **INDEXED**."""
+    document_key: str
+    """The document key for this identity override, formatted as `identity_override:{feature Core ID}:{identity UUID}`. **INDEXED**."""
+    environment_api_key: str
+    """Public client-side API key for the environment. **INDEXED**."""
+    identifier: str
+    """Unique identifier for the identity. **INDEXED**."""
+    identity_uuid: str
+    """The UUID for this identity. **INDEXED**."""
+    feature_state: FeatureState
+    """The feature state override for this identity."""
