@@ -226,7 +226,7 @@ class _EnvironmentFields(TypedDict):
     """Common fields for Environment documents."""
 
     name: NotRequired[str]
-    """Environment name. TODO: Can we drop NotRequired and adjust test data?"""
+    """Environment name. Defaults to an empty string if not set."""
     updated_at: NotRequired[DateTimeStr | None]
     """Last updated timestamp. If not set, current timestamp should be assumed."""
 
