@@ -1,6 +1,6 @@
 """
-Types describing Flagsmith Edge API's data model.
-The schemas are written to DynamoDB documents by Core, and read by Edge.
+The types in this module describe the Edge API's data model.
+They are used to type DynamoDB documents representing Flagsmith entities.
 """
 
 from typing import Literal, TypeAlias
