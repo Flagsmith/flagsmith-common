@@ -3,56 +3,19 @@ The types in this module describe the Edge API's data model.
 They are used to type DynamoDB documents representing Flagsmith entities.
 """
 
-from typing import Literal, TypeAlias
+from typing import Literal
 
 from typing_extensions import NotRequired, TypedDict
 
-from flagsmith_schemas.types import DateTimeStr, UUIDStr
-
-FeatureType = Literal["STANDARD", "MULTIVARIATE"]
-"""Represents the type of a Flagsmith feature. Multivariate features include multiple weighted values."""
-
-FeatureValue: TypeAlias = object
-"""Represents the value of a Flagsmith feature. Can be stored a boolean, an integer, or a string.
-
-The default (SaaS) maximum length for strings is 20000 characters.
-"""
-
-ContextValue: TypeAlias = int | float | bool | str
-"""Represents a scalar value in the Flagsmith context, e.g., of an identity trait.
-Here's how we store different types:
-- Numeric string values (int, float) are stored as numbers.
-- Boolean values are stored as booleans.
-- All other values are stored as strings.
-- Maximum length for strings is 2000 characters.
-
-This type does not include complex structures like lists or dictionaries.
-"""
-
-ConditionOperator = Literal[
-    "EQUAL",
-    "GREATER_THAN",
-    "LESS_THAN",
-    "LESS_THAN_INCLUSIVE",
-    "CONTAINS",
-    "GREATER_THAN_INCLUSIVE",
-    "NOT_CONTAINS",
-    "NOT_EQUAL",
-    "REGEX",
-    "PERCENTAGE_SPLIT",
-    "MODULO",
-    "IS_SET",
-    "IS_NOT_SET",
-    "IN",
-]
-"""Represents segment condition operators used by Flagsmith engine."""
-
-RuleType = Literal[
-    "ALL",
-    "ANY",
-    "NONE",
-]
-"""Represents segment rule types used by Flagsmith engine."""
+from flagsmith_schemas.types import (
+    ConditionOperator,
+    ContextValue,
+    DateTimeStr,
+    FeatureType,
+    FeatureValue,
+    RuleType,
+    UUIDStr,
+)
 
 
 class Feature(TypedDict):
