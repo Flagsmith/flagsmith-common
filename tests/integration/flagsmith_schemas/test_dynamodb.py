@@ -3,14 +3,14 @@ from typing import TypeVar
 import pytest
 from pydantic import TypeAdapter
 
-from flagsmith_models import (
+from flagsmith_schemas.dynamodb import (
     Environment,
     EnvironmentAPIKey,
     EnvironmentV2IdentityOverride,
     EnvironmentV2Meta,
     Identity,
 )
-from flagsmith_models.types import DateTimeStr, UUIDStr
+from flagsmith_schemas.types import DateTimeStr, UUIDStr
 
 T = TypeVar("T")
 

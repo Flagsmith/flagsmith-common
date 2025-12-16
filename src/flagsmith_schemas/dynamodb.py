@@ -7,7 +7,7 @@ from typing import Literal, TypeAlias
 
 from typing_extensions import NotRequired, TypedDict
 
-from flagsmith_models.types import DateTimeStr, UUIDStr
+from flagsmith_schemas.types import DateTimeStr, UUIDStr
 
 FeatureType = Literal["STANDARD", "MULTIVARIATE"]
 """Represents the type of a Flagsmith feature. Multivariate features include multiple weighted values."""
