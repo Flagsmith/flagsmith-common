@@ -1,4 +1,19 @@
+from decimal import Decimal
 from typing import Literal, TypeAlias
+
+DynamoInt: TypeAlias = Decimal
+"""An integer value stored in DynamoDB.
+
+DynamoDB represents all numbers as `Decimal`.
+`DynamoInt` indicates that the value should be treated as an integer.
+"""
+
+DynamoFloat: TypeAlias = Decimal
+"""A float value stored in DynamoDB.
+
+DynamoDB represents all numbers as `Decimal`.
+`DynamoFloat` indicates that the value should be treated as a float.
+"""
 
 UUIDStr: TypeAlias = str
 """A string representing a UUID."""

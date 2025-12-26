@@ -11,6 +11,8 @@ from flagsmith_schemas.types import (
     ConditionOperator,
     ContextValue,
     DateTimeStr,
+    DynamoFloat,
+    DynamoInt,
     FeatureType,
     FeatureValue,
     RuleType,
@@ -21,7 +23,7 @@ from flagsmith_schemas.types import (
 class Feature(TypedDict):
     """Represents a Flagsmith feature, defined at project level."""
 
-    id: int
+    id: DynamoInt
     """Unique identifier for the feature in Core."""
     name: str
     """Name of the feature. Must be unique within a project."""
@@ -31,7 +33,7 @@ class Feature(TypedDict):
 class MultivariateFeatureOption(TypedDict):
     """Represents a single multivariate feature option in the Flagsmith UI."""
 
-    id: NotRequired[int | None]
+    id: NotRequired[DynamoInt | None]
     """Unique identifier for the multivariate feature option in Core. **DEPRECATED**: MultivariateFeatureValue.id should be used instead."""
     value: FeatureValue
     """The feature state value that should be served when this option's parent multivariate feature state is selected by the engine."""
@@ -43,11 +45,11 @@ class MultivariateFeatureStateValue(TypedDict):
     Identity overrides are meant to hold only one of these, solely to inform the UI which option is selected for the given identity.
     """
 
-    id: NotRequired[int | None]
+    id: NotRequired[DynamoInt | None]
     """Unique identifier for the multivariate feature state value in Core. If feature state created via `edge-identities` APIs in Core, this can be missing or `None`."""
     mv_fs_value_uuid: NotRequired[UUIDStr]
     """The UUID for this multivariate feature state value. Should be used if `id` is `None`."""
-    percentage_allocation: float
+    percentage_allocation: DynamoFloat
     """The percentage allocation for this multivariate feature state value. Should be between or equal to 0 and 100."""
     multivariate_feature_option: MultivariateFeatureOption
     """The multivariate feature option that this value corresponds to."""
@@ -56,7 +58,7 @@ class MultivariateFeatureStateValue(TypedDict):
 class FeatureSegment(TypedDict):
     """Represents data specific to a segment feature override."""
 
-    priority: NotRequired[int | None]
+    priority: NotRequired[DynamoInt | None]
     """The priority of this segment feature override. Lower numbers indicate stronger priority. If `None` or not set, the weakest priority is assumed."""
 
 
@@ -69,7 +71,7 @@ class FeatureState(TypedDict):
     """Whether the feature is enabled or disabled."""
     feature_state_value: FeatureValue
     """The value for this feature state."""
-    django_id: NotRequired[int | None]
+    django_id: NotRequired[DynamoInt | None]
     """Unique identifier for the feature state in Core. If feature state created via Core's `edge-identities` APIs in Core, this can be missing or `None`."""
     featurestate_uuid: NotRequired[UUIDStr]
     """The UUID for this feature state. Should be used if `django_id` is `None`. If not set, should be generated."""
@@ -119,7 +121,7 @@ class SegmentRule(TypedDict):
 class Segment(TypedDict):
     """Represents a Flagsmith segment. Carries rules, feature overrides, and segment rules."""
 
-    id: int
+    id: DynamoInt
     """Unique identifier for the segment in Core."""
     name: str
     """Name of the segment."""
@@ -132,7 +134,7 @@ class Segment(TypedDict):
 class Organisation(TypedDict):
     """Represents data about a Flagsmith organisation. Carries settings necessary for an SDK API operation."""
 
-    id: int
+    id: DynamoInt
     """Unique identifier for the organisation in Core."""
     name: str
     """Organisation name as set via Core."""
@@ -147,7 +149,7 @@ class Organisation(TypedDict):
 class Project(TypedDict):
     """Represents data about a Flagsmith project. Carries settings necessary for an SDK API operation."""
 
-    id: int
+    id: DynamoInt
     """Unique identifier for the project in Core."""
     name: str
     """Project name as set via Core."""
@@ -155,7 +157,7 @@ class Project(TypedDict):
     """The organisation that this project belongs to."""
     segments: list[Segment]
     """List of segments."""
-    server_key_only_feature_ids: NotRequired[list[int]]
+    server_key_only_feature_ids: NotRequired[list[DynamoInt]]
     """List of feature IDs that are skipped when the SDK API serves flags for a public client-side key."""
     enable_realtime_updates: NotRequired[bool]
     """Whether the SDK API should use real-time updates. Defaults to `False`. Not currently used neither by SDK APIs nor by SDKs themselves."""
@@ -237,7 +239,7 @@ class EnvironmentAPIKey(TypedDict):
     **DynamoDB table**: `flagsmith_environment_api_key`
     """
 
-    id: int
+    id: DynamoInt
     """Unique identifier for the environment API key in Core. **INDEXED**."""
     key: str
     """The server-side API key string, e.g. `"ser.xxxxxxxxxxxxx"`. **INDEXED**."""
@@ -276,7 +278,7 @@ class Identity(TypedDict):
     """List of identity overrides for this identity."""
     identity_traits: list[Trait]
     """List of traits associated with this identity."""
-    django_id: NotRequired[int | None]
+    django_id: NotRequired[DynamoInt | None]
     """Unique identifier for the identity in Core. If identity created via Core's `edge-identities` API, this can be missing or `None`."""
 
 
@@ -286,7 +288,7 @@ class Environment(_EnvironmentFields):
     **DynamoDB table**: `flagsmith_environments`
     """
 
-    id: int
+    id: DynamoInt
     """Unique identifier for the environment in Core. **INDEXED**."""
     api_key: str
     """Public client-side API key for the environment. **INDEXED**."""
@@ -305,7 +307,7 @@ class EnvironmentV2Meta(_EnvironmentFields):
     document_key: Literal["_META"]
     """The fixed document key for the environment v2 document. Always `"_META"`. **INDEXED**."""
 
-    id: int
+    id: DynamoInt
     """Unique identifier for the environment in Core. Exists for compatibility with the API environment document schema."""
 
 
