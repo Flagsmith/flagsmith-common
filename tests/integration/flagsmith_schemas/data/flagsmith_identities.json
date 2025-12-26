@@ -1,0 +1,29 @@
+{
+    "composite_key": "pQuzvsMLQoOVAwITrTWDQJ_57c6edf1bbf145a1a23ea287ce44877f",
+    "created_date": "2024-03-19T09:41:22.974595+00:00",
+    "django_id": null,
+    "environment_api_key": "pQuzvsMLQoOVAwITrTWDQJ",
+    "identifier": "57c6edf1bbf145a1a23ea287ce44877f",
+    "identity_features": [
+        {
+            "django_id": null,
+            "enabled": true,
+            "feature": {
+                "id": 67,
+                "name": "test_feature",
+                "type": "STANDARD"
+            },
+            "featurestate_uuid": "20988957-d345-424e-9abc-1dc5a814da48",
+            "feature_segment": null,
+            "feature_state_value": null,
+            "multivariate_feature_state_values": []
+        }
+    ],
+    "identity_traits": [
+        {
+            "trait_key": "test_trait",
+            "trait_value": 42
+        }
+    ],
+    "identity_uuid": "118ecfc9-5234-4218-8af8-dd994dbfedc0"
+}

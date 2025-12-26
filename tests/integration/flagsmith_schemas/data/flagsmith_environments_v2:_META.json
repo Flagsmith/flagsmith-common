@@ -1,0 +1,108 @@
+{
+    "environment_id": "49268",
+    "document_key": "_META",
+    "allow_client_traits": true,
+    "amplitude_config": null,
+    "dynatrace_config": null,
+    "environment_api_key": "AQ9T6LixPqYMJkuqGJy3t2",
+    "feature_states": [
+        {
+            "django_id": 577621,
+            "enabled": true,
+            "feature": {
+                "id": 100298,
+                "name": "test_feature",
+                "type": "MULTIVARIATE"
+            },
+            "featurestate_uuid": "42d7805e-a9ac-401c-a7b7-d6583ac5a365",
+            "feature_segment": null,
+            "feature_state_value": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "multivariate_feature_state_values": [
+                {
+                    "id": 185130,
+                    "multivariate_feature_option": {
+                        "id": 20919,
+                        "value": "second"
+                    },
+                    "mv_fs_value_uuid": "0b02ce41-9965-4c61-8b96-c8d76e3d4a27",
+                    "percentage_allocation": 10
+                },
+                {
+                    "id": 48717,
+                    "multivariate_feature_option": {
+                        "id": 14004,
+                        "value": true
+                    },
+                    "mv_fs_value_uuid": "cb05f49c-de1f-44f1-87eb-c3b55d473063",
+                    "percentage_allocation": 30
+                }
+            ]
+        },
+        {
+            "django_id": 1041292,
+            "enabled": false,
+            "feature": {
+                "id": 172422,
+                "name": "feature",
+                "type": "STANDARD"
+            },
+            "featurestate_uuid": "58b7b954-1b75-493a-82df-5be0efeedd2a",
+            "feature_segment": null,
+            "feature_state_value": 3,
+            "multivariate_feature_state_values": []
+        }
+    ],
+    "heap_config": null,
+    "hide_disabled_flags": null,
+    "hide_sensitive_data": false,
+    "id": 49268,
+    "identity_overrides": [],
+    "mixpanel_config": null,
+    "name": "Development",
+    "project": {
+        "enable_realtime_updates": false,
+        "hide_disabled_flags": false,
+        "id": 19368,
+        "name": "Example Project",
+        "organisation": {
+            "feature_analytics": false,
+            "id": 13,
+            "name": "Flagsmith",
+            "persist_trait_data": true,
+            "stop_serving_flags": false
+        },
+        "segments": [
+            {
+                "feature_states": [],
+                "id": 44126,
+                "name": "test",
+                "rules": [
+                    {
+                        "conditions": [],
+                        "rules": [
+                            {
+                                "conditions": [
+                                    {
+                                        "operator": "EQUAL",
+                                        "property_": "test",
+                                        "value": "test"
+                                    }
+                                ],
+                                "rules": [],
+                                "type": "ANY"
+                            }
+                        ],
+                        "type": "ALL"
+                    }
+                ]
+            }
+        ],
+        "server_key_only_feature_ids": []
+    },
+    "rudderstack_config": null,
+    "segment_config": null,
+    "updated_at": "2025-11-16T13:28:31.244331+00:00",
+    "use_identity_composite_key_for_hashing": true,
+    "use_identity_overrides_in_local_eval": false,
+    "webhook_config": null
+}
