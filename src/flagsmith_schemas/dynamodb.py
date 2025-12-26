@@ -19,7 +19,7 @@ from flagsmith_schemas.types import (
 
 
 class Feature(TypedDict):
-    """Represents a Flagsmith feature defined at project level."""
+    """Represents a Flagsmith feature, defined at project level."""
 
     id: int
     """Unique identifier for the feature in Core."""
@@ -29,7 +29,7 @@ class Feature(TypedDict):
 
 
 class MultivariateFeatureOption(TypedDict):
-    """A container for a feature state value of a multivariate feature state."""
+    """Represents a single multivariate feature option in the Flagsmith UI."""
 
     id: NotRequired[int | None]
     """Unique identifier for the multivariate feature option in Core. **DEPRECATED**: MultivariateFeatureValue.id should be used instead."""
@@ -40,11 +40,11 @@ class MultivariateFeatureOption(TypedDict):
 class MultivariateFeatureStateValue(TypedDict):
     """Represents a multivariate feature state value.
 
-    **NOTE**: identity overrides are meant to hold only one of these, solely to inform the UI which option is selected for the given identity.
+    Identity overrides are meant to hold only one of these, solely to inform the UI which option is selected for the given identity.
     """
 
     id: NotRequired[int | None]
-    """Unique identifier for the multivariate feature state value in Core. If feature state created via Core's `edge-identities` API, this can be missing or `None`."""
+    """Unique identifier for the multivariate feature state value in Core. If feature state created via `edge-identities` APIs in Core, this can be missing or `None`."""
     mv_fs_value_uuid: NotRequired[UUIDStr]
     """The UUID for this multivariate feature state value. Should be used if `id` is `None`."""
     percentage_allocation: float
@@ -61,7 +61,7 @@ class FeatureSegment(TypedDict):
 
 
 class FeatureState(TypedDict):
-    """Represents a Flagsmith feature state. Used to define the state of a feature for an environment, segment overrides, and identity overrides."""
+    """Used to define the state of a feature for an environment, segment overrides, and identity overrides."""
 
     feature: Feature
     """The feature that this feature state is for."""
@@ -70,7 +70,7 @@ class FeatureState(TypedDict):
     feature_state_value: FeatureValue
     """The value for this feature state."""
     django_id: NotRequired[int | None]
-    """Unique identifier for the feature state in Core. If feature state created via Core's `edge-identities` API, this can be missing or `None`."""
+    """Unique identifier for the feature state in Core. If feature state created via Core's `edge-identities` APIs in Core, this can be missing or `None`."""
     featurestate_uuid: NotRequired[UUIDStr]
     """The UUID for this feature state. Should be used if `django_id` is `None`. If not set, should be generated."""
     feature_segment: NotRequired[FeatureSegment | None]
@@ -324,6 +324,6 @@ class EnvironmentV2IdentityOverride(TypedDict):
     identifier: str
     """Unique identifier for the identity. **INDEXED**."""
     identity_uuid: str
-    """The UUID for this identity. **INDEXED**."""
+    """The UUID for this identity, used by `edge-identities` APIs in Core. **INDEXED**."""
     feature_state: FeatureState
     """The feature state override for this identity."""
