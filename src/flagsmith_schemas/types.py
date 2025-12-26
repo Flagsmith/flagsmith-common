@@ -30,7 +30,7 @@ FeatureValue: TypeAlias = object
 The default (SaaS) maximum length for strings is 20000 characters.
 """
 
-ContextValue: TypeAlias = int | float | bool | str
+ContextValue: TypeAlias = DynamoInt | DynamoFloat | bool | str
 """Represents a scalar value in the Flagsmith context, e.g., of an identity trait.
 Here's how we store different types:
 - Numeric string values (int, float) are stored as numbers.
