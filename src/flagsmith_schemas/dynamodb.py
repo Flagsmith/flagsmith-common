@@ -38,10 +38,13 @@ class MultivariateFeatureOption(TypedDict):
 
 
 class MultivariateFeatureStateValue(TypedDict):
-    """Represents a multivariate feature state value assigned to an identity or environment."""
+    """Represents a multivariate feature state value.
+
+    **NOTE**: identity overrides are meant to hold only one of these, solely to inform the UI which option is selected for the given identity.
+    """
 
     id: NotRequired[int | None]
-    """Unique identifier for the multivariate feature state value in Core. TODO: document why and when this can be `None`."""
+    """Unique identifier for the multivariate feature state value in Core. If feature state created via Core's `edge-identities` API, this can be missing or `None`."""
     mv_fs_value_uuid: NotRequired[UUIDStr]
     """The UUID for this multivariate feature state value. Should be used if `id` is `None`."""
     percentage_allocation: float
@@ -67,7 +70,7 @@ class FeatureState(TypedDict):
     feature_state_value: FeatureValue
     """The value for this feature state."""
     django_id: NotRequired[int | None]
-    """Unique identifier for the feature state in Core. TODO: document why and when this can be `None`."""
+    """Unique identifier for the feature state in Core. If feature state created via Core's `edge-identities` API, this can be missing or `None`."""
     featurestate_uuid: NotRequired[UUIDStr]
     """The UUID for this feature state. Should be used if `django_id` is `None`. If not set, should be generated."""
     feature_segment: NotRequired[FeatureSegment | None]
@@ -274,7 +277,7 @@ class Identity(TypedDict):
     identity_traits: list[Trait]
     """List of traits associated with this identity."""
     django_id: NotRequired[int | None]
-    """Unique identifier for the identity in Core. TODO: document why and when this can be `None`."""
+    """Unique identifier for the identity in Core. If identity created via Core's `edge-identities` API, this can be missing or `None`."""
 
 
 class Environment(_EnvironmentFields):
