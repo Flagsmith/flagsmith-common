@@ -1,7 +1,19 @@
 import typing
+from decimal import Decimal
 
 if typing.TYPE_CHECKING:
     from flagsmith_schemas.dynamodb import FeatureState, MultivariateFeatureStateValue
+    from flagsmith_schemas.types import DynamoFeatureValue
+
+
+def validate_dynamo_feature_state_value(
+    value: typing.Any,
+) -> "DynamoFeatureValue":
+    if isinstance(value, bool | str | None):
+        return value
+    if isinstance(value, int):
+        return Decimal(value)
+    return str(value)
 
 
 def validate_multivariate_feature_state_values(

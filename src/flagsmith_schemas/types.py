@@ -1,41 +1,54 @@
 from decimal import Decimal
-from typing import Annotated, Literal, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Literal, TypeAlias
 
 from flagsmith_schemas.constants import PYDANTIC_INSTALLED
 
 if PYDANTIC_INSTALLED:
-    from flagsmith_schemas.pydantic_types import (  # noqa: F401
+    from flagsmith_schemas.pydantic_types import (
         ValidateDecimalAsFloat,
         ValidateDecimalAsInt,
+        ValidateDynamoFeatureStateValue,
         ValidateStrAsISODateTime,
         ValidateStrAsUUID,
     )
+elif not TYPE_CHECKING:
+    # This code runs at runtime when Pydantic is not installed.
+    # We could use PEP 649 strings with `Annotated`, but Pydantic is inconsistent in how it parses them.
+    # Define dummy types instead.
+    ValidateDecimalAsFloat = ...
+    ValidateDecimalAsInt = ...
+    ValidateDynamoFeatureStateValue = ...
+    ValidateStrAsISODateTime = ...
+    ValidateStrAsUUID = ...
 
 
-DynamoInt: TypeAlias = Annotated[Decimal, "ValidateDecimalAsInt"]
+DynamoInt: TypeAlias = Annotated[Decimal, ValidateDecimalAsInt]
 """An integer value stored in DynamoDB.
 
 DynamoDB represents all numbers as `Decimal`.
 `DynamoInt` indicates that the value should be treated as an integer.
 """
 
-DynamoFloat: TypeAlias = Annotated[Decimal, "ValidateDecimalAsFloat"]
+DynamoFloat: TypeAlias = Annotated[Decimal, ValidateDecimalAsFloat]
 """A float value stored in DynamoDB.
 
 DynamoDB represents all numbers as `Decimal`.
 `DynamoFloat` indicates that the value should be treated as a float.
 """
 
-UUIDStr: TypeAlias = Annotated[str, "ValidateStrAsUUID"]
+UUIDStr: TypeAlias = Annotated[str, ValidateStrAsUUID]
 """A string representing a UUID."""
 
-DateTimeStr: TypeAlias = Annotated[str, "ValidateStrAsISODateTime"]
+DateTimeStr: TypeAlias = Annotated[str, ValidateStrAsISODateTime]
 """A string representing a date and time in ISO 8601 format."""
 
 FeatureType = Literal["STANDARD", "MULTIVARIATE"]
 """Represents the type of a Flagsmith feature. Multivariate features include multiple weighted values."""
 
-DynamoFeatureValue: TypeAlias = DynamoInt | bool | str | None
+DynamoFeatureValue: TypeAlias = Annotated[
+    DynamoInt | bool | str | None,
+    ValidateDynamoFeatureStateValue,
+]
 """Represents the value of a Flagsmith feature. Can be stored a boolean, an integer, or a string.
 
 The default (SaaS) maximum length for strings is 20000 characters.
