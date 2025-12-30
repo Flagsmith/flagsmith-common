@@ -1,23 +1,34 @@
 """
 The types in this module describe the Edge API's data model.
 They are used to type DynamoDB documents representing Flagsmith entities.
+
+These types can be used with Pydantic for validation and serialization
+when `pydantic` is installed.
+Otherwise, they serve as documentation for the structure of the data stored in DynamoDB.
 """
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from typing_extensions import NotRequired, TypedDict
 
+from flagsmith_schemas.constants import PYDANTIC_INSTALLED
 from flagsmith_schemas.types import (
     ConditionOperator,
-    ContextValue,
     DateTimeStr,
+    DynamoContextValue,
+    DynamoFeatureValue,
     DynamoFloat,
     DynamoInt,
     FeatureType,
-    FeatureValue,
     RuleType,
     UUIDStr,
 )
+
+if PYDANTIC_INSTALLED:
+    from flagsmith_schemas.pydantic_types import (
+        ValidateIdentityFeatureStatesList,
+        ValidateMultivariateFeatureValuesList,
+    )
 
 
 class Feature(TypedDict):
@@ -35,7 +46,7 @@ class MultivariateFeatureOption(TypedDict):
 
     id: NotRequired[DynamoInt | None]
     """Unique identifier for the multivariate feature option in Core. This is used by Core UI to display the selected option for an identity override for a multivariate feature."""
-    value: FeatureValue
+    value: DynamoFeatureValue
     """The feature state value that should be served when this option's parent multivariate feature state is selected by the engine."""
 
 
@@ -69,7 +80,7 @@ class FeatureState(TypedDict):
     """The feature that this feature state is for."""
     enabled: bool
     """Whether the feature is enabled or disabled."""
-    feature_state_value: FeatureValue
+    feature_state_value: DynamoFeatureValue
     """The value for this feature state."""
     django_id: NotRequired[DynamoInt | None]
     """Unique identifier for the feature state in Core. If feature state created via Core's `edge-identities` APIs in Core, this can be missing or `None`."""
@@ -77,7 +88,7 @@ class FeatureState(TypedDict):
     """The UUID for this feature state. Should be used if `django_id` is `None`. If not set, should be generated."""
     feature_segment: NotRequired[FeatureSegment | None]
     """Segment override data, if this feature state is for a segment override."""
-    multivariate_feature_state_values: NotRequired[list[MultivariateFeatureStateValue]]
+    multivariate_feature_state_values: "NotRequired[Annotated[list[MultivariateFeatureStateValue], ValidateMultivariateFeatureValuesList]]"
     """List of multivariate feature state values, if this feature state is for a multivariate feature.
 
     Total `percentage_allocation` sum of the child multivariate feature state values must be less or equal to 100.
@@ -89,7 +100,7 @@ class Trait(TypedDict):
 
     trait_key: str
     """Key of the trait."""
-    trait_value: ContextValue
+    trait_value: DynamoContextValue
     """Value of the trait."""
 
 
@@ -275,7 +286,9 @@ class Identity(TypedDict):
     """
     created_date: DateTimeStr
     """Creation timestamp."""
-    identity_features: NotRequired[list[FeatureState]]
+    identity_features: (
+        "NotRequired[Annotated[list[FeatureState], ValidateIdentityFeatureStatesList]]"
+    )
     """List of identity overrides for this identity."""
     identity_traits: list[Trait]
     """List of traits associated with this identity."""

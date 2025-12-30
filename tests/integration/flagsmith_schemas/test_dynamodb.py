@@ -1,7 +1,8 @@
 from typing import TypeVar
 
 import pytest
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
+from pytest_mock import MockerFixture
 
 from flagsmith_schemas.dynamodb import (
     Environment,
@@ -513,3 +514,104 @@ def test_document__validate_json__expected_result(
 
     # Then
     assert document == expected_result
+
+
+def test_type_adapter__identity__duplicate_features__raises_expected(
+    mocker: MockerFixture,
+) -> None:
+    # Given
+    type_adapter = TypeAdapter(Identity)
+    python_data = {
+        "composite_key": "envkey_identifier",
+        "created_date": "2024-03-19T09:41:22.974595+00:00",
+        "environment_api_key": "envkey",
+        "identifier": "identifier",
+        "identity_uuid": "118ecfc9-5234-4218-8af8-dd994dbfedc0",
+        "identity_features": [
+            {
+                "enabled": True,
+                "feature": {"id": 1, "name": "feature1", "type": "STANDARD"},
+                "feature_state_value": None,
+                "multivariate_feature_state_values": [],
+            },
+            {
+                "enabled": False,
+                "feature": {"id": 1, "name": "feature1", "type": "STANDARD"},
+                "feature_state_value": "override",
+                "multivariate_feature_state_values": [],
+            },
+        ],
+        "identity_traits": [],
+    }
+
+    # When / Then
+    with pytest.raises(ValidationError) as exc_info:
+        type_adapter.validate_python(python_data)
+
+    assert len(exc_info.value.errors()) == 1
+    assert (
+        exc_info.value.errors()[0].items()
+        >= {
+            "type": "value_error",
+            "loc": ("identity_features",),
+            "msg": "Value error, Feature id=1 cannot have multiple feature states for a single identity.",
+        }.items()
+    )
+
+
+def test_type_adapter__environment__multivariate_feature_states_percentage_allocation_exceeds_100__raises_expected() -> (
+    None
+):
+    # Given
+    type_adapter = TypeAdapter(Environment)
+    python_data = {
+        "id": 1,
+        "api_key": "envkey",
+        "project": {
+            "id": 1,
+            "name": "Project",
+            "organisation": {
+                "id": 1,
+                "name": "Org",
+                "feature_analytics": False,
+                "stop_serving_flags": False,
+                "persist_trait_data": True,
+            },
+            "segments": [],
+            "hide_disabled_flags": False,
+        },
+        "feature_states": [
+            {
+                "feature": {"id": 1, "name": "mv_feature", "type": "MULTIVARIATE"},
+                "enabled": True,
+                "feature_state_value": "some_value",
+                "django_id": 1,
+                "multivariate_feature_state_values": [
+                    {
+                        "id": 1,
+                        "percentage_allocation": 60.0,
+                        "multivariate_feature_option": {"value": "option1"},
+                    },
+                    {
+                        "id": 2,
+                        "percentage_allocation": 50.0,
+                        "multivariate_feature_option": {"value": "option2"},
+                    },
+                ],
+            }
+        ],
+    }
+
+    # When / Then
+    with pytest.raises(ValidationError) as exc_info:
+        type_adapter.validate_python(python_data)
+
+    assert len(exc_info.value.errors()) == 1
+    assert (
+        exc_info.value.errors()[0].items()
+        >= {
+            "type": "value_error",
+            "loc": ("feature_states", 0, "multivariate_feature_state_values"),
+            "msg": "Value error, Total `percentage_allocation` of multivariate feature state values cannot exceed 100.",
+        }.items()
+    )
