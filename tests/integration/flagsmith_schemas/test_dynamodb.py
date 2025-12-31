@@ -1,4 +1,6 @@
 from decimal import Decimal
+from importlib import reload
+from sys import modules
 from typing import TypeVar
 
 import pytest
@@ -620,3 +622,31 @@ def test_type_adapter__environment__multivariate_feature_states_percentage_alloc
             "msg": "Value error, Total `percentage_allocation` of multivariate feature state values cannot exceed 100.",
         }.items()
     )
+
+
+def test_import__no_pydantic__expected_annotations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    # `pydantic` is not installed
+    monkeypatch.setitem(modules, "pydantic", None)
+    monkeypatch.setattr(
+        modules["flagsmith_schemas.constants"],
+        "PYDANTIC_INSTALLED",
+        False,
+    )
+    reload(modules["flagsmith_schemas.types"])
+
+    # When
+    # importing `flagsmith_schemas.dynamodb`
+    dynamodb_module = reload(modules["flagsmith_schemas.dynamodb"])
+
+    # Then
+    # no `pydantic` references in type annotations
+    assert "pydantic" not in str(dynamodb_module.Identity.__annotations__)
+    assert "pydantic" not in str(dynamodb_module.Environment.__annotations__)
+    assert "pydantic" not in str(dynamodb_module.EnvironmentAPIKey.__annotations__)
+    assert "pydantic" not in str(
+        dynamodb_module.EnvironmentV2IdentityOverride.__annotations__
+    )
+    assert "pydantic" not in str(dynamodb_module.EnvironmentV2Meta.__annotations__)
