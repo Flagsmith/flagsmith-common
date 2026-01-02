@@ -80,7 +80,7 @@ class FeatureState(TypedDict):
     multivariate_feature_state_values: NotRequired[list[MultivariateFeatureStateValue]]
     """List of multivariate feature state values, if this feature state is for a multivariate feature.
 
-    Total `percentage_allocation` sum must be less or equal to 100.
+    Total `percentage_allocation` sum of the child multivariate feature state values must be less or equal to 100.
     """
 
 
