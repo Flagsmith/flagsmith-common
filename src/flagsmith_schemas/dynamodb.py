@@ -257,6 +257,7 @@ class EnvironmentAPIKey(TypedDict):
 
 class Identity(TypedDict):
     """Represents a Flagsmith identity within an environment. Carries traits and feature overrides.
+    Used for per-identity flag evaluations in remote evaluation mode.
 
     **DynamoDB table**: `flagsmith_identities`
     """
@@ -313,6 +314,7 @@ class EnvironmentV2Meta(_EnvironmentFields):
 
 class EnvironmentV2IdentityOverride(TypedDict):
     """Represents an identity override.
+    Used for per-identity flag evaluations in local evaluation mode. Presented as part of the API environment document.
 
     **DynamoDB table**: `flagsmith_environments_v2`
     """
