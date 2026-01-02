@@ -89,7 +89,7 @@ requires = ["uv_build>=0.9.17,<0.10.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = ["common", "task_processor"]
+module-name = ["common", "task_processor", "flagsmith_schemas"]
 
 [tool.coverage.report]
 # Regexes for lines to exclude from consideration
