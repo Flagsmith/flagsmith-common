@@ -289,10 +289,10 @@ class Environment(_EnvironmentFields):
     **DynamoDB table**: `flagsmith_environments`
     """
 
-    id: DynamoInt
-    """Unique identifier for the environment in Core. **INDEXED**."""
     api_key: str
     """Public client-side API key for the environment. **INDEXED**."""
+    id: DynamoInt
+    """Unique identifier for the environment in Core."""
 
 
 class EnvironmentV2Meta(_EnvironmentFields):
