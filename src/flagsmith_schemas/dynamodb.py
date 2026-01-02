@@ -301,7 +301,7 @@ class EnvironmentV2Meta(_EnvironmentFields):
     """
 
     environment_id: str
-    """Unique identifier for the environment in Core. **INDEXED**."""
+    """Unique identifier for the environment in Core. Same as `Environment.id`, but a string for more loose coupling. **INDEXED**."""
     environment_api_key: str
     """Public client-side API key for the environment. **INDEXED**."""
     document_key: Literal["_META"]
