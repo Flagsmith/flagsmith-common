@@ -137,7 +137,7 @@ class Organisation(TypedDict):
     id: DynamoInt
     """Unique identifier for the organisation in Core."""
     name: str
-    """Organisation name as set via Core."""
+    """Organisation name."""
     feature_analytics: NotRequired[bool]
     """Whether the SDK API should log feature analytics events for this organisation. Defaults to `False`."""
     stop_serving_flags: NotRequired[bool]
@@ -152,7 +152,7 @@ class Project(TypedDict):
     id: DynamoInt
     """Unique identifier for the project in Core."""
     name: str
-    """Project name as set via Core."""
+    """Project name."""
     organisation: Organisation
     """The organisation that this project belongs to."""
     segments: list[Segment]
