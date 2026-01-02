@@ -46,9 +46,9 @@ class MultivariateFeatureStateValue(TypedDict):
     """
 
     id: NotRequired[DynamoInt | None]
-    """Unique identifier for the multivariate feature state value in Core. If feature state created via `edge-identities` APIs in Core, this can be missing or `None`."""
+    """Unique identifier for the multivariate feature state value in Core. Used for multivariate bucketing. If feature state created via `edge-identities` APIs in Core, this can be missing or `None`."""
     mv_fs_value_uuid: NotRequired[UUIDStr]
-    """The UUID for this multivariate feature state value. Should be used if `id` is `None`."""
+    """The UUID for this multivariate feature state value. Should be used for multivariate bucketing if `id` is `None`."""
     percentage_allocation: DynamoFloat
     """The percentage allocation for this multivariate feature state value. Should be between or equal to 0 and 100."""
     multivariate_feature_option: MultivariateFeatureOption
