@@ -1,11 +1,7 @@
 from functools import partial
-from typing import Generator
+from typing import TYPE_CHECKING, Generator
 
-import prometheus_client
 import pytest
-from prometheus_client.metrics import MetricWrapperBase
-from pyfakefs.fake_filesystem import FakeFilesystem
-from pytest_django.fixtures import SettingsWrapper
 
 from common.test_tools.types import (
     AssertMetricFixture,
@@ -14,6 +10,10 @@ from common.test_tools.types import (
     SnapshotFixture,
 )
 from task_processor.task_run_method import TaskRunMethod
+
+if TYPE_CHECKING:
+    from pyfakefs.fake_filesystem import FakeFilesystem
+    from pytest_django.fixtures import SettingsWrapper
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -26,12 +26,14 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def assert_metric_impl() -> Generator[AssertMetricFixture, None, None]:
+    import prometheus_client
+
     registry = prometheus_client.REGISTRY
     collectors = [*registry._collector_to_names]
 
     # Reset registry state
     for collector in collectors:
-        if isinstance(collector, MetricWrapperBase):
+        if isinstance(collector, prometheus_client.metrics.MetricWrapperBase):
             collector.clear()
 
     def _assert_metric(
@@ -53,7 +55,7 @@ assert_metric = pytest.fixture(assert_metric_impl)
 
 
 @pytest.fixture()
-def saas_mode(fs: FakeFilesystem) -> Generator[None, None, None]:
+def saas_mode(fs: "FakeFilesystem") -> Generator[None, None, None]:
     from common.core.utils import is_saas
 
     is_saas.cache_clear()
@@ -65,7 +67,7 @@ def saas_mode(fs: FakeFilesystem) -> Generator[None, None, None]:
 
 
 @pytest.fixture()
-def enterprise_mode(fs: FakeFilesystem) -> Generator[None, None, None]:
+def enterprise_mode(fs: "FakeFilesystem") -> Generator[None, None, None]:
     from common.core.utils import is_enterprise
 
     is_enterprise.cache_clear()
@@ -77,7 +79,7 @@ def enterprise_mode(fs: FakeFilesystem) -> Generator[None, None, None]:
 
 
 @pytest.fixture()
-def task_processor_mode(settings: SettingsWrapper) -> None:
+def task_processor_mode(settings: "SettingsWrapper") -> None:
     settings.TASK_PROCESSOR_MODE = True
     # The setting is supposed to be set before the metrics module is imported,
     # so reload it
@@ -101,7 +103,7 @@ def flagsmith_markers_marked(
 
 @pytest.fixture(name="run_tasks")
 def run_tasks_impl(
-    settings: SettingsWrapper,
+    settings: "SettingsWrapper",
     transactional_db: None,
     task_processor_mode: None,
 ) -> RunTasksFixture:
