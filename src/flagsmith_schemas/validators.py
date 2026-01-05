@@ -41,12 +41,15 @@ def validate_multivariate_feature_state_values(
 def validate_identity_feature_states(
     values: "list[FeatureState]",
 ) -> "list[FeatureState]":
-    for i, feature_state in enumerate(values, start=1):
-        if feature_state["feature"]["id"] in [
-            feature_state["feature"]["id"] for feature_state in values[i:]
-        ]:
+    seen: set[Decimal] = set()
+
+    for feature_state in values:
+        feature_id = feature_state["feature"]["id"]
+        if feature_id in seen:
             raise ValueError(
-                f"Feature id={feature_state['feature']['id']} cannot have multiple "
+                f"Feature id={feature_id} cannot have multiple "
                 "feature states for a single identity."
             )
+        seen.add(feature_id)
+
     return values
