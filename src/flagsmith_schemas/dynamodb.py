@@ -34,7 +34,7 @@ class MultivariateFeatureOption(TypedDict):
     """Represents a single multivariate feature option in the Flagsmith UI."""
 
     id: NotRequired[DynamoInt | None]
-    """Unique identifier for the multivariate feature option in Core. **DEPRECATED**: MultivariateFeatureValue.id should be used instead."""
+    """Unique identifier for the multivariate feature option in Core. This is used by Core UI to display the selected option for an identity override for a multivariate feature."""
     value: FeatureValue
     """The feature state value that should be served when this option's parent multivariate feature state is selected by the engine."""
 
