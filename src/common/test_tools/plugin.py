@@ -2,7 +2,6 @@ from functools import partial
 from typing import TYPE_CHECKING, Generator
 
 import pytest
-from pytest_django.fixtures import SettingsWrapper
 
 from common.test_tools.types import (
     AssertMetricFixture,
@@ -14,6 +13,7 @@ from task_processor.task_run_method import TaskRunMethod
 
 if TYPE_CHECKING:
     from pyfakefs.fake_filesystem import FakeFilesystem
+    from pytest_django.fixtures import SettingsWrapper
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -79,7 +79,7 @@ def enterprise_mode(fs: "FakeFilesystem") -> Generator[None, None, None]:
 
 
 @pytest.fixture()
-def task_processor_mode(settings: SettingsWrapper) -> None:
+def task_processor_mode(settings: "SettingsWrapper") -> None:
     settings.TASK_PROCESSOR_MODE = True
     # The setting is supposed to be set before the metrics module is imported,
     # so reload it
@@ -103,7 +103,7 @@ def flagsmith_markers_marked(
 
 @pytest.fixture(name="run_tasks")
 def run_tasks_impl(
-    settings: SettingsWrapper,
+    settings: "SettingsWrapper",
     transactional_db: None,
     task_processor_mode: None,
 ) -> RunTasksFixture:
