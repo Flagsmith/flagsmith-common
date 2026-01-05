@@ -4,5 +4,8 @@
         "config:recommended",
         ":semanticCommitScopeDisabled"
     ],
+    "ignorePresets": [
+        ":semanticPrefixFixDepsChoreOthers"
+    ],
     "semanticCommitType": "deps"
 }

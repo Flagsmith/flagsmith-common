@@ -2,6 +2,27 @@
 
 <a name="v1.5.2"></a>
 
+## [3.0.0](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.7...v3.0.0) (2026-01-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* Move to uv, add Renovate configuration ([#131](https://github.com/Flagsmith/flagsmith-common/issues/131))
+
+### CI
+
+* Move to uv, add Renovate configuration ([#131](https://github.com/Flagsmith/flagsmith-common/issues/131)) ([4ba7c46](https://github.com/Flagsmith/flagsmith-common/commit/4ba7c46a76bfe471282f36d968ef724aad7d4e9b))
+* pre-commit autoupdate ([#125](https://github.com/Flagsmith/flagsmith-common/issues/125)) ([8586918](https://github.com/Flagsmith/flagsmith-common/commit/85869180be3809570d4924afcc06831c7ecc0585))
+* pre-commit autoupdate ([#127](https://github.com/Flagsmith/flagsmith-common/issues/127)) ([47bf486](https://github.com/Flagsmith/flagsmith-common/commit/47bf4868e9f55827b3af3c36b699e61cb5000ae1))
+
+
+### Dependency Updates
+
+* **ci:** update actions/checkout action to v6 ([#133](https://github.com/Flagsmith/flagsmith-common/issues/133)) ([9935082](https://github.com/Flagsmith/flagsmith-common/commit/99350825d6a491cc3f51058dbb35ef1c7a91e8de))
+* **ci:** update amannn/action-semantic-pull-request action to v6 ([#135](https://github.com/Flagsmith/flagsmith-common/issues/135)) ([c831ba0](https://github.com/Flagsmith/flagsmith-common/commit/c831ba0c0a7774790d258ce80676f70c5c9214e6))
+* **ci:** update postgres docker tag to v15.15 ([#132](https://github.com/Flagsmith/flagsmith-common/issues/132)) ([464c4ac](https://github.com/Flagsmith/flagsmith-common/commit/464c4ac4a297c9f26bb3dacbf31498a402bab035))
+* update django to 5.2.9 ([#149](https://github.com/Flagsmith/flagsmith-common/issues/149)) ([e095f69](https://github.com/Flagsmith/flagsmith-common/commit/e095f69e2fcba48e7d2e42b14a92579d09cbdf50))
+
 ## [2.2.7](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.6...v2.2.7) (2025-11-12)
 
 
