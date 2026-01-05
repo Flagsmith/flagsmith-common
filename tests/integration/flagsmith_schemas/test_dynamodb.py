@@ -1,7 +1,11 @@
+from decimal import Decimal
+from importlib import reload
+from sys import modules
 from typing import TypeVar
 
 import pytest
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
+from pytest_mock import MockerFixture
 
 from flagsmith_schemas.dynamodb import (
     Environment,
@@ -22,13 +26,13 @@ T = TypeVar("T")
             Environment,
             "flagsmith_environments.json",
             {
-                "id": 12561,
+                "id": Decimal("12561"),
                 "api_key": "n9fbf9h3v4fFgH3U3ngWhb",
                 "project": {
-                    "id": 5359,
+                    "id": Decimal("5359"),
                     "name": "Edge API Test Project",
                     "organisation": {
-                        "id": 13,
+                        "id": Decimal("13"),
                         "name": "Flagsmith",
                         "feature_analytics": False,
                         "stop_serving_flags": False,
@@ -36,7 +40,7 @@ T = TypeVar("T")
                     },
                     "segments": [
                         {
-                            "id": 4267,
+                            "id": Decimal("4267"),
                             "name": "regular_segment",
                             "rules": [
                                 {
@@ -87,19 +91,19 @@ T = TypeVar("T")
                             "feature_states": [
                                 {
                                     "feature": {
-                                        "id": 15058,
+                                        "id": Decimal("15058"),
                                         "name": "string_feature",
                                         "type": "STANDARD",
                                     },
                                     "enabled": False,
                                     "feature_state_value": "segment_override",
-                                    "django_id": 81027,
+                                    "django_id": Decimal("81027"),
                                     "multivariate_feature_state_values": [],
                                 }
                             ],
                         },
                         {
-                            "id": 4268,
+                            "id": Decimal("4268"),
                             "name": "10_percent",
                             "rules": [
                                 {
@@ -123,19 +127,19 @@ T = TypeVar("T")
                             "feature_states": [
                                 {
                                     "feature": {
-                                        "id": 15060,
+                                        "id": Decimal("15060"),
                                         "name": "basic_flag",
                                         "type": "STANDARD",
                                     },
                                     "enabled": True,
                                     "feature_state_value": "",
-                                    "django_id": 81026,
+                                    "django_id": Decimal("81026"),
                                     "multivariate_feature_state_values": [],
                                 }
                             ],
                         },
                         {
-                            "id": 16,
+                            "id": Decimal("16"),
                             "name": "segment_two",
                             "rules": [
                                 {
@@ -164,23 +168,23 @@ T = TypeVar("T")
                             "feature_states": [
                                 {
                                     "feature": {
-                                        "id": 15058,
+                                        "id": Decimal("15058"),
                                         "name": "string_feature",
                                         "type": "STANDARD",
                                     },
                                     "enabled": True,
                                     "feature_state_value": "segment_two_override_priority_0",
-                                    "django_id": 78978,
+                                    "django_id": Decimal("78978"),
                                     "featurestate_uuid": UUIDStr(
                                         "1545809c-e97f-4a1f-9e67-8b4f2b396aa6"
                                     ),
-                                    "feature_segment": {"priority": 0},
+                                    "feature_segment": {"priority": Decimal("0")},
                                     "multivariate_feature_state_values": [],
                                 }
                             ],
                         },
                         {
-                            "id": 17,
+                            "id": Decimal("17"),
                             "name": "segment_three",
                             "rules": [
                                 {
@@ -209,17 +213,17 @@ T = TypeVar("T")
                             "feature_states": [
                                 {
                                     "feature": {
-                                        "id": 15058,
+                                        "id": Decimal("15058"),
                                         "name": "string_feature",
                                         "type": "STANDARD",
                                     },
                                     "enabled": True,
                                     "feature_state_value": "segment_three_override_priority_1",
-                                    "django_id": 78977,
+                                    "django_id": Decimal("78977"),
                                     "featurestate_uuid": UUIDStr(
                                         "1545809c-e97f-4a1f-9e67-8b4f2b396aa7"
                                     ),
-                                    "feature_segment": {"priority": 1},
+                                    "feature_segment": {"priority": Decimal("1")},
                                     "multivariate_feature_state_values": [],
                                 }
                             ],
@@ -230,77 +234,77 @@ T = TypeVar("T")
                 "feature_states": [
                     {
                         "feature": {
-                            "id": 15058,
+                            "id": Decimal("15058"),
                             "name": "string_feature",
                             "type": "STANDARD",
                         },
                         "enabled": True,
                         "feature_state_value": "foo",
-                        "django_id": 78978,
+                        "django_id": Decimal("78978"),
                         "feature_segment": None,
                         "multivariate_feature_state_values": [],
                     },
                     {
                         "feature": {
-                            "id": 15059,
+                            "id": Decimal("15059"),
                             "name": "integer_feature",
                             "type": "STANDARD",
                         },
                         "enabled": True,
-                        "feature_state_value": 1234,
-                        "django_id": 78980,
+                        "feature_state_value": Decimal("1234"),
+                        "django_id": Decimal("78980"),
                         "multivariate_feature_state_values": [],
                     },
                     {
                         "feature": {
-                            "id": 15060,
+                            "id": Decimal("15060"),
                             "name": "basic_flag",
                             "type": "STANDARD",
                         },
                         "enabled": False,
                         "feature_state_value": None,
-                        "django_id": 78982,
+                        "django_id": Decimal("78982"),
                         "multivariate_feature_state_values": [],
                     },
                     {
                         "feature": {
-                            "id": 15061,
+                            "id": Decimal("15061"),
                             "name": "float_feature",
                             "type": "STANDARD",
                         },
                         "enabled": True,
                         "feature_state_value": "12.34",
-                        "django_id": 78984,
+                        "django_id": Decimal("78984"),
                         "multivariate_feature_state_values": [],
                     },
                     {
                         "feature": {
-                            "id": 15062,
+                            "id": Decimal("15062"),
                             "name": "mv_feature",
                             "type": "MULTIVARIATE",
                         },
                         "enabled": True,
                         "feature_state_value": "foo",
-                        "django_id": 78986,
+                        "django_id": Decimal("78986"),
                         "multivariate_feature_state_values": [
                             {
-                                "id": 3404,
-                                "percentage_allocation": 30.0,
+                                "id": Decimal("3404"),
+                                "percentage_allocation": Decimal("30"),
                                 "multivariate_feature_option": {"value": "baz"},
                             },
                             {
-                                "id": 3402,
-                                "percentage_allocation": 30.0,
+                                "id": Decimal("3402"),
+                                "percentage_allocation": Decimal("30"),
                                 "multivariate_feature_option": {"value": "bar"},
                             },
                             {
-                                "id": 3405,
-                                "percentage_allocation": 0.0,
-                                "multivariate_feature_option": {"value": 1},
+                                "id": Decimal("3405"),
+                                "percentage_allocation": Decimal("0"),
+                                "multivariate_feature_option": {"value": Decimal("1")},
                             },
                             {
-                                "id": 3406,
-                                "percentage_allocation": 0.0,
+                                "id": Decimal("3406"),
+                                "percentage_allocation": Decimal("0"),
                                 "multivariate_feature_option": {"value": True},
                             },
                         ],
@@ -318,7 +322,7 @@ T = TypeVar("T")
                 "client_api_key": "pQuzvsMLQoOVAwITrTWDQJ",
                 "created_at": DateTimeStr("2023-04-21T13:11:13.913178+00:00"),
                 "expires_at": None,
-                "id": 907,
+                "id": Decimal("907"),
                 "name": "TestKey",
             },
             id="flagsmith_environment_api_key",
@@ -337,7 +341,7 @@ T = TypeVar("T")
                         "django_id": None,
                         "enabled": True,
                         "feature": {
-                            "id": 67,
+                            "id": Decimal("67"),
                             "name": "test_feature",
                             "type": "STANDARD",
                         },
@@ -366,10 +370,10 @@ T = TypeVar("T")
                 "environment_api_key": "AQ9T6LixPqYMJkuqGJy3t2",
                 "feature_states": [
                     {
-                        "django_id": 577621,
+                        "django_id": Decimal("577621"),
                         "enabled": True,
                         "feature": {
-                            "id": 100298,
+                            "id": Decimal("100298"),
                             "name": "test_feature",
                             "type": "MULTIVARIATE",
                         },
@@ -380,34 +384,34 @@ T = TypeVar("T")
                         "feature_state_value": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
                         "multivariate_feature_state_values": [
                             {
-                                "id": 185130,
+                                "id": Decimal("185130"),
                                 "multivariate_feature_option": {
-                                    "id": 20919,
+                                    "id": Decimal("20919"),
                                     "value": "second",
                                 },
                                 "mv_fs_value_uuid": UUIDStr(
                                     "0b02ce41-9965-4c61-8b96-c8d76e3d4a27"
                                 ),
-                                "percentage_allocation": 10.0,
+                                "percentage_allocation": Decimal("10.0"),
                             },
                             {
-                                "id": 48717,
+                                "id": Decimal("48717"),
                                 "multivariate_feature_option": {
-                                    "id": 14004,
+                                    "id": Decimal("14004"),
                                     "value": True,
                                 },
                                 "mv_fs_value_uuid": UUIDStr(
                                     "cb05f49c-de1f-44f1-87eb-c3b55d473063"
                                 ),
-                                "percentage_allocation": 30.0,
+                                "percentage_allocation": Decimal("30.0"),
                             },
                         ],
                     },
                     {
-                        "django_id": 1041292,
+                        "django_id": Decimal("1041292"),
                         "enabled": False,
                         "feature": {
-                            "id": 172422,
+                            "id": Decimal("172422"),
                             "name": "feature",
                             "type": "STANDARD",
                         },
@@ -415,24 +419,24 @@ T = TypeVar("T")
                             "58b7b954-1b75-493a-82df-5be0efeedd2a"
                         ),
                         "feature_segment": None,
-                        "feature_state_value": 3,
+                        "feature_state_value": Decimal("3"),
                         "multivariate_feature_state_values": [],
                     },
                 ],
                 "heap_config": None,
                 "hide_disabled_flags": None,
                 "hide_sensitive_data": False,
-                "id": 49268,
+                "id": Decimal("49268"),
                 "mixpanel_config": None,
                 "name": "Development",
                 "project": {
                     "enable_realtime_updates": False,
                     "hide_disabled_flags": False,
-                    "id": 19368,
+                    "id": Decimal("19368"),
                     "name": "Example Project",
                     "organisation": {
                         "feature_analytics": False,
-                        "id": 13,
+                        "id": Decimal("13"),
                         "name": "Flagsmith",
                         "persist_trait_data": True,
                         "stop_serving_flags": False,
@@ -440,7 +444,7 @@ T = TypeVar("T")
                     "segments": [
                         {
                             "feature_states": [],
-                            "id": 44126,
+                            "id": Decimal("44126"),
                             "name": "test",
                             "rules": [
                                 {
@@ -484,7 +488,11 @@ T = TypeVar("T")
                 "feature_state": {
                     "django_id": None,
                     "enabled": True,
-                    "feature": {"id": 136660, "name": "test1", "type": "STANDARD"},
+                    "feature": {
+                        "id": Decimal("136660"),
+                        "name": "test1",
+                        "type": "STANDARD",
+                    },
                     "featurestate_uuid": UUIDStr(
                         "652d8931-37d9-438e-9825-f525b9e83077"
                     ),
@@ -513,3 +521,132 @@ def test_document__validate_json__expected_result(
 
     # Then
     assert document == expected_result
+
+
+def test_type_adapter__identity__duplicate_features__raises_expected(
+    mocker: MockerFixture,
+) -> None:
+    # Given
+    type_adapter = TypeAdapter(Identity)
+    python_data = {
+        "composite_key": "envkey_identifier",
+        "created_date": "2024-03-19T09:41:22.974595+00:00",
+        "environment_api_key": "envkey",
+        "identifier": "identifier",
+        "identity_uuid": "118ecfc9-5234-4218-8af8-dd994dbfedc0",
+        "identity_features": [
+            {
+                "enabled": True,
+                "feature": {"id": 1, "name": "feature1", "type": "STANDARD"},
+                "feature_state_value": None,
+                "multivariate_feature_state_values": [],
+            },
+            {
+                "enabled": False,
+                "feature": {"id": 1, "name": "feature1", "type": "STANDARD"},
+                "feature_state_value": "override",
+                "multivariate_feature_state_values": [],
+            },
+        ],
+        "identity_traits": [],
+    }
+
+    # When / Then
+    with pytest.raises(ValidationError) as exc_info:
+        type_adapter.validate_python(python_data)
+
+    assert len(exc_info.value.errors()) == 1
+    assert (
+        exc_info.value.errors()[0].items()
+        >= {
+            "type": "value_error",
+            "loc": ("identity_features",),
+            "msg": "Value error, Feature id=1 cannot have multiple feature states for a single identity.",
+        }.items()
+    )
+
+
+def test_type_adapter__environment__multivariate_feature_states_percentage_allocation_exceeds_100__raises_expected() -> (
+    None
+):
+    # Given
+    type_adapter = TypeAdapter(Environment)
+    python_data = {
+        "id": 1,
+        "api_key": "envkey",
+        "project": {
+            "id": 1,
+            "name": "Project",
+            "organisation": {
+                "id": 1,
+                "name": "Org",
+                "feature_analytics": False,
+                "stop_serving_flags": False,
+                "persist_trait_data": True,
+            },
+            "segments": [],
+            "hide_disabled_flags": False,
+        },
+        "feature_states": [
+            {
+                "feature": {"id": 1, "name": "mv_feature", "type": "MULTIVARIATE"},
+                "enabled": True,
+                "feature_state_value": "some_value",
+                "django_id": 1,
+                "multivariate_feature_state_values": [
+                    {
+                        "id": 1,
+                        "percentage_allocation": 60.0,
+                        "multivariate_feature_option": {"value": "option1"},
+                    },
+                    {
+                        "id": 2,
+                        "percentage_allocation": 50.0,
+                        "multivariate_feature_option": {"value": "option2"},
+                    },
+                ],
+            }
+        ],
+    }
+
+    # When / Then
+    with pytest.raises(ValidationError) as exc_info:
+        type_adapter.validate_python(python_data)
+
+    assert len(exc_info.value.errors()) == 1
+    assert (
+        exc_info.value.errors()[0].items()
+        >= {
+            "type": "value_error",
+            "loc": ("feature_states", 0, "multivariate_feature_state_values"),
+            "msg": "Value error, Total `percentage_allocation` of multivariate feature state values cannot exceed 100.",
+        }.items()
+    )
+
+
+def test_import__no_pydantic__expected_annotations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    # `pydantic` is not installed
+    monkeypatch.setitem(modules, "pydantic", None)
+    monkeypatch.setattr(
+        modules["flagsmith_schemas.constants"],
+        "PYDANTIC_INSTALLED",
+        False,
+    )
+    reload(modules["flagsmith_schemas.types"])
+
+    # When
+    # importing `flagsmith_schemas.dynamodb`
+    dynamodb_module = reload(modules["flagsmith_schemas.dynamodb"])
+
+    # Then
+    # no `pydantic` references in type annotations
+    assert "pydantic" not in str(dynamodb_module.Identity.__annotations__)
+    assert "pydantic" not in str(dynamodb_module.Environment.__annotations__)
+    assert "pydantic" not in str(dynamodb_module.EnvironmentAPIKey.__annotations__)
+    assert "pydantic" not in str(
+        dynamodb_module.EnvironmentV2IdentityOverride.__annotations__
+    )
+    assert "pydantic" not in str(dynamodb_module.EnvironmentV2Meta.__annotations__)
