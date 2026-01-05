@@ -2,6 +2,14 @@
 
 <a name="v1.5.2"></a>
 
+## [3.1.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.0.0...v3.1.0) (2026-01-05)
+
+
+### Features
+
+* Add DynamoDB document schemas ([#150](https://github.com/Flagsmith/flagsmith-common/issues/150)) ([9f9518b](https://github.com/Flagsmith/flagsmith-common/commit/9f9518b278fd37b45683b1cec498438c81ecc915))
+* Annotate DynamoDB schemas with validation code ([#148](https://github.com/Flagsmith/flagsmith-common/issues/148)) ([ff17838](https://github.com/Flagsmith/flagsmith-common/commit/ff178388446190c66366585ecb0c1f18377c4d04))
+
 ## [3.0.0](https://github.com/Flagsmith/flagsmith-common/compare/v2.2.7...v3.0.0) (2026-01-05)
 
 
