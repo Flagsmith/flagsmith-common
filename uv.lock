@@ -388,7 +388,7 @@ wheels = [
 
 [[package]]
 name = "flagsmith-common"
-version = "2.2.7"
+version = "3.0.0"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -461,7 +461,7 @@ requires-dist = [
     { name = "pytest-django", marker = "extra == 'test-tools'", specifier = ">=4,<5" },
     { name = "requests", marker = "extra == 'common-core'" },
     { name = "simplejson", marker = "extra == 'common-core'", specifier = ">=3,<4" },
-    { name = "typing-extensions", marker = "extra == 'flagsmith-models'" },
+    { name = "typing-extensions", marker = "extra == 'flagsmith-schemas'" },
 ]
 provides-extras = ["test-tools", "common-core", "task-processor", "flagsmith-schemas"]
 
