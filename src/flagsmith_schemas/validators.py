@@ -1,7 +1,7 @@
 import typing
 from decimal import Decimal
 
-from flagsmith_schemas.constants import MAX_STRING_FEARTURE_STATE_VALUE_LENGTH
+from flagsmith_schemas.constants import MAX_STRING_FEATURE_STATE_VALUE_LENGTH
 
 if typing.TYPE_CHECKING:
     from flagsmith_schemas.dynamodb import FeatureState, MultivariateFeatureStateValue
@@ -14,10 +14,10 @@ def validate_dynamo_feature_state_value(
     if isinstance(value, bool | None):
         return value
     if isinstance(value, str):
-        if len(value) > MAX_STRING_FEARTURE_STATE_VALUE_LENGTH:
+        if len(value) > MAX_STRING_FEATURE_STATE_VALUE_LENGTH:
             raise ValueError(
                 "Dynamo feature state value string length cannot exceed "
-                f"{MAX_STRING_FEARTURE_STATE_VALUE_LENGTH} characters "
+                f"{MAX_STRING_FEATURE_STATE_VALUE_LENGTH} characters "
                 f"(got {len(value)} characters)."
             )
         return value
