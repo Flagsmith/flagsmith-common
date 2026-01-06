@@ -4,7 +4,7 @@ import threading
 import time
 
 import pytest
-from drf_yasg.generators import EndpointEnumerator  # type: ignore[import-untyped]
+from drf_spectacular.generators import EndpointEnumerator
 from pytest_mock import MockerFixture
 
 from common.gunicorn.utils import (
