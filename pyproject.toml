@@ -27,6 +27,7 @@ optional-dependencies = { test-tools = [
     "prometheus-client (>=0.0.16)",
 ], flagsmith-schemas = [
     "typing_extensions",
+    "flagsmith-flag-engine>10",
 ] }
 authors = [
     { name = "Matthew Elwell" },
