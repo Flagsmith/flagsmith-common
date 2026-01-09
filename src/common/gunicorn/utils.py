@@ -6,7 +6,7 @@ from typing import Any
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.wsgi import get_wsgi_application
 from django.http import HttpRequest
-from drf_yasg.generators import EndpointEnumerator  # type: ignore[import-untyped]
+from drf_spectacular.generators import EndpointEnumerator
 from environs import Env
 from gunicorn.app.wsgiapp import (  # type: ignore[import-untyped]
     WSGIApplication as GunicornWSGIApplication,
@@ -77,7 +77,7 @@ def get_route_template(route: str) -> str:
     `"^api/v1/environments/(?P<environment_api_key>[^/.]+)/api-keys/$"` ->
     `"/api/v1/environments/{environment_api_key}/api-keys/"`
     """
-    route_template: str = EndpointEnumerator().get_path_from_regex(route)
+    route_template: str = EndpointEnumerator().get_path_from_regex(route)  # type: ignore[no-untyped-call]
     return route_template
 
 
