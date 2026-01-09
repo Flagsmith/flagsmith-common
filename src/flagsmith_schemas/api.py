@@ -180,7 +180,7 @@ class V1IdentitiesRequest(TypedDict):
 
 
 class V1EnvironmentDocumentResponse(TypedDict):
-    """`/api/v1/environments-document/` response.
+    """`/api/v1/environment-documents/` response.
 
     Powers Flagsmith SDK's local evaluation mode.
     """
