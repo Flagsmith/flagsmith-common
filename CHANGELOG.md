@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [3.2.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.1.0...v3.2.0) (2026-01-09)
+
+
+### Features
+
+* Migrate to drf-spectacular ([#153](https://github.com/Flagsmith/flagsmith-common/issues/153)) ([94154b0](https://github.com/Flagsmith/flagsmith-common/commit/94154b01b68da8b0fd121ff32405604623c5011f))
+
 ## [3.1.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.0.0...v3.1.0) (2026-01-05)
 
 
