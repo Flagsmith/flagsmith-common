@@ -122,7 +122,7 @@ class Segment(TypedDict):
 
 
 class Project(TypedDict):
-    """Represents data about a Flagsmith project. For SDKs, this is mainly used to convey segment data."""
+    """Represents a Flagsmith project. For SDKs, this is mainly used to convey segment data."""
 
     segments: list[Segment]
     """List of segments."""
