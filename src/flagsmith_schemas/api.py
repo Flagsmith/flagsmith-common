@@ -45,7 +45,7 @@ class MultivariateFeatureStateValue(TypedDict):
     mv_fs_value_uuid: UUIDStr | None
     """The UUID for this multivariate feature state value. Should be used for multivariate bucketing if `id` is null."""
     percentage_allocation: float
-    """The percentage allocation for this multivariate feature state value. Should be between or equal to 0 and 100."""
+    """The percentage allocation for this multivariate feature state value. Should be between or equal to 0 and 100; total percentage allocation of grouped `MultivariateFeatureStateValue` must not exceed 100."""
     multivariate_feature_option: MultivariateFeatureOption
     """The multivariate feature option that this value corresponds to."""
 
