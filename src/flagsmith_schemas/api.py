@@ -98,7 +98,7 @@ class SegmentCondition(TypedDict):
 
 
 class SegmentRule(TypedDict):
-    """Represents a rule within a segment used by Flagsmith engine."""
+    """Represents a rule within a segment used by Flagsmith engine. Root rules usually contain nested rules."""
 
     type: RuleType
     """Type of the rule, defining how conditions are evaluated."""
