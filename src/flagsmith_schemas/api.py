@@ -64,7 +64,7 @@ class FeatureState(TypedDict):
     """The feature that this feature state is for."""
     enabled: bool
     """Whether the feature is enabled or disabled."""
-    feature_state_value: object
+    feature_state_value: FeatureValue
     """The value for this feature state."""
     featurestate_uuid: UUIDStr
     """The UUID for this feature state."""
