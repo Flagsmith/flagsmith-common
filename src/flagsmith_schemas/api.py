@@ -109,7 +109,7 @@ class SegmentRule(TypedDict):
 
 
 class Segment(TypedDict):
-    """Represents a Flagsmith segment. Carries rules, feature overrides, and segment rules."""
+    """Represents a Flagsmith segment. Carries rules and feature overrides."""
 
     id: int
     """Unique identifier for the segment in Core."""
