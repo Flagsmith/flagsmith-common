@@ -137,7 +137,7 @@ class IdentityOverride(TypedDict):
     """List of identity overrides for this identity."""
 
 
-class InputTrait(TypedDict):
+class TraitInput(TypedDict):
     """Represents a key-value pair trait provided as input when creating or updating an identity."""
 
     trait_key: str
@@ -170,7 +170,7 @@ class V1IdentitiesRequest(TypedDict):
 
     identifier: str
     """Unique identifier for the identity."""
-    traits: NotRequired[list[InputTrait] | None]
+    traits: NotRequired[list[TraitInput] | None]
     """List of traits to set for the identity. If `null` or not provided, no traits are set or updated."""
     transient: NotRequired[bool | None]
     """Whether the identity is transient (not persisted). Defaults to `false`."""
