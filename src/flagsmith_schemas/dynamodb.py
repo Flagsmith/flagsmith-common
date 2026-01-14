@@ -9,18 +9,17 @@ Otherwise, they serve as documentation for the structure of the data stored in D
 
 from typing import Annotated, Literal
 
+from flag_engine.segments.types import ConditionOperator, RuleType
 from typing_extensions import NotRequired, TypedDict
 
 from flagsmith_schemas.constants import PYDANTIC_INSTALLED
 from flagsmith_schemas.types import (
-    ConditionOperator,
     DateTimeStr,
     DynamoContextValue,
     DynamoFeatureValue,
     DynamoFloat,
     DynamoInt,
     FeatureType,
-    RuleType,
     UUIDStr,
 )
 
@@ -99,9 +98,9 @@ class Trait(TypedDict):
     """Represents a key-value pair associated with an identity."""
 
     trait_key: str
-    """Key of the trait."""
+    """Trait key."""
     trait_value: DynamoContextValue
-    """Value of the trait."""
+    """Trait value."""
 
 
 class SegmentCondition(TypedDict):
@@ -138,7 +137,7 @@ class Segment(TypedDict):
     """Name of the segment."""
     rules: list[SegmentRule]
     """List of rules within the segment."""
-    feature_states: list[FeatureState]
+    feature_states: NotRequired[list[FeatureState]]
     """List of segment overrides."""
 
 

@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Annotated, Literal, TypeAlias
 from flagsmith_schemas.constants import PYDANTIC_INSTALLED
 
 if PYDANTIC_INSTALLED:
+    from pydantic import WithJsonSchema
+
     from flagsmith_schemas.pydantic_types import (
         ValidateDecimalAsFloat,
         ValidateDecimalAsInt,
@@ -15,6 +17,9 @@ elif not TYPE_CHECKING:
     # This code runs at runtime when Pydantic is not installed.
     # We could use PEP 649 strings with `Annotated`, but Pydantic is inconsistent in how it parses them.
     # Define dummy types instead.
+    def WithJsonSchema(_: object) -> object:
+        return ...
+
     ValidateDecimalAsFloat = ...
     ValidateDecimalAsInt = ...
     ValidateDynamoFeatureStateValue = ...
@@ -36,7 +41,11 @@ DynamoDB represents all numbers as `Decimal`.
 `DynamoFloat` indicates that the value should be treated as a float.
 """
 
-UUIDStr: TypeAlias = Annotated[str, ValidateStrAsUUID]
+UUIDStr: TypeAlias = Annotated[
+    str,
+    ValidateStrAsUUID,
+    WithJsonSchema({"type": "string", "format": "uuid"}),
+]
 """A string representing a UUID."""
 
 DateTimeStr: TypeAlias = Annotated[str, ValidateStrAsISODateTime]
@@ -49,7 +58,7 @@ DynamoFeatureValue: TypeAlias = Annotated[
     DynamoInt | bool | str | None,
     ValidateDynamoFeatureStateValue,
 ]
-"""Represents the value of a Flagsmith feature. Can be stored a boolean, an integer, or a string.
+"""Represents the value of a Flagsmith feature stored in DynamoDB. Can be stored a boolean, an integer, or a string.
 
 The default (SaaS) maximum length for strings is 20000 characters.
 """
@@ -65,27 +74,5 @@ Here's how we store different types:
 This type does not include complex structures like lists or dictionaries.
 """
 
-ConditionOperator = Literal[
-    "EQUAL",
-    "GREATER_THAN",
-    "LESS_THAN",
-    "LESS_THAN_INCLUSIVE",
-    "CONTAINS",
-    "GREATER_THAN_INCLUSIVE",
-    "NOT_CONTAINS",
-    "NOT_EQUAL",
-    "REGEX",
-    "PERCENTAGE_SPLIT",
-    "MODULO",
-    "IS_SET",
-    "IS_NOT_SET",
-    "IN",
-]
-"""Represents segment condition operators used by Flagsmith engine."""
-
-RuleType = Literal[
-    "ALL",
-    "ANY",
-    "NONE",
-]
-"""Represents segment rule types used by Flagsmith engine."""
+FeatureValue: TypeAlias = int | bool | str | None
+"""Represents the value of a Flagsmith feature. Can be stored a boolean, an integer, or a string."""
