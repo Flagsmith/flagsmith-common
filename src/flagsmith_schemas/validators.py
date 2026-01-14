@@ -1,11 +1,16 @@
+import gzip
 import typing
 from decimal import Decimal
+
+import simplejson as json
 
 from flagsmith_schemas.constants import MAX_STRING_FEATURE_STATE_VALUE_LENGTH
 
 if typing.TYPE_CHECKING:
     from flagsmith_schemas.dynamodb import FeatureState, MultivariateFeatureStateValue
-    from flagsmith_schemas.types import DynamoFeatureValue
+    from flagsmith_schemas.types import DynamoFeatureValue, JsonGzipped
+
+T = typing.TypeVar("T")
 
 
 def validate_dynamo_feature_state_value(
@@ -53,3 +58,17 @@ def validate_identity_feature_states(
         seen.add(feature_id)
 
     return values
+
+
+def validate_json_gzipped(value: T) -> "JsonGzipped[T]":
+    return typing.cast(
+        "JsonGzipped[T]",
+        gzip.compress(
+            json.dumps(
+                value,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8"),
+            mtime=0,
+        ),
+    )
