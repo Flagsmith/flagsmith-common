@@ -2,6 +2,14 @@
 
 <a name="v1.5.2"></a>
 
+## [3.2.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.1.0...v3.2.0) (2026-01-14)
+
+
+### Features
+
+* Migrate to drf-spectacular ([#153](https://github.com/Flagsmith/flagsmith-common/issues/153)) ([94154b0](https://github.com/Flagsmith/flagsmith-common/commit/94154b01b68da8b0fd121ff32405604623c5011f))
+* **schemas:** Add SDK API request and response schemas ([#155](https://github.com/Flagsmith/flagsmith-common/issues/155)) ([65870a7](https://github.com/Flagsmith/flagsmith-common/commit/65870a7ead4770ef573974a98ec257e28dc4815a))
+
 ## [3.1.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.0.0...v3.1.0) (2026-01-05)
 
 
