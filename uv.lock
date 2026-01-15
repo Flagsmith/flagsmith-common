@@ -463,7 +463,7 @@ requires-dist = [
     { name = "drf-spectacular", marker = "extra == 'common-core'", specifier = ">=0.28.0,<1" },
     { name = "drf-writable-nested", marker = "extra == 'common-core'" },
     { name = "environs", marker = "extra == 'common-core'", specifier = "<15" },
-    { name = "flagsmith-flag-engine", marker = "extra == 'flagsmith-schemas'", specifier = ">10" },
+    { name = "flagsmith-flag-engine", marker = "extra == 'flagsmith-schemas'", specifier = ">6" },
     { name = "gunicorn", marker = "extra == 'common-core'", specifier = ">=19.1" },
     { name = "prometheus-client", marker = "extra == 'common-core'", specifier = ">=0.0.16" },
     { name = "prometheus-client", marker = "extra == 'task-processor'", specifier = ">=0.0.16" },

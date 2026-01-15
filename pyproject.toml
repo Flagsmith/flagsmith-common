@@ -28,7 +28,7 @@ optional-dependencies = { test-tools = [
 ], flagsmith-schemas = [
     "simplejson",
     "typing_extensions",
-    "flagsmith-flag-engine>10",
+    "flagsmith-flag-engine>6",
 ] }
 authors = [
     { name = "Matthew Elwell" },
