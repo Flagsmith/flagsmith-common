@@ -1,4 +1,5 @@
 import logging
+import time
 
 import prometheus_client
 from django.http import HttpResponse, JsonResponse
@@ -25,3 +26,17 @@ def metrics(request: Request) -> HttpResponse:
         metrics_page,
         content_type=prometheus_client.CONTENT_TYPE_LATEST,
     )
+
+
+def burn(request: Request) -> HttpResponse:
+    """
+    Burn CPU for a specified duration to simulate load.
+
+    Usage: GET /burn?s=10 (burns CPU for 10 seconds)
+    """
+    seconds = int(request.GET.get("s", 1))
+    end_time = time.monotonic() + seconds
+    while time.monotonic() < end_time:
+        pass  # Busy wait
+
+    return HttpResponse("waited")
