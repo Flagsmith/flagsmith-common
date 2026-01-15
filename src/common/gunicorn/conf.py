@@ -13,6 +13,6 @@ if typing.TYPE_CHECKING:  # pragma: no cover
     from gunicorn.workers.base import Worker  # type: ignore[import-untyped]
 
 
-def worker_exit(server: "Arbiter", worker: "Worker") -> None:
+def child_exit(server: "Arbiter", worker: "Worker") -> None:
     """Detach the process Prometheus metrics collector when a worker exits."""
     mark_process_dead(worker.pid)  # type: ignore[no-untyped-call]

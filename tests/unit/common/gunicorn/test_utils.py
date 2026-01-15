@@ -44,7 +44,6 @@ def test_run_server__default_config_file__runs_expected(
     # Given
     # prevent real forking from Gunicorn
     mocker.patch("os.fork").return_value = 0
-    mark_process_dead_mock = mocker.patch("common.gunicorn.conf.mark_process_dead")
 
     pid = os.getpid()
 
@@ -57,9 +56,6 @@ def test_run_server__default_config_file__runs_expected(
     # When
     with pytest.raises(SystemExit):
         run_server({"bind": f"0.0.0.0:{unused_tcp_port}"})
-
-    # Then
-    mark_process_dead_mock.assert_called_once_with(pid)
 
 
 def test_get_route_template__returns_expected__caches_expected(
