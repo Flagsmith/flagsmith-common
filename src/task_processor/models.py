@@ -180,7 +180,23 @@ class RecurringTask(AbstractBaseTask):
             # If we have never run this task, then we should execute it only if
             # the time has passed after which we want to ensure this task runs.
             # This allows us to control when intensive tasks should be run.
-            return not (self.first_run_time and self.first_run_time > now.time())
+            if not self.first_run_time:
+                return True
+            first_run_today = now.replace(
+                hour=self.first_run_time.hour,
+                minute=self.first_run_time.minute,
+                second=self.first_run_time.second,
+                microsecond=self.first_run_time.microsecond,
+            )
+            # Handle midnight boundary using 12-hour window heuristic.
+            time_difference = (now - first_run_today).total_seconds()
+            if time_difference > 12 * 3600:
+                # first_run_today appears far in the past; it refers to tomorrow.
+                return False
+            if time_difference < -12 * 3600:
+                # first_run_today appears far in the future; it refers to yesterday.
+                return True
+            return now >= first_run_today
 
         # if the last run was at t- run_every, then we should execute it
         if (timezone.now() - last_task_run.started_at) >= self.run_every:
