@@ -2,6 +2,14 @@
 
 <a name="v1.5.2"></a>
 
+## [3.2.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.2.0...v3.2.1) (2026-01-16)
+
+
+### Bug Fixes
+
+* **Recurring Task:** Prevent incorrect first run near midnight ([#159](https://github.com/Flagsmith/flagsmith-common/issues/159)) ([e07d3f3](https://github.com/Flagsmith/flagsmith-common/commit/e07d3f30d4f8e0fc8a9f3fb3a57c02f97f6ffaa5))
+* Relax flagsmith-flag-engine dependency for flagsmith-schemas ([#161](https://github.com/Flagsmith/flagsmith-common/issues/161)) ([0dc71a1](https://github.com/Flagsmith/flagsmith-common/commit/0dc71a11ccc4f29d98ec94bef93f53faf3c4e18b))
+
 ## [3.2.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.1.0...v3.2.0) (2026-01-14)
 
 
