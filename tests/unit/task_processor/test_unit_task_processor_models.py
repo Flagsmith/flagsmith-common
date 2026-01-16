@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import pytest
 from django.utils import timezone
+from freezegun import freeze_time
 from pytest_mock import MockerFixture
 
 from task_processor.decorators import register_task_handler
@@ -80,3 +81,31 @@ def test_recurring_task_run_should_execute_first_run_at(
         ).should_execute
         == expected
     )
+
+
+@freeze_time("2026-01-15 23:05:23")
+def test_recurring_task_should_execute__first_run_time_after_midnight__returns_false() -> (
+    None
+):
+    # Given
+    task = RecurringTask(
+        first_run_time=time(0, 5, 23),
+        run_every=timedelta(days=1),
+    )
+
+    # When & Then
+    assert task.should_execute is False
+
+
+@freeze_time("2026-01-16 00:30:00")
+def test_recurring_task_should_execute__first_run_time_before_midnight__returns_true() -> (
+    None
+):
+    # Given
+    task = RecurringTask(
+        first_run_time=time(23, 0, 0),
+        run_every=timedelta(days=1),
+    )
+
+    # When & Then
+    assert task.should_execute is True
