@@ -51,7 +51,7 @@ class DynamoBinary(SupportsBytes):
     value: bytes | bytearray
 
 
-class JsonGzipped(Generic[T], DynamoBinary):
+class JsonGzipped(DynamoBinary, Generic[T]):
     """A gzipped JSON blob representing a value of type `T`."""
 
     if PYDANTIC_INSTALLED:
