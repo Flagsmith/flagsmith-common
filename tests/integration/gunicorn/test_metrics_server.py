@@ -3,7 +3,6 @@ import urllib.request
 
 import prometheus_client
 import pytest
-from rest_framework.test import APIClient
 
 from common.gunicorn.metrics_server import start_metrics_server
 from tests import GetLogsFixture
@@ -29,34 +28,6 @@ def test_start_metrics_server__multiprocess_mode__serves_metrics(
     assert response.status == 200
     assert "pytest_tests_run_total" in content
     assert 'test_name="standalone_server_test"' in content
-
-
-# NOTE: This test is temporary. Remove once the Django /metrics endpoint is
-# deprecated in favour of the standalone metrics server.
-@pytest.mark.prometheus_multiprocess_mode
-def test_start_metrics_server__multiprocess_mode__output_matches_django_view(
-    unused_tcp_port: int,
-    test_metric: prometheus_client.Counter,
-    client: APIClient,
-) -> None:
-    # Given
-    test_metric.labels(test_name="equivalence_test").inc()
-    start_metrics_server(port=unused_tcp_port)
-
-    # When
-    with urllib.request.urlopen(
-        f"http://localhost:{unused_tcp_port}/metrics"
-    ) as response:
-        standalone_content = response.read().decode()
-
-    django_response = client.get("/metrics", follow=True)
-    django_content = django_response.content.decode()
-
-    # Then
-    assert "pytest_tests_run_total" in standalone_content
-    assert "pytest_tests_run_total" in django_content
-    assert 'test_name="equivalence_test"' in standalone_content
-    assert 'test_name="equivalence_test"' in django_content
 
 
 def test_start_metrics_server__multiproc_dir_unset__logs_warning_and_skips(
