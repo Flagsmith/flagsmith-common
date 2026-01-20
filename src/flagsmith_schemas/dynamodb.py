@@ -20,6 +20,7 @@ from flagsmith_schemas.types import (
     DynamoFloat,
     DynamoInt,
     FeatureType,
+    JsonGzipped,
     UUIDStr,
 )
 
@@ -200,18 +201,13 @@ class Webhook(TypedDict):
     """Secret used to sign webhook payloads."""
 
 
-class _EnvironmentFields(TypedDict):
+class _EnvironmentBaseFields(TypedDict):
     """Common fields for Environment documents."""
 
     name: NotRequired[str]
     """Environment name. Defaults to an empty string if not set."""
     updated_at: NotRequired[DateTimeStr | None]
     """Last updated timestamp. If not set, current timestamp should be assumed."""
-
-    project: Project
-    """Project-specific data for this environment."""
-    feature_states: list[FeatureState]
-    """List of feature states representing the environment defaults."""
 
     allow_client_traits: NotRequired[bool]
     """Whether the SDK API should allow clients to set traits for this environment. Identical to project-level's `persist_trait_data` setting. Defaults to `True`."""
@@ -240,7 +236,52 @@ class _EnvironmentFields(TypedDict):
     """Webhook configuration."""
 
 
-### Root document schemas below. Indexed fields are marked as **INDEXED** in the docstrings. ###
+class _EnvironmentV1Fields(TypedDict):
+    """Common fields for environment documents in `flagsmith_environments`."""
+
+    api_key: str
+    """Public client-side API key for the environment. **INDEXED**."""
+    id: DynamoInt
+    """Unique identifier for the environment in Core."""
+
+
+class _EnvironmentV2MetaFields(TypedDict):
+    """Common fields for environment documents in `flagsmith_environments_v2`."""
+
+    environment_id: str
+    """Unique identifier for the environment in Core. Same as `Environment.id`, but string-typed to reduce coupling with Core's type definitions **INDEXED**."""
+    environment_api_key: str
+    """Public client-side API key for the environment. **INDEXED**."""
+    document_key: Literal["_META"]
+    """The fixed document key for the environment v2 document. Always `"_META"`. **INDEXED**."""
+
+    id: DynamoInt
+    """Unique identifier for the environment in Core. Exists for compatibility with the API environment document schema."""
+
+
+class _EnvironmentBaseFieldsUncompressed(TypedDict):
+    """Common fields for uncompressed environment documents."""
+
+    project: Project
+    """Project-specific data for this environment."""
+    feature_states: list[FeatureState]
+    """List of feature states representing the environment defaults."""
+    compressed: NotRequired[Literal[False]]
+    """Either `False` or absent to indicate the data is uncompressed."""
+
+
+class _EnvironmentBaseFieldsCompressed(TypedDict):
+    """Common fields for compressed environment documents."""
+
+    project: JsonGzipped[Project]
+    """Project-specific data for this environment. **COMPRESSED**."""
+    feature_states: JsonGzipped[list[FeatureState]]
+    """List of feature states representing the environment defaults. **COMPRESSED**."""
+    compressed: Literal[True]
+    """Always `True` to indicate the data is compressed."""
+
+
+### Root document schemas below. Indexed fields are marked as **INDEXED** in the docstrings. Compressed fields are marked as **COMPRESSED**. ###
 
 
 class EnvironmentAPIKey(TypedDict):
@@ -295,33 +336,50 @@ class Identity(TypedDict):
     """Unique identifier for the identity in Core. If identity created via Core's `edge-identities` API, this can be missing or `None`."""
 
 
-class Environment(_EnvironmentFields):
+class Environment(
+    _EnvironmentBaseFieldsUncompressed,
+    _EnvironmentV1Fields,
+    _EnvironmentBaseFields,
+):
     """Represents a Flagsmith environment. Carries all necessary data for flag evaluation within the environment.
 
     **DynamoDB table**: `flagsmith_environments`
     """
 
-    api_key: str
-    """Public client-side API key for the environment. **INDEXED**."""
-    id: DynamoInt
-    """Unique identifier for the environment in Core."""
+
+class EnvironmentCompressed(
+    _EnvironmentBaseFieldsCompressed,
+    _EnvironmentV1Fields,
+    _EnvironmentBaseFields,
+):
+    """Represents a Flagsmith environment. Carries all necessary data for flag evaluation within the environment.
+    Has compressed fields.
+
+    **DynamoDB table**: `flagsmith_environments`
+    """
 
 
-class EnvironmentV2Meta(_EnvironmentFields):
+class EnvironmentV2Meta(
+    _EnvironmentBaseFieldsUncompressed,
+    _EnvironmentV2MetaFields,
+    _EnvironmentBaseFields,
+):
     """Represents a Flagsmith environment. Carries all necessary data for flag evaluation within the environment.
 
     **DynamoDB table**: `flagsmith_environments_v2`
     """
 
-    environment_id: str
-    """Unique identifier for the environment in Core. Same as `Environment.id`, but string-typed to reduce coupling with Core's type definitions **INDEXED**."""
-    environment_api_key: str
-    """Public client-side API key for the environment. **INDEXED**."""
-    document_key: Literal["_META"]
-    """The fixed document key for the environment v2 document. Always `"_META"`. **INDEXED**."""
 
-    id: DynamoInt
-    """Unique identifier for the environment in Core. Exists for compatibility with the API environment document schema."""
+class EnvironmentV2MetaCompressed(
+    _EnvironmentBaseFieldsCompressed,
+    _EnvironmentV2MetaFields,
+    _EnvironmentBaseFields,
+):
+    """Represents a Flagsmith environment. Carries all necessary data for flag evaluation within the environment.
+    Has compressed fields.
+
+    **DynamoDB table**: `flagsmith_environments_v2`
+    """
 
 
 class EnvironmentV2IdentityOverride(TypedDict):

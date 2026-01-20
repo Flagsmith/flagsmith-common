@@ -1,17 +1,21 @@
+import gzip
 from decimal import Decimal
 from importlib import reload
 from sys import modules
 from typing import TypeVar
 
 import pytest
+import simplejson as json
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock import MockerFixture
 
 from flagsmith_schemas.dynamodb import (
     Environment,
     EnvironmentAPIKey,
+    EnvironmentCompressed,
     EnvironmentV2IdentityOverride,
     EnvironmentV2Meta,
+    EnvironmentV2MetaCompressed,
     Identity,
 )
 from flagsmith_schemas.types import DateTimeStr, UUIDStr
@@ -314,6 +318,318 @@ T = TypeVar("T")
             id="flagsmith_environments",
         ),
         pytest.param(
+            EnvironmentCompressed,
+            "flagsmith_environments_compressed.json",
+            {
+                "compressed": True,
+                "id": Decimal("12561"),
+                "api_key": "n9fbf9h3v4fFgH3U3ngWhb",
+                "project": gzip.compress(
+                    json.dumps(
+                        {
+                            "id": Decimal("5359"),
+                            "name": "Edge API Test Project",
+                            "organisation": {
+                                "id": Decimal("13"),
+                                "name": "Flagsmith",
+                                "feature_analytics": False,
+                                "stop_serving_flags": False,
+                                "persist_trait_data": True,
+                            },
+                            "segments": [
+                                {
+                                    "id": Decimal("4267"),
+                                    "name": "regular_segment",
+                                    "rules": [
+                                        {
+                                            "type": "ALL",
+                                            "rules": [
+                                                {
+                                                    "type": "ANY",
+                                                    "rules": [],
+                                                    "conditions": [
+                                                        {
+                                                            "operator": "LESS_THAN",
+                                                            "value": "40",
+                                                            "property_": "age",
+                                                        }
+                                                    ],
+                                                },
+                                                {
+                                                    "type": "ANY",
+                                                    "rules": [],
+                                                    "conditions": [
+                                                        {
+                                                            "operator": "GREATER_THAN_INCLUSIVE",
+                                                            "value": "21",
+                                                            "property_": "age",
+                                                        }
+                                                    ],
+                                                },
+                                                {
+                                                    "type": "ANY",
+                                                    "rules": [],
+                                                    "conditions": [
+                                                        {
+                                                            "operator": "EQUAL",
+                                                            "value": "green",
+                                                            "property_": "favourite_colour",
+                                                        },
+                                                        {
+                                                            "operator": "EQUAL",
+                                                            "value": "blue",
+                                                            "property_": "favourite_colour",
+                                                        },
+                                                    ],
+                                                },
+                                            ],
+                                            "conditions": [],
+                                        }
+                                    ],
+                                    "feature_states": [
+                                        {
+                                            "feature": {
+                                                "id": Decimal("15058"),
+                                                "name": "string_feature",
+                                                "type": "STANDARD",
+                                            },
+                                            "enabled": False,
+                                            "feature_state_value": "segment_override",
+                                            "django_id": Decimal("81027"),
+                                            "multivariate_feature_state_values": [],
+                                        }
+                                    ],
+                                },
+                                {
+                                    "id": Decimal("4268"),
+                                    "name": "10_percent",
+                                    "rules": [
+                                        {
+                                            "type": "ALL",
+                                            "rules": [
+                                                {
+                                                    "type": "ANY",
+                                                    "rules": [],
+                                                    "conditions": [
+                                                        {
+                                                            "operator": "PERCENTAGE_SPLIT",
+                                                            "value": "0.1",
+                                                            "property_": "",
+                                                        }
+                                                    ],
+                                                }
+                                            ],
+                                            "conditions": [],
+                                        }
+                                    ],
+                                    "feature_states": [
+                                        {
+                                            "feature": {
+                                                "id": Decimal("15060"),
+                                                "name": "basic_flag",
+                                                "type": "STANDARD",
+                                            },
+                                            "enabled": True,
+                                            "feature_state_value": "",
+                                            "django_id": Decimal("81026"),
+                                            "multivariate_feature_state_values": [],
+                                        }
+                                    ],
+                                },
+                                {
+                                    "id": Decimal("16"),
+                                    "name": "segment_two",
+                                    "rules": [
+                                        {
+                                            "type": "ALL",
+                                            "rules": [
+                                                {
+                                                    "type": "ANY",
+                                                    "rules": [],
+                                                    "conditions": [
+                                                        {
+                                                            "operator": "EQUAL",
+                                                            "value": "2",
+                                                            "property_": "two",
+                                                        },
+                                                        {
+                                                            "operator": "IS_SET",
+                                                            "value": None,
+                                                            "property_": "two",
+                                                        },
+                                                    ],
+                                                }
+                                            ],
+                                            "conditions": [],
+                                        }
+                                    ],
+                                    "feature_states": [
+                                        {
+                                            "feature": {
+                                                "id": Decimal("15058"),
+                                                "name": "string_feature",
+                                                "type": "STANDARD",
+                                            },
+                                            "enabled": True,
+                                            "feature_state_value": "segment_two_override_priority_0",
+                                            "django_id": Decimal("78978"),
+                                            "featurestate_uuid": UUIDStr(
+                                                "1545809c-e97f-4a1f-9e67-8b4f2b396aa6"
+                                            ),
+                                            "feature_segment": {
+                                                "priority": Decimal("0")
+                                            },
+                                            "multivariate_feature_state_values": [],
+                                        }
+                                    ],
+                                },
+                                {
+                                    "id": Decimal("17"),
+                                    "name": "segment_three",
+                                    "rules": [
+                                        {
+                                            "type": "ALL",
+                                            "rules": [
+                                                {
+                                                    "type": "ALL",
+                                                    "rules": [],
+                                                    "conditions": [
+                                                        {
+                                                            "operator": "EQUAL",
+                                                            "value": "3",
+                                                            "property_": "three",
+                                                        },
+                                                        {
+                                                            "operator": "IS_NOT_SET",
+                                                            "value": None,
+                                                            "property_": "something_that_is_not_set",
+                                                        },
+                                                    ],
+                                                }
+                                            ],
+                                            "conditions": [],
+                                        }
+                                    ],
+                                    "feature_states": [
+                                        {
+                                            "feature": {
+                                                "id": Decimal("15058"),
+                                                "name": "string_feature",
+                                                "type": "STANDARD",
+                                            },
+                                            "enabled": True,
+                                            "feature_state_value": "segment_three_override_priority_1",
+                                            "django_id": Decimal("78977"),
+                                            "featurestate_uuid": UUIDStr(
+                                                "1545809c-e97f-4a1f-9e67-8b4f2b396aa7"
+                                            ),
+                                            "feature_segment": {
+                                                "priority": Decimal("1")
+                                            },
+                                            "multivariate_feature_state_values": [],
+                                        }
+                                    ],
+                                },
+                            ],
+                            "hide_disabled_flags": False,
+                        },
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    ).encode("utf-8"),
+                    mtime=0,
+                ),
+                "feature_states": gzip.compress(
+                    json.dumps(
+                        [
+                            {
+                                "feature": {
+                                    "id": Decimal("15058"),
+                                    "name": "string_feature",
+                                    "type": "STANDARD",
+                                },
+                                "enabled": True,
+                                "feature_state_value": "foo",
+                                "django_id": Decimal("78978"),
+                                "feature_segment": None,
+                                "multivariate_feature_state_values": [],
+                            },
+                            {
+                                "feature": {
+                                    "id": Decimal("15059"),
+                                    "name": "integer_feature",
+                                    "type": "STANDARD",
+                                },
+                                "enabled": True,
+                                "feature_state_value": Decimal("1234"),
+                                "django_id": Decimal("78980"),
+                                "multivariate_feature_state_values": [],
+                            },
+                            {
+                                "feature": {
+                                    "id": Decimal("15060"),
+                                    "name": "basic_flag",
+                                    "type": "STANDARD",
+                                },
+                                "enabled": False,
+                                "feature_state_value": None,
+                                "django_id": Decimal("78982"),
+                                "multivariate_feature_state_values": [],
+                            },
+                            {
+                                "feature": {
+                                    "id": Decimal("15061"),
+                                    "name": "float_feature",
+                                    "type": "STANDARD",
+                                },
+                                "enabled": True,
+                                "feature_state_value": "12.34",
+                                "django_id": Decimal("78984"),
+                                "multivariate_feature_state_values": [],
+                            },
+                            {
+                                "feature": {
+                                    "id": Decimal("15062"),
+                                    "name": "mv_feature",
+                                    "type": "MULTIVARIATE",
+                                },
+                                "enabled": True,
+                                "feature_state_value": "foo",
+                                "django_id": Decimal("78986"),
+                                "multivariate_feature_state_values": [
+                                    {
+                                        "id": Decimal("3404"),
+                                        "percentage_allocation": Decimal("30.0"),
+                                        "multivariate_feature_option": {"value": "baz"},
+                                    },
+                                    {
+                                        "id": Decimal("3402"),
+                                        "percentage_allocation": Decimal("30.0"),
+                                        "multivariate_feature_option": {"value": "bar"},
+                                    },
+                                    {
+                                        "id": Decimal("3405"),
+                                        "percentage_allocation": Decimal("0.0"),
+                                        "multivariate_feature_option": {
+                                            "value": Decimal("1")
+                                        },
+                                    },
+                                    {
+                                        "id": Decimal("3406"),
+                                        "percentage_allocation": Decimal("0.0"),
+                                        "multivariate_feature_option": {"value": True},
+                                    },
+                                ],
+                            },
+                        ],
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    ).encode("utf-8"),
+                    mtime=0,
+                ),
+            },
+            id="flagsmith_environments_compressed",
+        ),
+        pytest.param(
             EnvironmentAPIKey,
             "flagsmith_environment_api_key.json",
             {
@@ -477,6 +793,133 @@ T = TypeVar("T")
                 "webhook_config": None,
             },
             id="flagsmith_environments_v2:_META",
+        ),
+        pytest.param(
+            EnvironmentV2MetaCompressed,
+            "flagsmith_environments_v2:_META_compressed.json",
+            {
+                "compressed": True,
+                "environment_id": "49268",
+                "document_key": "_META",
+                "allow_client_traits": True,
+                "amplitude_config": None,
+                "dynatrace_config": None,
+                "environment_api_key": "AQ9T6LixPqYMJkuqGJy3t2",
+                "feature_states": gzip.compress(
+                    json.dumps(
+                        [
+                            {
+                                "django_id": 577621,
+                                "enabled": True,
+                                "feature": {
+                                    "id": 100298,
+                                    "name": "test_feature",
+                                    "type": "MULTIVARIATE",
+                                },
+                                "featurestate_uuid": "42d7805e-a9ac-401c-a7b7-d6583ac5a365",
+                                "feature_segment": None,
+                                "feature_state_value": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                                "multivariate_feature_state_values": [
+                                    {
+                                        "id": 185130,
+                                        "multivariate_feature_option": {
+                                            "id": 20919,
+                                            "value": "second",
+                                        },
+                                        "mv_fs_value_uuid": "0b02ce41-9965-4c61-8b96-c8d76e3d4a27",
+                                        "percentage_allocation": 10.0,
+                                    },
+                                    {
+                                        "id": 48717,
+                                        "multivariate_feature_option": {
+                                            "id": 14004,
+                                            "value": True,
+                                        },
+                                        "mv_fs_value_uuid": "cb05f49c-de1f-44f1-87eb-c3b55d473063",
+                                        "percentage_allocation": Decimal("30.0"),
+                                    },
+                                ],
+                            },
+                            {
+                                "django_id": 1041292,
+                                "enabled": False,
+                                "feature": {
+                                    "id": 172422,
+                                    "name": "feature",
+                                    "type": "STANDARD",
+                                },
+                                "featurestate_uuid": "58b7b954-1b75-493a-82df-5be0efeedd2a",
+                                "feature_segment": None,
+                                "feature_state_value": 3,
+                                "multivariate_feature_state_values": [],
+                            },
+                        ],
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    ).encode("utf-8"),
+                    mtime=0,
+                ),
+                "heap_config": None,
+                "hide_disabled_flags": None,
+                "hide_sensitive_data": False,
+                "id": Decimal("49268"),
+                "mixpanel_config": None,
+                "name": "Development",
+                "project": gzip.compress(
+                    json.dumps(
+                        {
+                            "enable_realtime_updates": False,
+                            "hide_disabled_flags": False,
+                            "id": Decimal("19368"),
+                            "name": "Example Project",
+                            "organisation": {
+                                "feature_analytics": False,
+                                "id": Decimal("13"),
+                                "name": "Flagsmith",
+                                "persist_trait_data": True,
+                                "stop_serving_flags": False,
+                            },
+                            "segments": [
+                                {
+                                    "feature_states": [],
+                                    "id": Decimal("44126"),
+                                    "name": "test",
+                                    "rules": [
+                                        {
+                                            "conditions": [],
+                                            "rules": [
+                                                {
+                                                    "conditions": [
+                                                        {
+                                                            "operator": "EQUAL",
+                                                            "property_": "test",
+                                                            "value": "test",
+                                                        }
+                                                    ],
+                                                    "rules": [],
+                                                    "type": "ANY",
+                                                }
+                                            ],
+                                            "type": "ALL",
+                                        }
+                                    ],
+                                }
+                            ],
+                            "server_key_only_feature_ids": [],
+                        },
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    ).encode("utf-8"),
+                    mtime=0,
+                ),
+                "rudderstack_config": None,
+                "segment_config": None,
+                "updated_at": "2025-11-16T13:28:31.244331+00:00",
+                "use_identity_composite_key_for_hashing": True,
+                "use_identity_overrides_in_local_eval": False,
+                "webhook_config": None,
+            },
+            id="flagsmith_environments_v2:_META_compressed",
         ),
         pytest.param(
             EnvironmentV2IdentityOverride,
