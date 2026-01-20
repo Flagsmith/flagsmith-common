@@ -2,6 +2,23 @@
 
 <a name="v1.5.2"></a>
 
+## [3.3.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.2.1...v3.3.0) (2026-01-20)
+
+
+### CI
+
+* pre-commit autoupdate ([#146](https://github.com/Flagsmith/flagsmith-common/issues/146)) ([e906002](https://github.com/Flagsmith/flagsmith-common/commit/e906002782a2460de7b9a389b8c1c07d87aa9204))
+
+
+### Features
+
+* **schemas:** Support partially gzip-compressed environment documents ([#157](https://github.com/Flagsmith/flagsmith-common/issues/157)) ([6cb67b6](https://github.com/Flagsmith/flagsmith-common/commit/6cb67b6b3f59263f3dcaa3ceb3a8799530170bf7))
+
+
+### Bug Fixes
+
+* **Monitoring:** Serve /metrics on a dedicated port ([#158](https://github.com/Flagsmith/flagsmith-common/issues/158)) ([4da371e](https://github.com/Flagsmith/flagsmith-common/commit/4da371e7e68bbf40f9a60b67b0bf6d6595d1d9e6))
+
 ## [3.2.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.2.0...v3.2.1) (2026-01-16)
 
 
