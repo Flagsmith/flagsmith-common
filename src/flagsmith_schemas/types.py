@@ -67,6 +67,9 @@ class JsonGzipped(DynamoBinary, Generic[T]):
             def _validate_json_gzipped(data: Any) -> bytes:
                 return json_gzip(_adapter.validate_python(data))
 
+            # We're returning bytes here for two reasons:
+            # 1. boto3.dynamodb seems to expect bytes as input for Binary columns.
+            # 2. We want to avoid having boto3 as a dependency.
             return core_schema.no_info_before_validator_function(
                 _validate_json_gzipped,
                 core_schema.bytes_schema(strict=False),
