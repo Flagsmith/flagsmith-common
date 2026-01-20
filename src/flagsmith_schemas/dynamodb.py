@@ -259,7 +259,7 @@ class _EnvironmentV2MetaFields(TypedDict):
     """Unique identifier for the environment in Core. Exists for compatibility with the API environment document schema."""
 
 
-class _UncompressedEnvironmentFields(TypedDict):
+class _EnvironmentFieldsUncompressed(TypedDict):
     """Common fields for uncompressed environment documents."""
 
     project: Project
@@ -270,7 +270,7 @@ class _UncompressedEnvironmentFields(TypedDict):
     """Either `False` or absent to indicate the data is uncompressed."""
 
 
-class _CompressedEnvironmentFields(TypedDict):
+class _EnvironmentFieldsCompressed(TypedDict):
     """Common fields for compressed environment documents."""
 
     project: JsonGzipped[Project]
