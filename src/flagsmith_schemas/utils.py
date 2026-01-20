@@ -3,8 +3,6 @@ import typing
 
 import simplejson as json
 
-T = typing.TypeVar("T")
-
 
 def json_gzip(value: typing.Any) -> bytes:
     return gzip.compress(
