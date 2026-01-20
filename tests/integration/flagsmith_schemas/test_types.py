@@ -48,4 +48,4 @@ def test_json_gzipped__valid_json_bytes__accepts_expected() -> None:
     result = type_adapter.validate_python(input_data)
 
     # Then
-    assert gzip.decompress(result) == json_bytes
+    assert gzip.decompress(bytes(result)) == json_bytes

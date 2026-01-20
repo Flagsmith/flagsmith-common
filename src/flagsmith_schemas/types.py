@@ -5,6 +5,7 @@ from typing import (
     Any,
     Generic,
     Literal,
+    SupportsBytes,
     TypeAlias,
     TypeVar,
     get_args,
@@ -44,7 +45,13 @@ elif not TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class JsonGzipped(Generic[T], bytes):
+class DynamoBinary(SupportsBytes):
+    """boto3's wrapper type for bytes stored in DynamoDB."""
+
+    value: bytes | bytearray
+
+
+class JsonGzipped(Generic[T], DynamoBinary):
     """A gzipped JSON blob representing a value of type `T`."""
 
     if PYDANTIC_INSTALLED:
