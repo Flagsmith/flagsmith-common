@@ -11,7 +11,6 @@ urlpatterns = [
     # Aptible health checks must be on /healthcheck and cannot redirect
     # see https://www.aptible.com/docs/core-concepts/apps/connecting-to-apps/app-endpoints/https-endpoints/health-checks
     re_path(r"^healthcheck", include("health_check.urls", namespace="health-aptible")),
-    path("burn/", views.burn),
 ]
 
 if settings.PROMETHEUS_ENABLED:

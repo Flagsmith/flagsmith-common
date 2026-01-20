@@ -1,6 +1,5 @@
 import prometheus_client
 import pytest
-from pytest_mock import MockerFixture
 from rest_framework.test import APIClient
 
 from common.test_tools import SnapshotFixture
@@ -29,33 +28,3 @@ def test_metrics__return_expected(
     # Assert
     assert response.status_code == 200
     assert response.content.decode() == snapshot()
-
-
-def test_burn__default_duration__returns_expected(
-    client: APIClient,
-    mocker: MockerFixture,
-) -> None:
-    # Given
-    mocker.patch("common.core.views.time.monotonic", side_effect=[0, 1])
-
-    # When
-    response = client.get("/burn/")
-
-    # Then
-    assert response.status_code == 200
-    assert response.content.decode() == "waited"
-
-
-def test_burn__custom_duration__returns_expected(
-    client: APIClient,
-    mocker: MockerFixture,
-) -> None:
-    # Given
-    mocker.patch("common.core.views.time.monotonic", side_effect=[0, 3])
-
-    # When
-    response = client.get("/burn/?s=3")
-
-    # Then
-    assert response.status_code == 200
-    assert response.content.decode() == "waited"
