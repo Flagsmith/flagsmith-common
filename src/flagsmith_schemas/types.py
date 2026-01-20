@@ -27,7 +27,7 @@ if PYDANTIC_INSTALLED:
         ValidateStrAsISODateTime,
         ValidateStrAsUUID,
     )
-    from flagsmith_schemas.validators import validate_json_gzipped
+    from flagsmith_schemas.utils import json_gzip
 elif not TYPE_CHECKING:
     # This code runs at runtime when Pydantic is not installed.
     # We could use PEP 649 strings with `Annotated`, but Pydantic is inconsistent in how it parses them.
@@ -58,7 +58,7 @@ class JsonGzipped(Generic[T], bytes):
             _adapter: TypeAdapter[T] = TypeAdapter(get_args(source_type)[0])
 
             def _validate_json_gzipped(data: Any) -> bytes:
-                return validate_json_gzipped(_adapter.validate_python(data))
+                return json_gzip(_adapter.validate_python(data))
 
             return core_schema.no_info_before_validator_function(
                 _validate_json_gzipped,
