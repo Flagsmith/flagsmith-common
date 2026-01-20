@@ -1,10 +1,25 @@
 from decimal import Decimal
-from typing import TYPE_CHECKING, Annotated, Literal, TypeAlias
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Generic,
+    Literal,
+    SupportsBytes,
+    TypeAlias,
+    TypeVar,
+    get_args,
+)
 
 from flagsmith_schemas.constants import PYDANTIC_INSTALLED
 
 if PYDANTIC_INSTALLED:
-    from pydantic import WithJsonSchema
+    from pydantic import (
+        GetCoreSchemaHandler,
+        TypeAdapter,
+        WithJsonSchema,
+    )
+    from pydantic_core import core_schema
 
     from flagsmith_schemas.pydantic_types import (
         ValidateDecimalAsFloat,
@@ -13,6 +28,7 @@ if PYDANTIC_INSTALLED:
         ValidateStrAsISODateTime,
         ValidateStrAsUUID,
     )
+    from flagsmith_schemas.utils import json_gzip
 elif not TYPE_CHECKING:
     # This code runs at runtime when Pydantic is not installed.
     # We could use PEP 649 strings with `Annotated`, but Pydantic is inconsistent in how it parses them.
@@ -25,6 +41,39 @@ elif not TYPE_CHECKING:
     ValidateDynamoFeatureStateValue = ...
     ValidateStrAsISODateTime = ...
     ValidateStrAsUUID = ...
+
+T = TypeVar("T")
+
+
+class DynamoBinary(SupportsBytes):
+    """boto3's wrapper type for bytes stored in DynamoDB."""
+
+    value: bytes | bytearray
+
+
+class JsonGzipped(DynamoBinary, Generic[T]):
+    """A gzipped JSON blob representing a value of type `T`."""
+
+    if PYDANTIC_INSTALLED:
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls,
+            source_type: "type[JsonGzipped[T]]",
+            handler: GetCoreSchemaHandler,
+        ) -> core_schema.CoreSchema:
+            _adapter: TypeAdapter[T] = TypeAdapter(get_args(source_type)[0])
+
+            def _validate_json_gzipped(data: Any) -> bytes:
+                return json_gzip(_adapter.validate_python(data))
+
+            # We're returning bytes here for two reasons:
+            # 1. boto3.dynamodb seems to expect bytes as input for Binary columns.
+            # 2. We want to avoid having boto3 as a dependency.
+            return core_schema.no_info_before_validator_function(
+                _validate_json_gzipped,
+                core_schema.bytes_schema(strict=False),
+            )
 
 
 DynamoInt: TypeAlias = Annotated[Decimal, ValidateDecimalAsInt]

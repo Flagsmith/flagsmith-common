@@ -416,6 +416,7 @@ common-core = [
 ]
 flagsmith-schemas = [
     { name = "flagsmith-flag-engine" },
+    { name = "simplejson" },
     { name = "typing-extensions" },
 ]
 task-processor = [
@@ -471,6 +472,7 @@ requires-dist = [
     { name = "pytest-django", marker = "extra == 'test-tools'", specifier = ">=4,<5" },
     { name = "requests", marker = "extra == 'common-core'" },
     { name = "simplejson", marker = "extra == 'common-core'", specifier = ">=3,<4" },
+    { name = "simplejson", marker = "extra == 'flagsmith-schemas'" },
     { name = "typing-extensions", marker = "extra == 'flagsmith-schemas'" },
 ]
 provides-extras = ["test-tools", "common-core", "task-processor", "flagsmith-schemas"]
