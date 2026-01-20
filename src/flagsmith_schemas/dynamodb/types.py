@@ -7,28 +7,105 @@ when `pydantic` is installed.
 Otherwise, they serve as documentation for the structure of the data stored in DynamoDB.
 """
 
-from typing import Annotated, Literal
+from decimal import Decimal
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Generic,
+    Literal,
+    TypeAlias,
+    TypeVar,
+    get_args,
+)
 
+from boto3.dynamodb.types import Binary  # type: ignore[import-untyped]
 from flag_engine.segments.types import ConditionOperator, RuleType
 from typing_extensions import NotRequired, TypedDict
 
 from flagsmith_schemas.constants import PYDANTIC_INSTALLED
-from flagsmith_schemas.types import (
-    DateTimeStr,
-    DynamoContextValue,
-    DynamoFeatureValue,
-    DynamoFloat,
-    DynamoInt,
-    FeatureType,
-    JsonGzipped,
-    UUIDStr,
-)
+from flagsmith_schemas.types import FeatureType, UUIDStr
 
 if PYDANTIC_INSTALLED:
+    from pydantic import GetCoreSchemaHandler, TypeAdapter
+    from pydantic_core import core_schema
+
     from flagsmith_schemas.pydantic_types import (
+        ValidateDecimalAsFloat,
+        ValidateDecimalAsInt,
+        ValidateDynamoFeatureStateValue,
         ValidateIdentityFeatureStatesList,
         ValidateMultivariateFeatureValuesList,
+        ValidateStrAsISODateTime,
     )
+    from flagsmith_schemas.utils import json_gzip
+elif not TYPE_CHECKING:
+    ValidateDecimalAsFloat = ...
+    ValidateDecimalAsInt = ...
+    ValidateDynamoFeatureStateValue = ...
+    ValidateStrAsISODateTime = ...
+
+T = TypeVar("T")
+
+
+class JsonGzipped(Generic[T], Binary):  # type: ignore[misc]
+    """A gzipped JSON blob representing a value of type `T`."""
+
+    if PYDANTIC_INSTALLED:
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls,
+            source_type: "type[JsonGzipped[T]]",
+            handler: GetCoreSchemaHandler,
+        ) -> core_schema.CoreSchema:
+            _adapter: TypeAdapter[T] = TypeAdapter(get_args(source_type)[0])
+
+            def _validate_json_gzipped(data: Any) -> bytes:
+                return json_gzip(_adapter.validate_python(data))
+
+            return core_schema.no_info_before_validator_function(
+                _validate_json_gzipped,
+                core_schema.bytes_schema(strict=False),
+            )
+
+
+DynamoInt: TypeAlias = Annotated[Decimal, ValidateDecimalAsInt]
+"""An integer value stored in DynamoDB.
+
+DynamoDB represents all numbers as `Decimal`.
+`DynamoInt` indicates that the value should be treated as an integer.
+"""
+
+DynamoFloat: TypeAlias = Annotated[Decimal, ValidateDecimalAsFloat]
+"""A float value stored in DynamoDB.
+
+DynamoDB represents all numbers as `Decimal`.
+`DynamoFloat` indicates that the value should be treated as a float.
+"""
+
+DateTimeStr: TypeAlias = Annotated[str, ValidateStrAsISODateTime]
+"""A string representing a date and time in ISO 8601 format."""
+
+DynamoFeatureValue: TypeAlias = Annotated[
+    DynamoInt | bool | str | None,
+    ValidateDynamoFeatureStateValue,
+]
+"""Represents the value of a Flagsmith feature stored in DynamoDB. Can be stored a boolean, an integer, or a string.
+
+The default (SaaS) maximum length for strings is 20000 characters.
+"""
+
+DynamoContextValue: TypeAlias = DynamoInt | DynamoFloat | bool | str
+"""Represents a scalar value in the Flagsmith context, e.g., of an identity trait.
+Here's how we store different types:
+- Numeric string values (int, float) are stored as numbers.
+- Boolean values are stored as booleans.
+- All other values are stored as strings.
+- Maximum length for strings is 2000 characters.
+
+This type does not include complex structures like lists or dictionaries.
+"""
 
 
 class Feature(TypedDict):
@@ -259,7 +336,7 @@ class _EnvironmentV2MetaFields(TypedDict):
     """Unique identifier for the environment in Core. Exists for compatibility with the API environment document schema."""
 
 
-class _EnvironmentBaseFieldsUncompressed(TypedDict):
+class _UncompressedEnvironmentFields(TypedDict):
     """Common fields for uncompressed environment documents."""
 
     project: Project
@@ -270,7 +347,7 @@ class _EnvironmentBaseFieldsUncompressed(TypedDict):
     """Either `False` or absent to indicate the data is uncompressed."""
 
 
-class _EnvironmentBaseFieldsCompressed(TypedDict):
+class _CompressedEnvironmentFields(TypedDict):
     """Common fields for compressed environment documents."""
 
     project: JsonGzipped[Project]
@@ -337,7 +414,7 @@ class Identity(TypedDict):
 
 
 class Environment(
-    _EnvironmentBaseFieldsUncompressed,
+    _UncompressedEnvironmentFields,
     _EnvironmentV1Fields,
     _EnvironmentBaseFields,
 ):
@@ -348,7 +425,7 @@ class Environment(
 
 
 class EnvironmentCompressed(
-    _EnvironmentBaseFieldsCompressed,
+    _CompressedEnvironmentFields,
     _EnvironmentV1Fields,
     _EnvironmentBaseFields,
 ):
@@ -360,7 +437,7 @@ class EnvironmentCompressed(
 
 
 class EnvironmentV2Meta(
-    _EnvironmentBaseFieldsUncompressed,
+    _UncompressedEnvironmentFields,
     _EnvironmentV2MetaFields,
     _EnvironmentBaseFields,
 ):
@@ -371,7 +448,7 @@ class EnvironmentV2Meta(
 
 
 class EnvironmentV2MetaCompressed(
-    _EnvironmentBaseFieldsCompressed,
+    _CompressedEnvironmentFields,
     _EnvironmentV2MetaFields,
     _EnvironmentBaseFields,
 ):
