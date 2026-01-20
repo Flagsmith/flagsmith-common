@@ -201,7 +201,7 @@ class Webhook(TypedDict):
     """Secret used to sign webhook payloads."""
 
 
-class _EnvironmentFields(TypedDict):
+class _EnvironmentBaseFields(TypedDict):
     """Common fields for Environment documents."""
 
     name: NotRequired[str]
