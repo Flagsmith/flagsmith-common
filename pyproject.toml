@@ -5,7 +5,7 @@ description = "Flagsmith's common library"
 requires-python = ">=3.11,<4.0"
 dependencies = []
 optional-dependencies = { test-tools = [
-    "pyfakefs (>=5,<6)",
+    "pyfakefs (>=6,<7)",
     "pytest-django (>=4,<5)",
 ], common-core = [
     "django (>4,<6)",
@@ -72,7 +72,7 @@ dev = [
     "mypy (>=1.15.0, <2.0.0)",
     "pre-commit",
     "pydantic>=2.12.5",
-    "pyfakefs (>=5.7.4, <6.0.0)",
+    "pyfakefs (>=6.1.1, <6.2.0)",
     "pytest (>=8.3.4, <9.0.0)",
     "pytest-asyncio (>=0.25.3, <1.0.0)",
     "pytest-cov (>=6.0.0, <7.0.0)",
