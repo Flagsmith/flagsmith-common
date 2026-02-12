@@ -24,7 +24,7 @@ jobs:
       - name: Build Package
         run: uv build
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: ${{ env.artifact-name }}
           path: dist/
@@ -42,7 +42,7 @@ jobs:
       id-token: write # for pypa/gh-action-pypi-publish to authenticate with PyPI
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: ${{ env.artifact-name }}
           path: dist/
