@@ -11,7 +11,7 @@ volumes:
 
 services:
   default-database:
-    image: postgres:15.15-alpine
+    image: postgres:18.2-alpine
     restart: unless-stopped
     volumes:
       - default-database:/var/lib/postgresql/data
@@ -26,7 +26,7 @@ services:
       timeout: 30s
 
   task-processor-database:
-    image: postgres:15.15-alpine
+    image: postgres:18.2-alpine
     restart: unless-stopped
     volumes:
       - task-processor-database:/var/lib/postgresql/data
