@@ -211,7 +211,9 @@ class _EnvironmentBaseFields(TypedDict):
 
     allow_client_traits: NotRequired[bool]
     """Whether the SDK API should allow clients to set traits for this environment.
-    If set to `False`, assumes only persisted traits are used in evaluation, and incoming traits are ignored. Defaults to `True`."""
+    If set to `False`, assumes only persisted traits and traits from server-side SDKs are used in evaluation, and traits incoming from client-side SDKs are ignored.
+    Defaults to `True`.
+    """
     hide_sensitive_data: NotRequired[bool]
     """Whether the SDK API should hide sensitive data for this environment. Defaults to `False`."""
     hide_disabled_flags: NotRequired[bool | None]
