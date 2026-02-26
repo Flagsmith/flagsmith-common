@@ -210,7 +210,10 @@ class _EnvironmentBaseFields(TypedDict):
     """Last updated timestamp. If not set, current timestamp should be assumed."""
 
     allow_client_traits: NotRequired[bool]
-    """Whether the SDK API should allow clients to set traits for this environment. Identical to project-level's `persist_trait_data` setting. Defaults to `True`."""
+    """Whether the SDK API should allow clients to set traits for this environment.
+    If set to `False`, assumes only persisted traits and traits from server-side SDKs are used in evaluation, and traits incoming from client-side SDKs are ignored.
+    Defaults to `True`.
+    """
     hide_sensitive_data: NotRequired[bool]
     """Whether the SDK API should hide sensitive data for this environment. Defaults to `False`."""
     hide_disabled_flags: NotRequired[bool | None]
