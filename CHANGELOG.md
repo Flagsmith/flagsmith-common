@@ -2,6 +2,24 @@
 
 <a name="v1.5.2"></a>
 
+## [3.3.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.3.0...v3.3.1) (2026-03-04)
+
+
+### CI
+
+* pre-commit autoupdate ([#165](https://github.com/Flagsmith/flagsmith-common/issues/165)) ([2b1a0dc](https://github.com/Flagsmith/flagsmith-common/commit/2b1a0dc348b20af364d4abd867d51cadd913307d))
+
+
+### Dependency Updates
+
+* update dependency django to v5.2.11 [security] ([#168](https://github.com/Flagsmith/flagsmith-common/issues/168)) ([c71c67a](https://github.com/Flagsmith/flagsmith-common/commit/c71c67a0741fe1679a13cd5f349801c23c1da74b))
+* update dependency django to v5.2.12 [security] ([#175](https://github.com/Flagsmith/flagsmith-common/issues/175)) ([8535029](https://github.com/Flagsmith/flagsmith-common/commit/85350293e32b7701f8d265dd9a7f8ea6e3f60dcf))
+
+
+### Docs
+
+* Clarify `allow_client_traits` behaviour ([#173](https://github.com/Flagsmith/flagsmith-common/issues/173)) ([c591ade](https://github.com/Flagsmith/flagsmith-common/commit/c591ade482ab02017bc094a99f8cfa3504383b59))
+
 ## [3.3.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.2.1...v3.3.0) (2026-01-20)
 
 
