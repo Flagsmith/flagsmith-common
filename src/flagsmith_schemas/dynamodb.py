@@ -404,3 +404,6 @@ class EnvironmentV2IdentityOverride(TypedDict):
     """The UUID for this identity, used by `edge-identities` APIs in Core. **INDEXED**."""
     feature_state: FeatureState
     """The feature state override for this identity."""
+    created_date: DateTimeStr
+    """ISO 8601 creation timestamp. Note: might change between updates due to how it's written by Core.
+    """
