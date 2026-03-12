@@ -35,6 +35,26 @@ This enables the `route` label for Prometheus HTTP metrics.
 
 5. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
 
+### Pre-commit hooks
+
+This repo provides a [`flagsmith-lint-tests`](.pre-commit-hooks.yaml) hook that enforces test conventions:
+
+- **FT001**: No module-level `Test*` classes — use function-based tests
+- **FT002**: No `import unittest` / `from unittest import TestCase` — use pytest (`unittest.mock` is fine)
+- **FT003**: Test names must follow `test_{subject}__{condition}__{expected}`
+- **FT004**: Test bodies must contain `# Given`, `# When`, and `# Then` comments
+
+To use in your repo, add to `.pre-commit-config.yaml`:
+
+```yaml
+- repo: https://github.com/Flagsmith/flagsmith-common
+  rev: main
+  hooks:
+    - id: flagsmith-lint-tests
+```
+
+Use `# noqa: FT003` (or any code) inline to suppress individual violations.
+
 ### Test tools
 
 #### Fixtures
