@@ -75,7 +75,7 @@ def sleep_task(db: None) -> TaskHandler[[int]]:
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_task_runs_task_and_creates_task_run_object_when_success(
+def test_run_task__success__creates_task_run_object(
     current_database: str,
     dummy_task: TaskHandler[[str, str]],
 ) -> None:
@@ -106,7 +106,7 @@ def test_run_task_runs_task_and_creates_task_run_object_when_success(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_task_kills_task_after_timeout(
+def test_run_task__timeout__kills_task(
     caplog: pytest.LogCaptureFixture,
     current_database: str,
     sleep_task: TaskHandler[[int]],
@@ -158,7 +158,7 @@ def test_run_task_kills_task_after_timeout(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_task_kills_task_after_timeout(
+def test_run_recurring_task__timeout__kills_task(
     caplog: pytest.LogCaptureFixture,
     current_database: str,
     settings: SettingsWrapper,
@@ -213,7 +213,7 @@ def test_run_recurring_task_kills_task_after_timeout(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks_runs_task_and_creates_recurring_task_run_object_when_success(
+def test_run_recurring_tasks__success__creates_recurring_task_run_object(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -247,7 +247,7 @@ def test_run_recurring_tasks_runs_task_and_creates_recurring_task_run_object_whe
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks_runs_locked_task_after_timeout(
+def test_run_recurring_tasks__locked_task_after_timeout__runs_task(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -291,7 +291,7 @@ def test_run_recurring_tasks_runs_locked_task_after_timeout(
 
 @pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks_multiple_runs(
+def test_run_recurring_tasks__multiple_runs__executes_expected_times(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -343,7 +343,7 @@ def test_run_recurring_tasks_multiple_runs(
 
 @pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks_loops_over_all_tasks(
+def test_run_recurring_tasks__multiple_tasks__loops_over_all(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -381,7 +381,7 @@ def test_run_recurring_tasks_loops_over_all_tasks(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks_only_executes_tasks_after_interval_set_by_run_every(
+def test_run_recurring_tasks__called_before_interval__executes_only_once(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -412,7 +412,7 @@ def test_run_recurring_tasks_only_executes_tasks_after_interval_set_by_run_every
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks_does_nothing_if_unregistered_task_is_new(
+def test_run_recurring_tasks__unregistered_new_task__does_nothing(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -444,7 +444,7 @@ def test_run_recurring_tasks_does_nothing_if_unregistered_task_is_new(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks_deletes_the_task_if_unregistered_task_is_old(
+def test_run_recurring_tasks__unregistered_old_task__deletes_task(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -479,7 +479,7 @@ def test_run_recurring_tasks_deletes_the_task_if_unregistered_task_is_old(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_task_runs_task_and_creates_task_run_object_when_failure(
+def test_run_task__failure__creates_task_run_object(
     caplog: pytest.LogCaptureFixture,
     current_database: str,
     raise_exception_task: TaskHandler[[str]],
@@ -533,7 +533,7 @@ def test_run_task_runs_task_and_creates_task_run_object_when_failure(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_task_runs_failed_task_again(
+def test_run_task__failed_task__runs_again(
     current_database: str,
     raise_exception_task: TaskHandler[[str]],
 ) -> None:
@@ -557,7 +557,6 @@ def test_run_task_runs_failed_task_again(
         == 2
     )
 
-    # Then
     for task_run in task_runs:
         assert task_run.result == TaskResult.FAILURE.value
         assert task_run.started_at
@@ -571,7 +570,7 @@ def test_run_task_runs_failed_task_again(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_task_runs_task_and_creates_recurring_task_run_object_when_failure(
+def test_run_recurring_task__failure__creates_recurring_task_run_object(
     current_database: str,
 ) -> None:
     # Given
@@ -599,7 +598,7 @@ def test_run_recurring_task_runs_task_and_creates_recurring_task_run_object_when
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_task_does_nothing_if_no_tasks(current_database: str) -> None:
+def test_run_task__no_tasks__does_nothing(current_database: str) -> None:
     # Given - no tasks
     pass
 
@@ -613,7 +612,7 @@ def test_run_task_does_nothing_if_no_tasks(current_database: str) -> None:
 
 @pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-def test_run_task_runs_tasks_in_correct_priority(
+def test_run_task__multiple_priorities__runs_in_correct_order(
     current_database: str,
     dummy_task: TaskHandler[[str, str]],
 ) -> None:
@@ -707,7 +706,7 @@ def test_run_task__backoff__persists_expected(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_task__backoff__recurring__raises_expected(
+def test_run_task__backoff_recurring__raises_expected(
     current_database: str,
 ) -> None:
     # Given
@@ -717,7 +716,7 @@ def test_run_task__backoff__recurring__raises_expected(
 
     initialise()
 
-    # When & Then
+    # When / Then
     with pytest.raises(AssertionError) as exc_info:
         run_recurring_tasks(current_database)
 
@@ -729,7 +728,7 @@ def test_run_task__backoff__recurring__raises_expected(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_task__backoff__max_num_failures__noop(
+def test_run_task__backoff_max_num_failures__noop(
     current_database: str,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -760,7 +759,7 @@ def test_run_task__backoff__max_num_failures__noop(
 
 
 @pytest.mark.multi_database
-def test_run_tasks__fails_if_not_in_task_processor_mode(
+def test_run_tasks__not_in_task_processor_mode__fails(
     current_database: str,
     dummy_task: TaskHandler[[str, str]],
 ) -> None:
@@ -771,14 +770,14 @@ def test_run_tasks__fails_if_not_in_task_processor_mode(
         args=("arg1", "arg2"),
     ).save(using=current_database)
 
-    # When
+    # When / Then
     with pytest.raises(AssertionError):
         run_tasks(current_database)
 
 
 @pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-def test_run_tasks__expected_metrics(
+def test_run_tasks__tasks_executed__expected_metrics(
     assert_metric: AssertMetricFixture,
     current_database: str,
     dummy_task: TaskHandler[[str, str]],
@@ -875,7 +874,7 @@ def test_run_tasks__expected_metrics(
 
 @pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-def test_run_tasks_skips_locked_tasks(
+def test_run_tasks__locked_task__skips_locked(
     current_database: str,
     dummy_task: TaskHandler[[str, str]],
     sleep_task: TaskHandler[[int]],
@@ -919,7 +918,7 @@ def test_run_tasks_skips_locked_tasks(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_more_than_one_task(
+def test_run_tasks__multiple_tasks__runs_all(
     current_database: str,
     dummy_task: TaskHandler[[str, str]],
 ) -> None:
@@ -957,7 +956,7 @@ def test_run_more_than_one_task(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_recurring_tasks_are_unlocked_if_picked_up_but_not_executed(
+def test_recurring_tasks__picked_up_but_not_executed__are_unlocked(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -993,7 +992,7 @@ def test_recurring_tasks_are_unlocked_if_picked_up_but_not_executed(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_task_does_not_block_on_timeout(
+def test_run_task__timeout__does_not_block(
     current_database: str,
     sleep_task: TaskHandler[[int]],
 ) -> None:

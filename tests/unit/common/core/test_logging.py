@@ -8,7 +8,7 @@ from common.core.logging import JsonFormatter
 
 
 @pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
-def test_json_formatter__outputs_expected(
+def test_json_formatter__format_log__outputs_expected(
     caplog: pytest.LogCaptureFixture,
     request: pytest.FixtureRequest,
 ) -> None:

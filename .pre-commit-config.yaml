@@ -20,6 +20,12 @@ repos:
       - id: check-toml
   - repo: local
     hooks:
+      - id: flagsmith-lint-tests
+        name: flagsmith-lint-tests
+        language: system
+        entry: python -P src/common/lint_tests.py
+        types: [python]
+        files: ^tests/.*test_.*\.py$
       - id: python-typecheck
         name: python-typecheck
         language: system

@@ -966,7 +966,7 @@ def test_document__validate_json__expected_result(
     assert document == expected_result
 
 
-def test_type_adapter__identity__duplicate_features__raises_expected(
+def test_type_adapter__identity_duplicate_features__raises_expected(
     mocker: MockerFixture,
 ) -> None:
     # Given
@@ -1009,7 +1009,7 @@ def test_type_adapter__identity__duplicate_features__raises_expected(
     )
 
 
-def test_type_adapter__environment__multivariate_feature_states_percentage_allocation_exceeds_100__raises_expected() -> (
+def test_type_adapter__environment_multivariate_feature_states_percentage_allocation_exceeds_100__raises_expected() -> (
     None
 ):
     # Given

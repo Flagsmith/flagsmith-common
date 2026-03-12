@@ -35,7 +35,7 @@ def test_main__non_overridden_args__defaults_to_django(
         ["flagsmith", "healthcheck", "tcp"],
     ),
 )
-def test_main__healthcheck_tcp__no_server__runs_expected(
+def test_main__healthcheck_tcp_no_server__runs_expected(
     argv: list[str],
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -48,7 +48,7 @@ def test_main__healthcheck_tcp__no_server__runs_expected(
     assert exc_info.value.code == 1
 
 
-def test_main__healthcheck_tcp__server__runs_expected(
+def test_main__healthcheck_tcp_server__runs_expected(
     unused_tcp_port: int,
     http_server: HTTPServer,
 ) -> None:
@@ -63,7 +63,7 @@ def test_main__healthcheck_tcp__server__runs_expected(
     assert exc_info.value.code == 0
 
 
-def test_main__healthcheck_http__no_server__runs_expected() -> None:
+def test_main__healthcheck_http_no_server__runs_expected() -> None:
     # Given
     argv = ["flagsmith", "healthcheck", "http"]
 
@@ -79,7 +79,7 @@ def test_main__healthcheck_http__no_server__runs_expected() -> None:
         (["flagsmith", "healthcheck", "http", "health/readiness"], "/health/readiness"),
     ),
 )
-def test_main__healthcheck_http__server__runs_expected(
+def test_main__healthcheck_http_server__runs_expected(
     unused_tcp_port: int,
     http_server: HTTPServer,
     argv: list[str],
@@ -94,7 +94,7 @@ def test_main__healthcheck_http__server__runs_expected(
     main(argv)
 
 
-def test_main__healthcheck_http__server_invalid_response__runs_expected(
+def test_main__healthcheck_http_server_invalid_response__runs_expected(
     unused_tcp_port: int,
     http_server: HTTPServer,
 ) -> None:

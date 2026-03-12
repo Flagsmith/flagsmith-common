@@ -6,7 +6,7 @@ from pytest_mock import MockerFixture
 from common.gunicorn.conf import child_exit, when_ready
 
 
-def test_child_exit__calls_mark_process_dead_with_worker_pid(
+def test_child_exit__worker_exits__marks_process_dead_with_worker_pid(
     mocker: MockerFixture,
 ) -> None:
     # Given

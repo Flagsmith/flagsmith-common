@@ -10,7 +10,7 @@ from task_processor.health import TaskProcessorHealthCheckBackend
 from task_processor.task_run_method import TaskRunMethod
 
 
-def test_skips_validation_if_task_run_method_is_not_task_processor(
+def test_task_processor_app__not_task_processor_mode__skips_validation(
     mocker: MockerFixture,
     settings: SettingsWrapper,
 ) -> None:
@@ -33,7 +33,7 @@ def test_skips_validation_if_task_run_method_is_not_task_processor(
         (False, None),
     ],
 )
-def test_registers_health_check_if_enabled(
+def test_task_processor_app__health_check_toggle__registers_expected(
     enabled: bool,
     mocker: MockerFixture,
     expected_call: tuple[typing.Any, ...],
@@ -94,7 +94,7 @@ def test_registers_health_check_if_enabled(
         ),
     ],
 )
-def test_validates_django_settings_are_compatible_with_multi_database_setup(
+def test_task_processor_app__invalid_multi_database_setup__raises_improperly_configured(
     expected_error: str,
     mocker: MockerFixture,
     settings: SettingsWrapper,

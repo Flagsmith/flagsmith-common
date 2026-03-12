@@ -1,0 +1,8 @@
+- id: flagsmith-lint-tests
+  name: flagsmith-lint-tests
+  description: Lint Flagsmith test conventions (function-only, naming, GWT comments)
+  entry: flagsmith-lint-tests
+  language: python
+  types: [python]
+  files: test_.*\.py$
+  args: []
