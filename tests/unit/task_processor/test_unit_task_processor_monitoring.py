@@ -8,7 +8,7 @@ from task_processor.monitoring import get_num_waiting_tasks
 
 
 @pytest.mark.django_db
-def test_get_num_waiting_tasks() -> None:
+def test_get_num_waiting_tasks__mixed_task_states__returns_only_waiting() -> None:
     # Given
     now = timezone.now()
 

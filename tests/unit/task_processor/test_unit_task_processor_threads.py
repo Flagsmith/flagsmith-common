@@ -22,7 +22,7 @@ from task_processor import threads
     ],
 )
 @pytest.mark.django_db
-def test_task_runner_is_resilient_to_errors(
+def test_task_runner__run_iteration_error__logs_and_closes_connections(
     mocker: MockerFixture,
     caplog: pytest.LogCaptureFixture,
     exception: Exception,

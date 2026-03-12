@@ -18,7 +18,7 @@ sixty_days_ago = now - timedelta(days=60)
 
 
 @pytest.mark.django_db
-def test_clean_up_old_tasks_does_nothing_when_no_tasks() -> None:
+def test_clean_up_old_tasks__no_tasks__does_nothing() -> None:
     # Given
     assert Task.objects.count() == 0
 
@@ -29,7 +29,7 @@ def test_clean_up_old_tasks_does_nothing_when_no_tasks() -> None:
     assert Task.objects.count() == 0
 
 
-def test_clean_up_old_recurring_task_runs_does_nothing_when_no_runs(db: None) -> None:
+def test_clean_up_old_recurring_task_runs__no_runs__does_nothing(db: None) -> None:
     # Given
     assert RecurringTaskRun.objects.count() == 0
 
@@ -41,7 +41,7 @@ def test_clean_up_old_recurring_task_runs_does_nothing_when_no_runs(db: None) ->
 
 
 @pytest.mark.django_db
-def test_clean_up_old_tasks(
+def test_clean_up_old_tasks__tasks_exist__deletes_old_completed(
     settings: SettingsWrapper,
     django_assert_num_queries: DjangoAssertNumQueries,
 ) -> None:
@@ -92,7 +92,7 @@ def test_clean_up_old_tasks(
 
 
 @pytest.mark.django_db
-def test_clean_up_old_recurring_task_runs(
+def test_clean_up_old_recurring_task_runs__runs_exist__deletes_old(
     settings: SettingsWrapper,
     django_assert_num_queries: DjangoAssertNumQueries,
 ) -> None:
@@ -128,7 +128,9 @@ def test_clean_up_old_recurring_task_runs(
 
 
 @pytest.mark.django_db
-def test_clean_up_old_tasks_include_failed_tasks(settings: SettingsWrapper) -> None:
+def test_clean_up_old_tasks__include_failed_enabled__deletes_failed(
+    settings: SettingsWrapper,
+) -> None:
     # Given
     settings.TASK_DELETE_RETENTION_DAYS = 2
     settings.TASK_DELETE_INCLUDE_FAILED_TASKS = True
@@ -146,7 +148,7 @@ def test_clean_up_old_tasks_include_failed_tasks(settings: SettingsWrapper) -> N
 
 
 @pytest.mark.django_db
-def test_clean_up_old_tasks_does_not_run_if_disabled(
+def test_clean_up_old_tasks__disabled__does_not_run(
     settings: SettingsWrapper,
     django_assert_num_queries: DjangoAssertNumQueries,
 ) -> None:
@@ -166,7 +168,7 @@ def test_clean_up_old_tasks_does_not_run_if_disabled(
 
 
 @pytest.mark.django_db
-def test_clean_up_old_recurring_task_runs_does_not_run_if_disabled(
+def test_clean_up_old_recurring_task_runs__disabled__does_not_run(
     settings: SettingsWrapper,
     django_assert_num_queries: DjangoAssertNumQueries,
 ) -> None:

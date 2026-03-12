@@ -32,7 +32,7 @@ def mock_thread_class(
 
 
 @pytest.mark.django_db
-def test_register_task_handler_run_in_thread__transaction_commit__true__default(
+def test_register_task_handler_run_in_thread__transaction_commit_true__default(
     caplog: pytest.LogCaptureFixture,
     mock_thread_class: MagicMock,
     django_capture_on_commit_callbacks: DjangoCaptureOnCommitCallbacks,
@@ -98,7 +98,7 @@ def test_register_task_handler_run_in_thread__transaction_commit__false(
 
 @pytest.mark.django_db
 @pytest.mark.task_processor_mode
-def test_register_recurring_task(
+def test_register_recurring_task__task_processor_mode__creates_task(
     mocker: MockerFixture,
 ) -> None:
     # Given
@@ -126,7 +126,7 @@ def test_register_recurring_task(
 
 
 @pytest.mark.django_db
-def test_register_recurring_task_does_nothing_if_not_run_by_processor() -> None:
+def test_register_recurring_task__not_run_by_processor__does_nothing() -> None:
     # Given
 
     task_kwargs = {"first_arg": "foo", "second_arg": "bar"}
@@ -147,7 +147,9 @@ def test_register_recurring_task_does_nothing_if_not_run_by_processor() -> None:
         assert get_task(task_identifier)
 
 
-def test_register_task_handler_validates_inputs() -> None:
+def test_register_task_handler__non_serializable_input__raises_invalid_arguments() -> (
+    None
+):
     # Given
     @register_task_handler()
     def my_function(*args: typing.Any, **kwargs: typing.Any) -> None:
@@ -156,7 +158,7 @@ def test_register_task_handler_validates_inputs() -> None:
     class NonSerializableObj:
         pass
 
-    # When
+    # When / Then
     with pytest.raises(InvalidArgumentsError):
         my_function(NonSerializableObj())
 
@@ -164,7 +166,7 @@ def test_register_task_handler_validates_inputs() -> None:
 @pytest.mark.parametrize(
     "task_run_method", (TaskRunMethod.SEPARATE_THREAD, TaskRunMethod.SYNCHRONOUSLY)
 )
-def test_inputs_are_validated_when_run_without_task_processor(
+def test_inputs_validation__run_without_task_processor__raises_invalid_arguments(
     settings: SettingsWrapper, task_run_method: TaskRunMethod
 ) -> None:
     # Given
@@ -177,13 +179,13 @@ def test_inputs_are_validated_when_run_without_task_processor(
     class NonSerializableObj:
         pass
 
-    # When
+    # When / Then
     with pytest.raises(InvalidArgumentsError):
         my_function.delay(args=(NonSerializableObj(),))
 
 
 @pytest.mark.django_db
-def test_delay_returns_none_if_task_queue_is_full(settings: SettingsWrapper) -> None:
+def test_delay__task_queue_full__returns_none(settings: SettingsWrapper) -> None:
     # Given
     settings.TASK_RUN_METHOD = TaskRunMethod.TASK_PROCESSOR
 
@@ -204,7 +206,7 @@ def test_delay_returns_none_if_task_queue_is_full(settings: SettingsWrapper) -> 
 
 
 @pytest.mark.django_db
-def test_delay__expected_metrics(
+def test_delay__task_enqueued__expected_metrics(
     settings: SettingsWrapper,
     assert_metric: AssertMetricFixture,
 ) -> None:
@@ -227,7 +229,9 @@ def test_delay__expected_metrics(
 
 
 @pytest.mark.django_db
-def test_can_create_task_with_priority(settings: SettingsWrapper) -> None:
+def test_create_task__with_priority__sets_expected_priority(
+    settings: SettingsWrapper,
+) -> None:
     # Given
     settings.TASK_RUN_METHOD = TaskRunMethod.TASK_PROCESSOR
 

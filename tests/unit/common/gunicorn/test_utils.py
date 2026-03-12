@@ -53,7 +53,7 @@ def test_run_server__default_config_file__runs_expected(
 
     threading.Thread(target=delay_kill).start()
 
-    # When
+    # When / Then
     with pytest.raises(SystemExit):
         run_server({"bind": f"0.0.0.0:{unused_tcp_port}"})
 

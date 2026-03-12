@@ -10,7 +10,7 @@ from task_processor import routers
 
 
 @pytest.mark.parametrize("model", apps.get_app_config("task_processor").get_models())
-def test_TaskProcessorRouter_routes_queries_to_task_processor_database(
+def test_task_processor_router__query_routing__uses_task_processor_database(
     mocker: MockerFixture,
     model: type[Model],
 ) -> None:
@@ -25,7 +25,7 @@ def test_TaskProcessorRouter_routes_queries_to_task_processor_database(
     assert read_database == write_database == "task_processor"
 
 
-def test_TaskProcessorRouter_does_not_affect_non_task_processor_models(
+def test_task_processor_router__non_task_processor_models__not_affected(
     mocker: MockerFixture,
 ) -> None:
     # Given
@@ -53,7 +53,7 @@ def test_TaskProcessorRouter_does_not_affect_non_task_processor_models(
         for model in apps.get_app_config("task_processor").get_models()
     ],
 )
-def test_TaskProcessorRouter_allows_relation_among_task_processor_models(
+def test_task_processor_router__relation_among_task_processor_models__allowed(
     mocker: MockerFixture,
     model1: type[Model],
     model2: type[Model],
@@ -80,7 +80,7 @@ def test_TaskProcessorRouter_allows_relation_among_task_processor_models(
         ("other", "other", None),
     ],
 )
-def test_TaskProcessorRouter_applies_migrations_to_both_databases(
+def test_task_processor_router__migration_targeting__applies_to_both_databases(
     app_label: str,
     database: str,
     expected: bool,

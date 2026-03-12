@@ -3,7 +3,7 @@ from pytest_mock import MockerFixture
 from common.core import middleware as middleware_module
 
 
-def test_APIResponseVersionHeaderMiddleware__adds_version_header(
+def test_api_response_version_header_middleware__request_processed__adds_version_header(
     mocker: MockerFixture,
 ) -> None:
     # Given

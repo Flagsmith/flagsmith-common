@@ -7,7 +7,7 @@ from task_processor.models import HealthCheckModel
 from task_processor.task_run_method import TaskRunMethod
 
 
-def test_is_processor_healthy_returns_false_if_task_not_processed(
+def test_is_processor_healthy__task_not_processed__returns_false(
     mocker: MockerFixture,
 ) -> None:
     # Given
@@ -27,7 +27,7 @@ def test_is_processor_healthy_returns_false_if_task_not_processed(
 
 
 @pytest.mark.django_db
-def test_is_processor_healthy_returns_true_if_task_processed(
+def test_is_processor_healthy__task_processed__returns_true(
     settings: SettingsWrapper,
 ) -> None:
     # Given

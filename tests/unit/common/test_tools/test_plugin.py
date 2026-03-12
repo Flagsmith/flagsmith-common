@@ -10,7 +10,7 @@ from task_processor.decorators import register_task_handler
 from task_processor.models import Task
 
 
-def test_assert_metrics__asserts_expected(
+def test_assert_metrics__metric_incremented__asserts_expected(
     assert_metric: AssertMetricFixture,
     test_metric: prometheus_client.Counter,
 ) -> None:
@@ -25,7 +25,7 @@ def test_assert_metrics__asserts_expected(
     )
 
 
-def test_assert_metrics__registry_reset_expected(
+def test_assert_metrics__after_registry_reset__raises_assertion(
     test_metric: prometheus_client.Counter,
 ) -> None:
     # Given
@@ -44,24 +44,33 @@ def test_assert_metrics__registry_reset_expected(
         )
 
 
-def test_no_marker__oss_edition_expected() -> None:
-    # When & Then
-    assert edition_printer() == "oss!"
+def test_edition_printer__no_marker__returns_oss() -> None:
+    # Given / When
+    result = edition_printer()
+
+    # Then
+    assert result == "oss!"
 
 
 @pytest.mark.saas_mode
-def test_saas_mode_marker__is_saas_returns_expected() -> None:
-    # When & Then
-    assert edition_printer() == "saas!"
+def test_edition_printer__saas_mode__returns_saas() -> None:
+    # Given / When
+    result = edition_printer()
+
+    # Then
+    assert result == "saas!"
 
 
 @pytest.mark.enterprise_mode
-def test_enterprise_mode_marker__is_enterprise_returns_expected() -> None:
-    # When & Then
-    assert edition_printer() == "enterprise!"
+def test_edition_printer__enterprise_mode__returns_enterprise() -> None:
+    # Given / When
+    result = edition_printer()
+
+    # Then
+    assert result == "enterprise!"
 
 
-def test_run_tasks__runs_expected_tasks(
+def test_run_tasks__single_task_delayed__runs_expected(
     run_tasks: RunTasksFixture,
 ) -> None:
     # Given

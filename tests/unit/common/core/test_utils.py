@@ -49,28 +49,33 @@ def bad_replica(mocker: MockerFixture) -> MockType:
     return replica
 
 
-def test__is_oss_for_enterprise_returns_false(fs: FakeFilesystem) -> None:
+def test_is_oss__enterprise_version_exists__returns_false(fs: FakeFilesystem) -> None:
     # Given
     fs.create_file("./ENTERPRISE_VERSION")
 
-    # Then
+    # When / Then
     assert is_oss() is False
 
 
-def test__is_oss_for_saas_returns_false(fs: FakeFilesystem) -> None:
+def test_is_oss__saas_deployment_exists__returns_false(fs: FakeFilesystem) -> None:
     # Given
     fs.create_file("./SAAS_DEPLOYMENT")
 
-    # Then
+    # When / Then
     assert is_oss() is False
 
 
-def test__is_oss_for_oss_returns_true(fs: FakeFilesystem) -> None:
+def test_is_oss__no_version_files__returns_true(fs: FakeFilesystem) -> None:
+    # Given / When
+    result = is_oss()
+
     # Then
-    assert is_oss() is True
+    assert result is True
 
 
-def test_get_version_info(fs: FakeFilesystem) -> None:
+def test_get_version_info__all_files_present__returns_expected(
+    fs: FakeFilesystem,
+) -> None:
     # Given
     expected_manifest_contents = {
         ".": "2.66.2",
@@ -98,7 +103,7 @@ def test_get_version_info(fs: FakeFilesystem) -> None:
     }
 
 
-def test_get_version_info_with_missing_files(fs: FakeFilesystem) -> None:
+def test_get_version_info__missing_files__returns_unknown(fs: FakeFilesystem) -> None:
     # Given
     fs.create_file("./ENTERPRISE_VERSION")
 
@@ -217,7 +222,7 @@ def test_get_version__invalid_file_contents__returns_unknown(
         ({"default", "replica_1", "cross_region_replica_1"}, True),
     ],
 )
-def test_is_database_replica_setup__tells_whether_any_replica_is_present(
+def test_is_database_replica_setup__various_database_configs__returns_expected(
     database_names: list[str],
     expected: bool,
     mocker: MockerFixture,

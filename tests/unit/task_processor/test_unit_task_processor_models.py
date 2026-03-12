@@ -15,7 +15,7 @@ one_hour_ago = now - timedelta(hours=1)
 one_hour_from_now = now + timedelta(hours=1)
 
 
-def test_task_run(mocker: MockerFixture) -> None:
+def test_task__run__calls_handler_with_args(mocker: MockerFixture) -> None:
     # Given
     mock = mocker.Mock()
     mock.__name__ = "test_task"
@@ -59,28 +59,36 @@ def test_task_args__no_data__return_expected() -> None:
         ({"value": Decimal("10.12345")}, '{"value": 10.12345}'),
     ),
 )
-def test_serialize_data_handles_decimal_objects(
+def test_serialize_data__decimal_input__returns_expected_json(
     input: dict[str, Decimal],
     expected_output: str,
 ) -> None:
-    assert Task.serialize_data(input) == expected_output
+    # Given / When
+    result = Task.serialize_data(input)
+
+    # Then
+    assert result == expected_output
 
 
 @pytest.mark.parametrize(
     "first_run_time, expected",
     ((one_hour_ago.time(), True), (one_hour_from_now.time(), False)),
 )
-def test_recurring_task_run_should_execute_first_run_at(
+def test_recurring_task__first_run_time_set__should_execute_returns_expected(
     first_run_time: time,
     expected: bool,
 ) -> None:
-    assert (
-        RecurringTask(
-            first_run_time=first_run_time,
-            run_every=timedelta(days=1),
-        ).should_execute
-        == expected
+    # Given
+    task = RecurringTask(
+        first_run_time=first_run_time,
+        run_every=timedelta(days=1),
     )
+
+    # When
+    result = task.should_execute
+
+    # Then
+    assert result == expected
 
 
 @freeze_time("2026-01-15 23:05:23")

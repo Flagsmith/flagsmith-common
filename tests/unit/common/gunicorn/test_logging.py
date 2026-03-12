@@ -17,7 +17,7 @@ from common.test_tools import AssertMetricFixture
 
 
 @pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
-def test_gunicorn_access_log_json_formatter__outputs_expected(
+def test_gunicorn_access_log_json_formatter__format_log__outputs_expected(
     settings: SettingsWrapper,
 ) -> None:
     # Given
@@ -97,7 +97,7 @@ def test_gunicorn_access_log_json_formatter__outputs_expected(
     }
 
 
-def test_gunicorn_prometheus_gunicorn_logger__expected_metrics(
+def test_gunicorn_prometheus_gunicorn_logger__access_logged__expected_metrics(
     mocker: MockerFixture,
     assert_metric: AssertMetricFixture,
 ) -> None:
@@ -136,7 +136,7 @@ def test_gunicorn_prometheus_gunicorn_logger__expected_metrics(
     )
 
 
-def test_gunicorn_json_capable_logger__sets_expected_formatters(
+def test_gunicorn_json_capable_logger__json_log_format__sets_expected_formatters(
     settings: SettingsWrapper,
 ) -> None:
     # Given
