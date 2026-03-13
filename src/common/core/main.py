@@ -34,10 +34,17 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     ctx = contextlib.ExitStack()
 
     # Set up logging early, before Django settings are loaded.
+    application_loggers_env = os.environ.get("APPLICATION_LOGGERS", "")
     setup_logging(
         log_level=os.environ.get("LOG_LEVEL", "INFO"),
         log_format=os.environ.get("LOG_FORMAT", "generic"),
         logging_configuration_file=os.environ.get("LOGGING_CONFIGURATION_FILE"),
+        application_loggers=[
+            logger_name
+            for name in application_loggers_env.split(",")
+            if (logger_name := name.strip())
+        ]
+        or None,
     )
 
     # Prometheus multiproc support

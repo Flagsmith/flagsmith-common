@@ -10,6 +10,7 @@ def test_ensure_cli_env__env_vars_set__calls_setup_logging_with_env_values() -> 
         "LOG_LEVEL": "WARNING",
         "LOG_FORMAT": "json",
         "LOGGING_CONFIGURATION_FILE": "/tmp/logging.json",
+        "APPLICATION_LOGGERS": "myapp,mylib",
     }
 
     # When
@@ -25,6 +26,7 @@ def test_ensure_cli_env__env_vars_set__calls_setup_logging_with_env_values() -> 
         log_level="WARNING",
         log_format="json",
         logging_configuration_file="/tmp/logging.json",
+        application_loggers=["myapp", "mylib"],
     )
 
 
@@ -42,4 +44,5 @@ def test_ensure_cli_env__no_env_vars__calls_setup_logging_with_defaults() -> Non
         log_level="INFO",
         log_format="generic",
         logging_configuration_file=None,
+        application_loggers=None,
     )
