@@ -10,6 +10,7 @@ from django.core.management import (
 )
 
 from common.core.cli import healthcheck
+from common.core.logging import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,12 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     """
     ctx = contextlib.ExitStack()
 
-    # TODO @khvn26 Move logging setup to here
+    # Set up logging early, before Django settings are loaded.
+    setup_logging(
+        log_level=os.environ.get("LOG_LEVEL", "INFO"),
+        log_format=os.environ.get("LOG_FORMAT", "generic"),
+        logging_configuration_file=os.environ.get("LOGGING_CONFIGURATION_FILE"),
+    )
 
     # Prometheus multiproc support
     if not os.environ.get("PROMETHEUS_MULTIPROC_DIR"):
