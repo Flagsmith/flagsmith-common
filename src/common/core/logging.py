@@ -53,7 +53,6 @@ def setup_logging(
     log_level: str = "INFO",
     log_format: str = "generic",
     logging_configuration_file: str | None = None,
-    extra_processors: list[Processor] | None = None,
     application_loggers: list[str] | None = None,
 ) -> None:
     """
@@ -67,15 +66,11 @@ def setup_logging(
         log_format: Either "generic" or "json".
         logging_configuration_file: Path to a JSON logging config file.
             If provided, this takes precedence over other format options.
-        extra_processors: Additional structlog processors (e.g. OTel, Sentry).
         application_loggers: Top-level logger names for application packages.
             These loggers are set to ``log_level`` while the root logger uses
             ``max(log_level, WARNING)`` to suppress noise from third-party
             libraries. If ``log_level`` is DEBUG, everything logs at DEBUG.
     """
-    if extra_processors is None:
-        extra_processors = []
-
     if logging_configuration_file:
         with open(logging_configuration_file) as f:
             config = json.load(f)
@@ -110,7 +105,7 @@ def setup_logging(
         }
         logging.config.dictConfig(dict_config)
 
-    setup_structlog(log_format=log_format, extra_processors=extra_processors)
+    setup_structlog(log_format=log_format)
 
 
 def map_event_to_json_record(
@@ -169,9 +164,10 @@ def build_processor_formatter(log_format: str) -> structlog.stdlib.ProcessorForm
 
 def setup_structlog(
     log_format: str,
-    extra_processors: list[Processor],
 ) -> None:
     """Configure structlog to route through stdlib logging."""
+    from common.core.sentry import sentry_processor
+
     formatter = build_processor_formatter(log_format)
 
     # Replace the formatter on existing root handlers with ProcessorFormatter.
@@ -190,7 +186,7 @@ def setup_structlog(
             structlog.processors.UnicodeDecoder(),
             structlog.processors.format_exc_info,
             structlog.processors.TimeStamper(fmt="iso"),
-            *extra_processors,
+            sentry_processor,
             structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
         ],
         wrapper_class=structlog.stdlib.BoundLogger,

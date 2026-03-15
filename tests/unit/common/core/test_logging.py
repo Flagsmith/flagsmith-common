@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import pytest
 import structlog
@@ -192,26 +192,26 @@ def test_setup_logging__custom_config_file__loads_dictconfig(
     assert custom_logger.level == logging.CRITICAL
 
 
-def test_setup_logging__extra_processors__passed_to_structlog(
+def test_setup_logging__structlog_configured__sentry_processor_wired(
+    capsys: pytest.CaptureFixture[str],
     test_app_loggers: list[str],
 ) -> None:
     # Given
-    mock_processor = MagicMock()
     setup_logging(
         log_level="DEBUG",
         log_format="generic",
-        extra_processors=[mock_processor],
         application_loggers=test_app_loggers,
     )
-    structured_logger = structlog.get_logger("test.extra_proc")
+    structured_logger = structlog.get_logger("test.sentry_proc")
 
     # When
-    structured_logger.info("test extra")
+    with patch("common.core.sentry.sentry_sdk") as mock_sentry:
+        structured_logger.info("test sentry context", environment_id="env-1")
 
     # Then
-    mock_processor.assert_called_once()
-    event_dict = mock_processor.call_args[0][2]
-    assert event_dict["event"] == "test extra"
+    mock_sentry.set_context.assert_called_once()
+    context = mock_sentry.set_context.call_args[0][1]
+    assert context["environment_id"] == "env-1"
 
 
 def test_setup_logging__json_format__structlog_exception_included(
