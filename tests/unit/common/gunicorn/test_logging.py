@@ -3,11 +3,11 @@ import os
 from datetime import datetime, timedelta
 
 import pytest
+import structlog.stdlib
 from gunicorn.config import AccessLogFormat, Config  # type: ignore[import-untyped]
 from pytest_django.fixtures import SettingsWrapper
 from pytest_mock import MockerFixture
 
-from common.core.logging import JsonFormatter
 from common.gunicorn.logging import (
     GunicornAccessLogJsonFormatter,
     GunicornJsonCapableLogger,
@@ -150,7 +150,7 @@ def test_gunicorn_json_capable_logger__json_log_format__sets_expected_formatters
     # Then
     assert isinstance(
         logger.error_log.handlers[0].formatter,
-        JsonFormatter,
+        structlog.stdlib.ProcessorFormatter,
     )
     assert isinstance(
         logger.access_log.handlers[0].formatter,

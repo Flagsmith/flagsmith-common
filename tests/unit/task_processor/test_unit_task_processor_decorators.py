@@ -61,7 +61,8 @@ def test_register_task_handler_run_in_thread__transaction_commit_true__default(
 
     assert len(caplog.records) == 1
     assert (
-        caplog.records[0].message == "Running function my_function in unmanaged thread."
+        caplog.records[0].getMessage()
+        == "Running function my_function in unmanaged thread."
     )
 
 
@@ -92,7 +93,8 @@ def test_register_task_handler_run_in_thread__transaction_commit__false(
 
     assert len(caplog.records) == 1
     assert (
-        caplog.records[0].message == "Running function my_function in unmanaged thread."
+        caplog.records[0].getMessage()
+        == "Running function my_function in unmanaged thread."
     )
 
 
