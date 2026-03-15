@@ -34,6 +34,17 @@ class GunicornAccessLogJsonRecord(JsonRecord, extra_items=Any, total=False):  # 
 
 
 class GunicornAccessLogJsonFormatter(JsonFormatter):
+    """JSON formatter for Gunicorn access logs.
+
+    Extends :class:`~common.core.logging.JsonFormatter` with request-specific
+    fields extracted from Gunicorn's ``LogRecord.args`` dict.
+
+    This uses a stdlib ``Formatter`` rather than a structlog
+    ``ProcessorFormatter`` because Gunicorn populates ``record.args`` with
+    its own format variables — working with the ``LogRecord`` directly is
+    the natural abstraction for this data.
+    """
+
     def _get_extra(self, record_args: dict[str, Any]) -> dict[str, Any]:
         ret: dict[str, dict[str, Any]] = {}
 
@@ -43,7 +54,7 @@ class GunicornAccessLogJsonFormatter(JsonFormatter):
             # Gunicorn's access log format string for
             # request headers, response headers and environ variables
             # without the % prefix, e.g. "{origin}i" or "{flagsmith.environment_id}e"
-            # https://docs.gunicorn.org/en/stable/settings.html#access-log-format
+            # https://gunicorn.org/reference/settings/#access_log_format
             for extra_key in extra_items_to_log:
                 extra_key_lower = extra_key.lower()
                 if (
@@ -87,6 +98,8 @@ class GunicornAccessLogJsonFormatter(JsonFormatter):
 
 
 class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
+    """Gunicorn logger that records Prometheus metrics on each access log entry."""
+
     def access(
         self,
         resp: Response,
@@ -116,6 +129,22 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
 
 
 class GunicornJsonCapableLogger(PrometheusGunicornLogger):
+    """Gunicorn logger that aligns formatting with the application logging setup.
+
+    Gunicorn manages its own loggers (``gunicorn.error``, ``gunicorn.access``)
+    with ``propagate=False``, so they bypass the root handler configured by
+    :func:`~common.core.logging.setup_logging`. This class bridges that gap:
+
+    * **Error log** — receives a ``ProcessorFormatter`` (via
+      :func:`~common.core.logging.build_processor_formatter`) so that
+      Gunicorn's operational messages share the same format and ISO timestamps
+      as application logs.
+    * **Access log (JSON mode)** — receives a
+      :class:`GunicornAccessLogJsonFormatter` that produces structured JSON
+      with request-specific fields.  In generic mode the access log keeps
+      Gunicorn's default CLF format.
+    """
+
     def setup(self, cfg: Config) -> None:
         super().setup(cfg)
         log_format = getattr(settings, "LOG_FORMAT", "generic")
