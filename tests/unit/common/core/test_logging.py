@@ -2,12 +2,19 @@ import json
 import logging
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING, Generator
 from unittest.mock import patch
 
 import pytest
+import sentry_sdk
 import structlog
+from sentry_sdk.envelope import Envelope
+from sentry_sdk.transport import Transport
 
 from common.core.logging import JsonFormatter, setup_logging
+
+if TYPE_CHECKING:
+    from sentry_sdk._types import Event
 
 
 @pytest.fixture(autouse=True)
@@ -22,6 +29,24 @@ def reset_logging() -> None:
 @pytest.fixture
 def test_app_loggers() -> list[str]:
     return ["test"]
+
+
+class MockSentryTransport(Transport):
+    def __init__(self) -> None:
+        self.events: list[Event] = []
+
+    def capture_envelope(self, envelope: Envelope) -> None:
+        if event := envelope.get_event():
+            self.events.append(event)
+
+
+@pytest.fixture
+def sentry_transport_mock() -> Generator[MockSentryTransport, None, None]:
+    transport = MockSentryTransport()
+    sentry_sdk.init(transport=transport, transport_queue_size=0)
+    yield transport
+    sentry_sdk.flush()
+    sentry_sdk.init(transport=None)
 
 
 @pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
@@ -320,6 +345,77 @@ def test_setup_logging__application_loggers__third_party_filtered(
     output = capsys.readouterr().out
     assert "app message" in output
     assert "noisy third-party message" not in output
+
+
+def test_setup_logging__stdlib_error__sentry_captures_clean_message(
+    capsys: pytest.CaptureFixture[str],
+    test_app_loggers: list[str],
+    sentry_transport_mock: "MockSentryTransport",
+) -> None:
+    """Verify Sentry receives the original message, not the rendered output.
+
+    Sentry's ``LoggingIntegration`` monkey-patches ``Logger.callHandlers``
+    and reads ``record.msg`` / ``record.args`` in a ``finally`` block
+    *after* all handlers (and formatters) have run::
+
+        try:
+            old_callhandlers(self, record)  # formatters run here
+        finally:
+            integration._handle_record(record)  # reads record.msg
+
+    structlog's ``ProcessorFormatter.format()`` replaces ``record.msg``
+    with rendered output (JSON/console) and clears ``record.args`` to
+    ``()``.  Without ``_SentryFriendlyProcessorFormatter``, Sentry would
+    see a JSON blob as the message — breaking event grouping because every
+    rendered string (containing timestamps, PIDs, …) is unique.
+
+    ``_SentryFriendlyProcessorFormatter`` snapshots and restores the
+    originals so Sentry sees the clean message template and args.
+    """
+    # Given
+    setup_logging(
+        log_level="DEBUG", log_format="json", application_loggers=test_app_loggers
+    )
+    test_logger = logging.getLogger("test.sentry_compat")
+
+    # When
+    test_logger.error("order %s failed for %s", "ORD-123", "alice")
+
+    # Then — the stream got JSON
+    output = capsys.readouterr().out.strip()
+    parsed = json.loads(output)
+    assert parsed["message"] == "order ORD-123 failed for alice"
+
+    # And — Sentry received the original message template, not the JSON blob.
+    assert len(sentry_transport_mock.events) == 1
+    logentry = sentry_transport_mock.events[0]["logentry"]
+    assert logentry["message"] == "order %s failed for %s"
+    assert logentry["params"] == ["ORD-123", "alice"]
+    assert logentry["formatted"] == "order ORD-123 failed for alice"
+
+
+def test_setup_logging__structlog_error__sentry_captures_with_context(
+    capsys: pytest.CaptureFixture[str],
+    test_app_loggers: list[str],
+    sentry_transport_mock: "MockSentryTransport",
+) -> None:
+    """Verify structlog errors reach Sentry with context from sentry_processor."""
+    # Given
+    setup_logging(
+        log_level="DEBUG", log_format="json", application_loggers=test_app_loggers
+    )
+    structured_logger = structlog.get_logger("test.sentry_structlog")
+
+    # When
+    structured_logger.error("payment failed", order_id="ORD-456")
+
+    # Then — Sentry captured the event
+    assert len(sentry_transport_mock.events) == 1
+    event = sentry_transport_mock.events[0]
+
+    # And — sentry_processor set the structlog context
+    assert "structlog" in event["contexts"]
+    assert event["contexts"]["structlog"]["order_id"] == "ORD-456"
 
 
 def test_setup_logging__default_args__root_at_warning() -> None:

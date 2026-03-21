@@ -129,8 +129,33 @@ def map_event_to_json_record(
     return event_dict
 
 
-def build_processor_formatter(log_format: str) -> structlog.stdlib.ProcessorFormatter:
-    """Build a ``ProcessorFormatter`` for the given log format.
+class _SentryFriendlyProcessorFormatter(structlog.stdlib.ProcessorFormatter):
+    """Preserves ``record.msg`` and ``record.args`` across formatting.
+
+    Sentry's ``LoggingIntegration`` reads these fields *after* handlers run;
+    structlog's ``ProcessorFormatter`` replaces them with rendered output, breaking event
+    grouping. We snapshot before and restore after so Sentry sees the originals
+    and avoids failed event deduplication.
+    """
+
+    def format(self, record: logging.LogRecord) -> str:
+        # Snapshot the original fields before ProcessorFormatter
+        # replaces them with rendered output.
+        original_msg = record.msg
+        original_args = record.args
+
+        formatted = super().format(record)
+
+        # Restore so Sentry (and any other post-handler hook) sees
+        # the original message template and substitution args.
+        record.msg = original_msg
+        record.args = original_args
+
+        return formatted
+
+
+def build_processor_formatter(log_format: str) -> _SentryFriendlyProcessorFormatter:
+    """Build a ``_SentryFriendlyProcessorFormatter`` for the given log format.
 
     This is used both by :func:`setup_structlog` (for the root logger) and by
     Gunicorn logger classes so that all log output shares the same rendering.
@@ -153,7 +178,7 @@ def build_processor_formatter(log_format: str) -> structlog.stdlib.ProcessorForm
         structlog.stdlib.ExtraAdder(),
     ]
 
-    return structlog.stdlib.ProcessorFormatter(
+    return _SentryFriendlyProcessorFormatter(
         processors=[
             structlog.stdlib.ProcessorFormatter.remove_processors_meta,
             *renderer_processors,
