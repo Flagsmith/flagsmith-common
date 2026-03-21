@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime, timedelta
 from typing import Any
@@ -126,9 +127,10 @@ class GunicornJsonCapableLogger(PrometheusGunicornLogger):
             self.error_log.removeHandler(handler)
         self.error_log.propagate = True
 
-        # Access log: JSON propagates to root for structured output;
-        # generic keeps Gunicorn's own CLF handler set by super().setup().
+        # In JSON mode, replace the access log formatter with the root's
+        # ProcessorFormatter. In generic mode, keep Gunicorn's CLF formatter.
+        # The handler itself is preserved so ACCESS_LOG_LOCATION is respected.
         if os.environ.get("LOG_FORMAT") == "json":
-            for handler in self.access_log.handlers[:]:
-                self.access_log.removeHandler(handler)
-            self.access_log.propagate = True
+            root_formatter = logging.getLogger().handlers[0].formatter
+            for handler in self.access_log.handlers:
+                handler.setFormatter(root_formatter)

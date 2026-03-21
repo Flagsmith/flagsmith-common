@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 import structlog
@@ -65,24 +66,28 @@ def test_gunicorn_prometheus_gunicorn_logger__access_logged__expected_metrics(
     )
 
 
-def test_gunicorn_json_capable_logger__json_format__access_log_propagates(
+def test_gunicorn_json_capable_logger__json_format__access_log_uses_processor_formatter(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     # Given
     monkeypatch.setenv("LOG_FORMAT", "json")
+    setup_logging(log_level="INFO", log_format="json")
     config = Config()
     config.set("accesslog", "-")
 
     # When
     logger = GunicornJsonCapableLogger(config)
 
-    # Then — error log propagates
+    # Then — error log propagates to root
     assert logger.error_log.handlers == []
     assert logger.error_log.propagate is True
 
-    # And — access log propagates (structured fields via foreign_pre_chain)
-    assert logger.access_log.handlers == []
-    assert logger.access_log.propagate is True
+    # And — access log keeps its handler (respecting accesslog destination)
+    # but uses the root's ProcessorFormatter for structured JSON output
+    assert len(logger.access_log.handlers) == 1
+    assert logger.access_log.propagate is False
+    root_formatter = logging.getLogger().handlers[0].formatter
+    assert logger.access_log.handlers[0].formatter is root_formatter
 
 
 def test_gunicorn_json_capable_logger__generic_format__access_log_keeps_clf(
@@ -103,6 +108,61 @@ def test_gunicorn_json_capable_logger__generic_format__access_log_keeps_clf(
     # And — access log has its own CLF handler, does not propagate
     assert len(logger.access_log.handlers) == 1
     assert logger.access_log.propagate is False
+
+
+@pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
+def test_gunicorn_json_capable_logger__json_format_file__writes_to_access_log_location(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    monkeypatch.setenv("LOG_FORMAT", "json")
+    access_log_file = tmp_path / "access.log"
+    setup_logging(
+        log_level="DEBUG",
+        log_format="json",
+        application_loggers=["gunicorn"],
+        extra_foreign_processors=[make_gunicorn_access_processor()],
+    )
+    config = Config()
+    config.set("accesslog", str(access_log_file))
+    gunicorn_logger = GunicornJsonCapableLogger(config)
+
+    # When
+    gunicorn_logger.access_log.info(
+        '%(h)s "%(r)s" %(s)s',
+        {
+            "h": "10.0.0.1",
+            "r": "GET /health HTTP/1.1",
+            "s": 200,
+            "m": "GET",
+            "U": "/health",
+            "q": "",
+            "a": "curl",
+            "M": 5,
+            "B": 2,
+            "t": "[08/Dec/2023:06:05:47 +0000]",
+        },
+    )
+
+    # Then — output went to the file, not stdout
+    content = access_log_file.read_text()
+    assert json.loads(content) == {
+        "duration_in_ms": 5,
+        "levelname": "INFO",
+        "logger_name": "gunicorn.access",
+        "message": '10.0.0.1 "GET /health HTTP/1.1" 200',
+        "method": "GET",
+        "path": "/health",
+        "pid": os.getpid(),
+        "remote_ip": "10.0.0.1",
+        "response_size_in_bytes": 2,
+        "status": "200",
+        "thread_name": "MainThread",
+        "time": "2023-12-08T06:05:47+00:00",
+        "timestamp": "2023-12-08T06:05:47Z",
+        "user_agent": "curl",
+    }
 
 
 @pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
