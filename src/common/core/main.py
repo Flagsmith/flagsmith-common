@@ -12,6 +12,7 @@ from environs import Env
 
 from common.core.cli import healthcheck
 from common.core.logging import setup_logging
+from common.gunicorn.processors import make_gunicorn_access_processor
 
 env = Env()
 
@@ -37,8 +38,6 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     ctx = contextlib.ExitStack()
 
     # Set up logging early, before Django settings are loaded.
-    from common.gunicorn.logging import make_gunicorn_access_processor
-
     setup_logging(
         log_level=env.str("LOG_LEVEL", "INFO"),
         log_format=env.str("LOG_FORMAT", "generic"),

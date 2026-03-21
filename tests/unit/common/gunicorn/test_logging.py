@@ -13,8 +13,8 @@ from common.core.logging import setup_logging
 from common.gunicorn.logging import (
     GunicornJsonCapableLogger,
     PrometheusGunicornLogger,
-    make_gunicorn_access_processor,
 )
+from common.gunicorn.processors import make_gunicorn_access_processor
 from common.gunicorn.utils import DEFAULT_ACCESS_LOG_FORMAT
 from common.test_tools import AssertMetricFixture
 
