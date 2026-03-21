@@ -2,6 +2,7 @@ import json
 import logging
 import logging.config
 import os
+import sys
 import threading
 from typing import Any
 
@@ -54,6 +55,7 @@ def setup_logging(
     log_format: str = "generic",
     logging_configuration_file: str | None = None,
     application_loggers: list[str] | None = None,
+    extra_foreign_processors: list[Processor] | None = None,
 ) -> None:
     """
     Set up logging for the application.
@@ -70,6 +72,9 @@ def setup_logging(
             These loggers are set to ``log_level`` while the root logger uses
             ``max(log_level, WARNING)`` to suppress noise from third-party
             libraries. If ``log_level`` is DEBUG, everything logs at DEBUG.
+        extra_foreign_processors: Additional structlog processors to run in
+            the ``foreign_pre_chain`` for stdlib log records (e.g. the
+            Gunicorn access log field extractor).
     """
     if logging_configuration_file:
         with open(logging_configuration_file) as f:
@@ -105,7 +110,9 @@ def setup_logging(
         }
         logging.config.dictConfig(dict_config)
 
-    setup_structlog(log_format=log_format)
+    setup_structlog(
+        log_format=log_format, extra_foreign_processors=extra_foreign_processors
+    )
 
 
 def map_event_to_json_record(
@@ -144,21 +151,38 @@ class _SentryFriendlyProcessorFormatter(structlog.stdlib.ProcessorFormatter):
         original_msg = record.msg
         original_args = record.args
 
+        # Stash original args on the record so foreign_pre_chain
+        # processors (e.g. the Gunicorn access log extractor) can
+        # access them — ProcessorFormatter clears record.args to ()
+        # before running the chain.
+        record._original_args = original_args  # noqa: SLF001
+
         formatted = super().format(record)
 
         # Restore so Sentry (and any other post-handler hook) sees
         # the original message template and substitution args.
         record.msg = original_msg
         record.args = original_args
+        record.__dict__.pop("_original_args", None)
 
         return formatted
 
 
-def build_processor_formatter(log_format: str) -> _SentryFriendlyProcessorFormatter:
+def _drop_internal_keys(
+    logger: WrappedLogger, method_name: str, event_dict: EventDict
+) -> EventDict:
+    """Remove internal attributes that leak via ``ExtraAdder``."""
+    event_dict.pop("_original_args", None)
+    return event_dict
+
+
+def build_processor_formatter(
+    log_format: str,
+    extra_foreign_processors: list[Processor] | None = None,
+) -> _SentryFriendlyProcessorFormatter:
     """Build a ``_SentryFriendlyProcessorFormatter`` for the given log format.
 
-    This is used both by :func:`setup_structlog` (for the root logger) and by
-    Gunicorn logger classes so that all log output shares the same rendering.
+    This is used by :func:`setup_structlog` for the root logger.
     """
     if log_format == "json":
         renderer_processors: list[Processor] = [
@@ -166,8 +190,9 @@ def build_processor_formatter(log_format: str) -> _SentryFriendlyProcessorFormat
             structlog.processors.JSONRenderer(),
         ]
     else:
+        colors = sys.stdout.isatty() and structlog.dev._has_colors
         renderer_processors = [
-            structlog.dev.ConsoleRenderer(),
+            structlog.dev.ConsoleRenderer(colors=colors),
         ]
 
     foreign_pre_chain: list[Processor] = [
@@ -176,6 +201,8 @@ def build_processor_formatter(log_format: str) -> _SentryFriendlyProcessorFormat
         structlog.stdlib.add_log_level,
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.stdlib.ExtraAdder(),
+        _drop_internal_keys,
+        *(extra_foreign_processors or []),
     ]
 
     return _SentryFriendlyProcessorFormatter(
@@ -189,11 +216,14 @@ def build_processor_formatter(log_format: str) -> _SentryFriendlyProcessorFormat
 
 def setup_structlog(
     log_format: str,
+    extra_foreign_processors: list[Processor] | None = None,
 ) -> None:
     """Configure structlog to route through stdlib logging."""
     from common.core.sentry import sentry_processor
 
-    formatter = build_processor_formatter(log_format)
+    formatter = build_processor_formatter(
+        log_format, extra_foreign_processors=extra_foreign_processors
+    )
 
     # Replace the formatter on existing root handlers with ProcessorFormatter.
     root = logging.getLogger()

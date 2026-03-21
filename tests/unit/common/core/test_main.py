@@ -1,5 +1,5 @@
 import os
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 from common.core.main import ensure_cli_env
 
@@ -11,6 +11,7 @@ def test_ensure_cli_env__env_vars_set__calls_setup_logging_with_env_values() -> 
         "LOG_FORMAT": "json",
         "LOGGING_CONFIGURATION_FILE": "/tmp/logging.json",
         "APPLICATION_LOGGERS": "myapp,mylib",
+        "ACCESS_LOG_EXTRA_ITEMS": "{flagsmith.route}e,{origin}i",
     }
 
     # When
@@ -27,6 +28,7 @@ def test_ensure_cli_env__env_vars_set__calls_setup_logging_with_env_values() -> 
         log_format="json",
         logging_configuration_file="/tmp/logging.json",
         application_loggers=["myapp", "mylib"],
+        extra_foreign_processors=ANY,
     )
 
 
@@ -45,4 +47,5 @@ def test_ensure_cli_env__no_env_vars__calls_setup_logging_with_defaults() -> Non
         log_format="generic",
         logging_configuration_file=None,
         application_loggers=None,
+        extra_foreign_processors=ANY,
     )

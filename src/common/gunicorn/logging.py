@@ -1,100 +1,87 @@
-import logging
-import sys
+import os
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from django.conf import settings
 from gunicorn.config import Config  # type: ignore[import-untyped]
 from gunicorn.http.message import Request  # type: ignore[import-untyped]
 from gunicorn.http.wsgi import Response  # type: ignore[import-untyped]
 from gunicorn.instrument.statsd import (  # type: ignore[import-untyped]
     Statsd as StatsdGunicornLogger,
 )
+from structlog.typing import EventDict, Processor, WrappedLogger
 
-from common.core.logging import JsonFormatter, JsonRecord, build_processor_formatter
 from common.gunicorn import metrics
 from common.gunicorn.constants import (
-    WSGI_EXTRA_PREFIX,
     WSGI_EXTRA_SUFFIX_TO_CATEGORY,
     wsgi_extra_key_regex,
 )
 from common.gunicorn.utils import get_extra
 
 
-class GunicornAccessLogJsonRecord(JsonRecord, extra_items=Any, total=False):  # type: ignore[call-arg]  # TODO https://github.com/python/mypy/issues/18176
-    time: str
-    path: str
-    remote_ip: str
-    route: str
-    method: str
-    status: str
-    user_agent: str
-    duration_in_ms: int
-    response_size_in_bytes: int
+def make_gunicorn_access_processor(
+    access_log_extra_items: list[str] | None = None,
+) -> Processor:
+    """Create a processor that extracts structured fields from Gunicorn access logs.
 
+    Gunicorn populates ``record.args`` with a dict of request/response data
+    (keyed by format variables like ``h``, ``m``, ``s``, ``U``, etc.).  This
+    processor detects those records and promotes the data into the event dict
+    so it flows through the normal rendering pipeline.
 
-class GunicornAccessLogJsonFormatter(JsonFormatter):
-    """JSON formatter for Gunicorn access logs.
-
-    Extends :class:`~common.core.logging.JsonFormatter` with request-specific
-    fields extracted from Gunicorn's ``LogRecord.args`` dict.
-
-    This uses a stdlib ``Formatter`` rather than a structlog
-    ``ProcessorFormatter`` because Gunicorn populates ``record.args`` with
-    its own format variables — working with the ``LogRecord`` directly is
-    the natural abstraction for this data.
+    Pass the returned processor to :func:`~common.core.logging.setup_logging`
+    via ``extra_foreign_processors``.
     """
 
-    def _get_extra(self, record_args: dict[str, Any]) -> dict[str, Any]:
-        ret: dict[str, dict[str, Any]] = {}
+    def processor(
+        logger: WrappedLogger,
+        method_name: str,
+        event_dict: EventDict,
+    ) -> EventDict:
+        record = event_dict.get("_record")
+        if record is None or record.name != "gunicorn.access":
+            return event_dict
+        # ProcessorFormatter clears record.args before running
+        # foreign_pre_chain; the originals are stashed on the record
+        # by _SentryFriendlyProcessorFormatter.format().
+        args = getattr(record, "_original_args", record.args)
+        if not isinstance(args, dict):
+            return event_dict
 
-        extra_items_to_log: list[str] | None
-        if extra_items_to_log := getattr(settings, "ACCESS_LOG_EXTRA_ITEMS", None):
-            # We expect the extra items to be in the form of
-            # Gunicorn's access log format string for
-            # request headers, response headers and environ variables
-            # without the % prefix, e.g. "{origin}i" or "{flagsmith.environment_id}e"
-            # https://gunicorn.org/reference/settings/#access_log_format
-            for extra_key in extra_items_to_log:
+        url = args.get("U", "")
+        if q := args.get("q"):
+            url += f"?{q}"
+
+        if t := args.get("t"):
+            event_dict["time"] = datetime.strptime(
+                t, "[%d/%b/%Y:%H:%M:%S %z]"
+            ).isoformat()
+        event_dict["path"] = url
+        event_dict["remote_ip"] = args.get("h", "")
+        event_dict["method"] = args.get("m", "")
+        event_dict["status"] = str(args.get("s", ""))
+        event_dict["user_agent"] = args.get("a", "")
+        event_dict["duration_in_ms"] = args.get("M", 0)
+        event_dict["response_size_in_bytes"] = args.get("B") or 0
+
+        if access_log_extra_items:
+            for extra_key in access_log_extra_items:
                 extra_key_lower = extra_key.lower()
                 if (
-                    (extra_value := record_args.get(extra_key_lower))
+                    (extra_value := args.get(extra_key_lower))
                     and (re_match := wsgi_extra_key_regex.match(extra_key_lower))
                     and (
-                        extra_category := WSGI_EXTRA_SUFFIX_TO_CATEGORY.get(
+                        category := WSGI_EXTRA_SUFFIX_TO_CATEGORY.get(
                             re_match.group("suffix")
                         )
                     )
                 ):
-                    ret.setdefault(extra_category, {})[re_match.group("key")] = (
+                    event_dict.setdefault(category, {})[re_match.group("key")] = (
                         extra_value
                     )
 
-        return ret
+        return event_dict
 
-    def get_json_record(self, record: logging.LogRecord) -> GunicornAccessLogJsonRecord:
-        args = record.args
-
-        if TYPE_CHECKING:
-            assert isinstance(args, dict)
-
-        url = args["U"]
-        if q := args["q"]:
-            url += f"?{q}"
-
-        return {
-            **super().get_json_record(record),
-            **self._get_extra(args),  # type: ignore[typeddict-item]  # TODO https://github.com/python/mypy/issues/18176
-            "time": datetime.strptime(args["t"], "[%d/%b/%Y:%H:%M:%S %z]").isoformat(),
-            "path": url,
-            "remote_ip": args["h"],
-            "route": args.get(f"{{{WSGI_EXTRA_PREFIX}route}}e") or "",
-            "method": args["m"],
-            "status": str(args["s"]),
-            "user_agent": args["a"],
-            "duration_in_ms": args["M"],
-            "response_size_in_bytes": args["B"] or 0,
-        }
+    return processor
 
 
 class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
@@ -129,32 +116,19 @@ class PrometheusGunicornLogger(StatsdGunicornLogger):  # type: ignore[misc]
 
 
 class GunicornJsonCapableLogger(PrometheusGunicornLogger):
-    """Gunicorn logger that aligns formatting with the application logging setup.
-
-    Gunicorn manages its own loggers (``gunicorn.error``, ``gunicorn.access``)
-    with ``propagate=False``, so they bypass the root handler configured by
-    :func:`~common.core.logging.setup_logging`. This class bridges that gap:
-
-    * **Error log** — receives a ``ProcessorFormatter`` (via
-      :func:`~common.core.logging.build_processor_formatter`) so that
-      Gunicorn's operational messages share the same format and ISO timestamps
-      as application logs.
-    * **Access log (JSON mode)** — receives a
-      :class:`GunicornAccessLogJsonFormatter` that produces structured JSON
-      with request-specific fields.  In generic mode the access log keeps
-      Gunicorn's default CLF format.
-    """
+    """Gunicorn logger that integrates with the application logging setup."""
 
     def setup(self, cfg: Config) -> None:
         super().setup(cfg)
-        log_format = getattr(settings, "LOG_FORMAT", "generic")
-        if log_format == "json":
-            self._set_handler(
-                self.access_log,
-                cfg.accesslog,
-                GunicornAccessLogJsonFormatter(),
-                stream=sys.stdout,
-            )
-        formatter = build_processor_formatter(log_format)
-        for handler in self.error_log.handlers:
-            handler.setFormatter(formatter)
+
+        # Error log always propagates to root.
+        for handler in self.error_log.handlers[:]:
+            self.error_log.removeHandler(handler)
+        self.error_log.propagate = True
+
+        # Access log: JSON propagates to root for structured output;
+        # generic keeps Gunicorn's own CLF handler set by super().setup().
+        if os.environ.get("LOG_FORMAT") == "json":
+            for handler in self.access_log.handlers[:]:
+                self.access_log.removeHandler(handler)
+            self.access_log.propagate = True
