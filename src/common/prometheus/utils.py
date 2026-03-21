@@ -1,13 +1,10 @@
 import importlib
 
 import prometheus_client
-from django.conf import settings
 from prometheus_client.metrics import MetricWrapperBase
 from prometheus_client.multiprocess import MultiProcessCollector
 
-
-class Histogram(prometheus_client.Histogram):
-    DEFAULT_BUCKETS = settings.PROMETHEUS_HISTOGRAM_BUCKETS
+Histogram = prometheus_client.Histogram
 
 
 def get_registry() -> prometheus_client.CollectorRegistry:
