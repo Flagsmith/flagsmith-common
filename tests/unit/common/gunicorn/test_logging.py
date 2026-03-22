@@ -255,6 +255,31 @@ def test_gunicorn_access_processor__json_format__extracts_structured_fields(
     }
 
 
+@pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
+def test_gunicorn_access_processor__non_dict_args__passes_through(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    monkeypatch.setenv("LOG_FORMAT", "json")
+    setup_logging(
+        log_level="DEBUG",
+        log_format="json",
+        application_loggers=["gunicorn"],
+        extra_foreign_processors=[make_gunicorn_access_processor()],
+    )
+    access_logger = logging.getLogger("gunicorn.access")
+
+    # When
+    access_logger.info("Worker %s booting on port %d", "web", 8000)
+
+    # Then
+    output = capsys.readouterr().out.strip()
+    parsed = json.loads(output)
+    assert parsed["message"] == "Worker web booting on port 8000"
+    assert "method" not in parsed
+
+
 def test_gunicorn_json_capable_logger__generic_format__outputs_pure_clf(
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
