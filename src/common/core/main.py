@@ -67,7 +67,7 @@ def execute_from_command_line(argv: list[str]) -> None:
             "checktaskprocessorthreadhealth": healthcheck.main,
         }[subcommand]
     except (IndexError, KeyError):
-        pass
+        logger.info("Invoking Django")
     else:
         return subcommand_main(
             argv[2:],
