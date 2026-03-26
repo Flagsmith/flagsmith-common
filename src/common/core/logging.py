@@ -155,7 +155,7 @@ class _SentryFriendlyProcessorFormatter(structlog.stdlib.ProcessorFormatter):
         # processors (e.g. the Gunicorn access log extractor) can
         # access them — ProcessorFormatter clears record.args to ()
         # before running the chain.
-        record._original_args = original_args  # noqa: SLF001
+        record._original_args = original_args
 
         formatted = super().format(record)
 
@@ -163,7 +163,7 @@ class _SentryFriendlyProcessorFormatter(structlog.stdlib.ProcessorFormatter):
         # the original message template and substitution args.
         record.msg = original_msg
         record.args = original_args
-        record.__dict__.pop("_original_args", None)
+        del record._original_args  # type: ignore[attr-defined]
 
         return formatted
 
