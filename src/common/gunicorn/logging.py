@@ -59,7 +59,8 @@ class GunicornJsonCapableLogger(PrometheusGunicornLogger):
         # In JSON mode, replace the access log formatter with the root's
         # ProcessorFormatter. In generic mode, keep Gunicorn's CLF formatter.
         # The handler itself is preserved so ACCESS_LOG_LOCATION is respected.
-        if os.environ.get("LOG_FORMAT") == "json":
-            root_formatter = logging.getLogger().handlers[0].formatter
+        root_handlers = logging.getLogger().handlers
+        if os.environ.get("LOG_FORMAT") == "json" and root_handlers:
+            root_formatter = root_handlers[0].formatter
             for handler in self.access_log.handlers:
                 handler.setFormatter(root_formatter)
