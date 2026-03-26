@@ -167,13 +167,13 @@ class _SentryFriendlyProcessorFormatter(structlog.stdlib.ProcessorFormatter):
 
         return formatted
 
-
-def _drop_internal_keys(
-    logger: WrappedLogger, method_name: str, event_dict: EventDict
-) -> EventDict:
-    """Remove internal attributes that leak via ``ExtraAdder``."""
-    event_dict.pop("_original_args", None)
-    return event_dict
+    @staticmethod
+    def drop_internal_keys(
+        _: WrappedLogger, __: str, event_dict: EventDict
+    ) -> EventDict:
+        """Remove internal attributes that leak via ``ExtraAdder``."""
+        event_dict.pop("_original_args", None)
+        return event_dict
 
 
 def build_processor_formatter(
@@ -201,7 +201,7 @@ def build_processor_formatter(
         structlog.stdlib.add_log_level,
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.stdlib.ExtraAdder(),
-        _drop_internal_keys,
+        _SentryFriendlyProcessorFormatter.drop_internal_keys,
         *(extra_foreign_processors or []),
     ]
 
