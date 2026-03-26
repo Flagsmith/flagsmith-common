@@ -145,6 +145,42 @@ class _SentryFriendlyProcessorFormatter(structlog.stdlib.ProcessorFormatter):
     and avoids failed event deduplication.
     """
 
+    def __init__(
+        self,
+        log_format: str = "generic",
+        extra_foreign_processors: list[Processor] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if log_format == "json":
+            renderer_processors: list[Processor] = [
+                map_event_to_json_record,
+                structlog.processors.JSONRenderer(),
+            ]
+        else:
+            colors = sys.stdout.isatty() and structlog.dev._has_colors
+            renderer_processors = [
+                structlog.dev.ConsoleRenderer(colors=colors),
+            ]
+
+        foreign_pre_chain: list[Processor] = [
+            structlog.contextvars.merge_contextvars,
+            structlog.stdlib.add_logger_name,
+            structlog.stdlib.add_log_level,
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.stdlib.ExtraAdder(),
+            self.drop_internal_keys,
+            *(extra_foreign_processors or []),
+        ]
+
+        super().__init__(
+            processors=[
+                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                *renderer_processors,
+            ],
+            foreign_pre_chain=foreign_pre_chain,
+            **kwargs,
+        )
+
     def format(self, record: logging.LogRecord) -> str:
         # Snapshot the original fields before ProcessorFormatter
         # replaces them with rendered output.
@@ -176,44 +212,6 @@ class _SentryFriendlyProcessorFormatter(structlog.stdlib.ProcessorFormatter):
         return event_dict
 
 
-def build_processor_formatter(
-    log_format: str,
-    extra_foreign_processors: list[Processor] | None = None,
-) -> _SentryFriendlyProcessorFormatter:
-    """Build a ``_SentryFriendlyProcessorFormatter`` for the given log format.
-
-    This is used by :func:`setup_structlog` for the root logger.
-    """
-    if log_format == "json":
-        renderer_processors: list[Processor] = [
-            map_event_to_json_record,
-            structlog.processors.JSONRenderer(),
-        ]
-    else:
-        colors = sys.stdout.isatty() and structlog.dev._has_colors
-        renderer_processors = [
-            structlog.dev.ConsoleRenderer(colors=colors),
-        ]
-
-    foreign_pre_chain: list[Processor] = [
-        structlog.contextvars.merge_contextvars,
-        structlog.stdlib.add_logger_name,
-        structlog.stdlib.add_log_level,
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.stdlib.ExtraAdder(),
-        _SentryFriendlyProcessorFormatter.drop_internal_keys,
-        *(extra_foreign_processors or []),
-    ]
-
-    return _SentryFriendlyProcessorFormatter(
-        processors=[
-            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-            *renderer_processors,
-        ],
-        foreign_pre_chain=foreign_pre_chain,
-    )
-
-
 def setup_structlog(
     log_format: str,
     extra_foreign_processors: list[Processor] | None = None,
@@ -221,8 +219,8 @@ def setup_structlog(
     """Configure structlog to route through stdlib logging."""
     from common.core.sentry import sentry_processor
 
-    formatter = build_processor_formatter(
-        log_format, extra_foreign_processors=extra_foreign_processors
+    formatter = _SentryFriendlyProcessorFormatter(
+        log_format=log_format, extra_foreign_processors=extra_foreign_processors
     )
 
     # Replace the formatter on existing root handlers with ProcessorFormatter.
