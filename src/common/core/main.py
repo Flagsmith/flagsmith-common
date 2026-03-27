@@ -8,8 +8,13 @@ from tempfile import mkdtemp
 from django.core.management import (
     execute_from_command_line as django_execute_from_command_line,
 )
+from environs import Env
 
 from common.core.cli import healthcheck
+from common.core.logging import setup_logging
+from common.gunicorn.processors import make_gunicorn_access_processor
+
+env = Env()
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +37,18 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     """
     ctx = contextlib.ExitStack()
 
-    # TODO @khvn26 Move logging setup to here
+    # Set up logging early, before Django settings are loaded.
+    setup_logging(
+        log_level=env.str("LOG_LEVEL", "INFO"),
+        log_format=env.str("LOG_FORMAT", "generic"),
+        logging_configuration_file=env.str("LOGGING_CONFIGURATION_FILE", None),
+        application_loggers=env.list("APPLICATION_LOGGERS", []) or None,
+        extra_foreign_processors=[
+            make_gunicorn_access_processor(
+                env.list("ACCESS_LOG_EXTRA_ITEMS", []) or None,
+            ),
+        ],
+    )
 
     # Prometheus multiproc support
     if not os.environ.get("PROMETHEUS_MULTIPROC_DIR"):

@@ -1,100 +1,30 @@
+import json
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
+from pathlib import Path
 
 import pytest
-from gunicorn.config import AccessLogFormat, Config  # type: ignore[import-untyped]
-from pytest_django.fixtures import SettingsWrapper
+import structlog
+from gunicorn.config import Config  # type: ignore[import-untyped]
 from pytest_mock import MockerFixture
 
-from common.core.logging import JsonFormatter
+from common.core.logging import setup_logging
 from common.gunicorn.logging import (
-    GunicornAccessLogJsonFormatter,
     GunicornJsonCapableLogger,
     PrometheusGunicornLogger,
 )
+from common.gunicorn.processors import make_gunicorn_access_processor
+from common.gunicorn.utils import DEFAULT_ACCESS_LOG_FORMAT
 from common.test_tools import AssertMetricFixture
 
 
-@pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
-def test_gunicorn_access_log_json_formatter__format_log__outputs_expected(
-    settings: SettingsWrapper,
-) -> None:
-    # Given
-    settings.ACCESS_LOG_EXTRA_ITEMS = [
-        "{flagsmith.route}e",
-        "{X-LOG-ME-STATUS}o",
-        "{x-log-me}i",
-    ]
-
-    gunicorn_access_log_json_formatter = GunicornAccessLogJsonFormatter()
-    log_record = logging.LogRecord(
-        name="gunicorn.access",
-        level=logging.INFO,
-        pathname="",
-        lineno=1,
-        msg=AccessLogFormat.default,
-        args={
-            "{flagsmith.route}e": "/test/{test_id}",
-            "{wsgi.version}e": (1, 0),
-            "{x-log-me-status}o": "acked",
-            "{x-log-me}i": "42",
-            "a": "requests",
-            "b": "42",
-            "B": 42,
-            "D": 1000000,
-            "f": "-",
-            "h": "192.168.0.1",
-            "H": None,
-            "l": "-",
-            "L": "1.0",
-            "m": "GET",
-            "M": 1000,
-            "p": "<42>",
-            "q": "foo=bar",
-            "r": "GET",
-            "s": 200,
-            "T": 1,
-            "t": datetime.fromisoformat("2023-12-08T06:05:47+00:00").strftime(
-                "[%d/%b/%Y:%H:%M:%S %z]"
-            ),
-            "u": "-",
-            "U": "/test/42",
-        },
-        exc_info=None,
-    )
-    expected_pid = os.getpid()
-
-    # When
-    json_log = gunicorn_access_log_json_formatter.get_json_record(log_record)
-
-    # Then
-    assert json_log == {
-        "duration_in_ms": 1000,
-        "environ_variables": {
-            "flagsmith.route": "/test/{test_id}",
-        },
-        "levelname": "INFO",
-        "logger_name": "gunicorn.access",
-        "message": '192.168.0.1 - - [08/Dec/2023:06:05:47 +0000] "GET" 200 42 "-" "requests"',
-        "method": "GET",
-        "path": "/test/42?foo=bar",
-        "pid": expected_pid,
-        "remote_ip": "192.168.0.1",
-        "request_headers": {
-            "x-log-me": "42",
-        },
-        "response_headers": {
-            "x-log-me-status": "acked",
-        },
-        "response_size_in_bytes": 42,
-        "route": "/test/{test_id}",
-        "status": "200",
-        "thread_name": "MainThread",
-        "time": "2023-12-08T06:05:47+00:00",
-        "timestamp": "2023-12-08 06:05:47,000",
-        "user_agent": "requests",
-    }
+@pytest.fixture(autouse=True)
+def _reset_logging() -> None:
+    root = logging.getLogger()
+    for handler in root.handlers[:]:
+        root.removeHandler(handler)
+    structlog.reset_defaults()
 
 
 def test_gunicorn_prometheus_gunicorn_logger__access_logged__expected_metrics(
@@ -136,36 +66,264 @@ def test_gunicorn_prometheus_gunicorn_logger__access_logged__expected_metrics(
     )
 
 
-def test_gunicorn_json_capable_logger__json_log_format__sets_expected_formatters(
-    settings: SettingsWrapper,
+def test_gunicorn_json_capable_logger__json_format__access_log_uses_processor_formatter(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     # Given
-    settings.LOG_FORMAT = "json"
+    monkeypatch.setenv("LOG_FORMAT", "json")
+    setup_logging(log_level="INFO", log_format="json")
     config = Config()
     config.set("accesslog", "-")
 
     # When
     logger = GunicornJsonCapableLogger(config)
 
-    # Then
-    assert isinstance(
-        logger.error_log.handlers[0].formatter,
-        JsonFormatter,
-    )
-    assert isinstance(
-        logger.access_log.handlers[0].formatter,
-        GunicornAccessLogJsonFormatter,
-    )
+    # Then — error log propagates to root
+    assert logger.error_log.handlers == []
+    assert logger.error_log.propagate is True
+
+    # And — access log keeps its handler (respecting accesslog destination)
+    # but uses the root's ProcessorFormatter for structured JSON output
+    assert len(logger.access_log.handlers) == 1
+    assert logger.access_log.propagate is False
+    root_formatter = logging.getLogger().handlers[0].formatter
+    assert logger.access_log.handlers[0].formatter is root_formatter
 
 
-def test_gunicorn_json_capable_logger__non_existent_setting__not_raises(
-    settings: SettingsWrapper,
+def test_gunicorn_json_capable_logger__generic_format__access_log_keeps_clf(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     # Given
-    del settings.LOG_FORMAT
+    monkeypatch.delenv("LOG_FORMAT", raising=False)
     config = Config()
+    config.set("accesslog", "-")
 
-    # When & Then
-    from common.gunicorn.logging import GunicornJsonCapableLogger
+    # When
+    logger = GunicornJsonCapableLogger(config)
 
-    GunicornJsonCapableLogger(config)
+    # Then — error log propagates
+    assert logger.error_log.handlers == []
+    assert logger.error_log.propagate is True
+
+    # And — access log has its own CLF handler, does not propagate
+    assert len(logger.access_log.handlers) == 1
+    assert logger.access_log.propagate is False
+
+
+@pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
+def test_gunicorn_json_capable_logger__json_format_file__writes_to_access_log_location(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    monkeypatch.setenv("LOG_FORMAT", "json")
+    access_log_file = tmp_path / "access.log"
+    setup_logging(
+        log_level="DEBUG",
+        log_format="json",
+        application_loggers=["gunicorn"],
+        extra_foreign_processors=[make_gunicorn_access_processor()],
+    )
+    config = Config()
+    config.set("accesslog", str(access_log_file))
+    gunicorn_logger = GunicornJsonCapableLogger(config)
+
+    # When
+    gunicorn_logger.access_log.info(
+        '%(h)s "%(r)s" %(s)s',
+        {
+            "h": "10.0.0.1",
+            "r": "GET /health HTTP/1.1",
+            "s": 200,
+            "m": "GET",
+            "U": "/health",
+            "q": "",
+            "a": "curl",
+            "M": 5,
+            "B": 2,
+            "t": "[08/Dec/2023:06:05:47 +0000]",
+        },
+    )
+
+    # Then — output went to the file, not stdout
+    content = access_log_file.read_text()
+    assert json.loads(content) == {
+        "duration_in_ms": 5,
+        "levelname": "INFO",
+        "logger_name": "gunicorn.access",
+        "message": '10.0.0.1 "GET /health HTTP/1.1" 200',
+        "method": "GET",
+        "path": "/health",
+        "pid": os.getpid(),
+        "remote_ip": "10.0.0.1",
+        "response_size_in_bytes": 2,
+        "status": "200",
+        "thread_name": "MainThread",
+        "time": "2023-12-08T06:05:47+00:00",
+        "timestamp": "2023-12-08T06:05:47Z",
+        "user_agent": "curl",
+    }
+
+
+@pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
+def test_gunicorn_access_processor__json_format__extracts_structured_fields(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    monkeypatch.setenv("LOG_FORMAT", "json")
+    setup_logging(
+        log_level="DEBUG",
+        log_format="json",
+        application_loggers=["gunicorn"],
+        extra_foreign_processors=[
+            make_gunicorn_access_processor(
+                [
+                    "{origin}i",
+                    "{access-control-allow-origin}o",
+                    "{flagsmith.route}e",
+                    "{x-log-me-status}o",
+                    "{x-log-me}i",
+                ]
+            ),
+        ],
+    )
+    config = Config()
+    config.set("accesslog", "-")
+    gunicorn_logger = GunicornJsonCapableLogger(config)
+    access_logger = gunicorn_logger.access_log
+
+    record_args = {
+        "h": "192.168.0.1",
+        "l": "-",
+        "u": "-",
+        "t": "[08/Dec/2023:06:05:47 +0000]",
+        "r": "GET /test/42?foo=bar HTTP/1.1",
+        "m": "GET",
+        "U": "/test/42",
+        "q": "foo=bar",
+        "s": 200,
+        "B": 42,
+        "b": "42",
+        "f": "-",
+        "a": "requests",
+        "T": 1,
+        "M": 1000,
+        "D": 1000000,
+        "L": "1.0",
+        "p": "<42>",
+        "{origin}i": "https://app.flagsmith.com",
+        "{access-control-allow-origin}o": "https://app.flagsmith.com",
+        "{flagsmith.route}e": "/test/{test_id}",
+        "{x-log-me-status}o": "acked",
+        "{x-log-me}i": "42",
+    }
+
+    # When
+    access_logger.info(DEFAULT_ACCESS_LOG_FORMAT, record_args)
+
+    # Then
+    output = capsys.readouterr().out.strip()
+    parsed = json.loads(output)
+    assert parsed == {
+        "duration_in_ms": 1000,
+        "environ_variables": {"flagsmith.route": "/test/{test_id}"},
+        "levelname": "INFO",
+        "logger_name": "gunicorn.access",
+        "message": (
+            '192.168.0.1 - - [08/Dec/2023:06:05:47 +0000] "GET /test/42?foo=bar HTTP/1.1"'
+            ' 200 42 "-" "requests" https://app.flagsmith.com https://app.flagsmith.com'
+        ),
+        "method": "GET",
+        "path": "/test/42?foo=bar",
+        "pid": os.getpid(),
+        "remote_ip": "192.168.0.1",
+        "request_headers": {
+            "origin": "https://app.flagsmith.com",
+            "x-log-me": "42",
+        },
+        "response_headers": {
+            "access-control-allow-origin": "https://app.flagsmith.com",
+            "x-log-me-status": "acked",
+        },
+        "response_size_in_bytes": 42,
+        "status": "200",
+        "thread_name": "MainThread",
+        "time": "2023-12-08T06:05:47+00:00",
+        "timestamp": "2023-12-08T06:05:47Z",
+        "user_agent": "requests",
+    }
+
+
+@pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
+def test_gunicorn_access_processor__non_dict_args__passes_through(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    monkeypatch.setenv("LOG_FORMAT", "json")
+    setup_logging(
+        log_level="DEBUG",
+        log_format="json",
+        application_loggers=["gunicorn"],
+        extra_foreign_processors=[make_gunicorn_access_processor()],
+    )
+    access_logger = logging.getLogger("gunicorn.access")
+
+    # When
+    access_logger.info("Worker %s booting on port %d", "web", 8000)
+
+    # Then
+    output = capsys.readouterr().out.strip()
+    parsed = json.loads(output)
+    assert parsed["message"] == "Worker web booting on port 8000"
+    assert "method" not in parsed
+
+
+def test_gunicorn_json_capable_logger__generic_format__outputs_pure_clf(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    monkeypatch.delenv("LOG_FORMAT", raising=False)
+    setup_logging(
+        log_level="DEBUG",
+        log_format="generic",
+        application_loggers=["gunicorn"],
+    )
+    config = Config()
+    config.set("accesslog", "-")
+    gunicorn_logger = GunicornJsonCapableLogger(config)
+
+    record_args = {
+        "h": "192.168.0.1",
+        "l": "-",
+        "u": "-",
+        "t": "[08/Dec/2023:06:05:47 +0000]",
+        "r": "GET /api/flags HTTP/1.1",
+        "m": "GET",
+        "U": "/api/flags",
+        "q": "",
+        "s": 200,
+        "B": 1234,
+        "b": "1234",
+        "f": "-",
+        "a": "python-requests/2.31.0",
+        "T": 0,
+        "M": 42,
+        "D": 42000,
+        "L": "0.042",
+        "p": "<12345>",
+        "{origin}i": "-",
+        "{access-control-allow-origin}o": "-",
+    }
+
+    # When
+    gunicorn_logger.access_log.info(DEFAULT_ACCESS_LOG_FORMAT, record_args)
+
+    # Then — pure CLF, no structlog metadata
+    output = capsys.readouterr().out.strip()
+    assert output == (
+        '192.168.0.1 - - [08/Dec/2023:06:05:47 +0000] "GET /api/flags HTTP/1.1"'
+        ' 200 1234 "-" "python-requests/2.31.0" - -'
+    )
