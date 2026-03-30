@@ -30,10 +30,10 @@ def make_gunicorn_access_processor(
         record = event_dict.get("_record")
         if record is None or record.name != "gunicorn.access":
             return event_dict
-        # ProcessorFormatter clears record.args before running
-        # foreign_pre_chain; the originals are stashed on the record
-        # by _SentryFriendlyProcessorFormatter.format().
-        args = getattr(record, "_original_args", record.args)
+        # ProcessorFormatter clears record.args on its internal copy
+        # before running foreign_pre_chain; the originals are available
+        # via pass_foreign_args=True as "positional_args" in event_dict.
+        args = event_dict.get("positional_args", record.args)
         if not isinstance(args, dict):
             return event_dict
 
