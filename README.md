@@ -96,6 +96,48 @@ Use this mark to auto-use the `saas_mode` fixture.
 
 Use this mark to auto-use the `enterprise_mode` fixture.
 
+### OpenTelemetry
+
+Flagsmith supports exporting traces and structured logs over OTLP.
+
+#### Configuration
+
+OTel instrumentation is opt-in, controlled by environment variables:
+
+| Variable                          | Description                                                                                                           | Default         |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`     | Base OTLP endpoint (e.g. `http://collector:4318`). If unset, no OTel setup occurs and OTel packages are not imported. | _(disabled)_    |
+| `OTEL_SERVICE_NAME`               | The `service.name` resource attribute.                                                                                | `flagsmith-api` |
+| `OTEL_TRACING_EXCLUDED_URL_PATHS` | Comma-separated URL paths to exclude from tracing (e.g. `health/liveness,health/readiness`).                          | _(none)_        |
+
+Standard `OTEL_*` env vars (e.g. `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_EXPORTER_OTLP_HEADERS`) are also respected by the OTel SDK.
+
+#### What gets configured
+
+When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, `ensure_cli_env()` sets up:
+
+- **Tracing**: `TracerProvider` with OTLP/HTTP span export, W3C `TraceContext` + `Baggage` propagation, and Django auto-instrumentation via `DjangoInstrumentor`. Span names are formatted as `{METHOD} {route_template}` (e.g. `GET /api/v1/projects/{pk}/`).
+- **Structured log export**: A structlog processor that routes log events to an OTLP log endpoint.
+
+#### Emitting OTel log events via structlog
+
+Use structlog as usual. The OTel processor captures events and maps them to OTLP log records:
+
+```python
+import structlog
+
+log = structlog.get_logger("code_references")
+log.info("scan-created", code_references__count=3, feature__count=2)
+```
+
+This produces an OTLP log record with:
+
+- `Body: scan-created`
+- `EventName: code_references.scan_created` (logger name + `inflection.underscore` of the event)
+- `Severity: INFO`
+- `Attributes: code_references.count=3, feature.count=2` (double underscores are converted to dots)
+- W3C Baggage entries from the current OTel context are copied into log attributes (e.g. `amplitude.device_id`, `amplitude.session_id`).
+
 ### Metrics
 
 Flagsmith uses Prometheus to track performance metrics.
