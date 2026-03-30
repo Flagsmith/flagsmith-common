@@ -2,6 +2,24 @@
 
 <a name="v1.5.2"></a>
 
+## [3.5.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.4.0...v3.5.0) (2026-03-30)
+
+
+### CI
+
+* pre-commit autoupdate ([#180](https://github.com/Flagsmith/flagsmith-common/issues/180)) ([63b850d](https://github.com/Flagsmith/flagsmith-common/commit/63b850d481e59119956bb41b03ecfe5835c15269))
+
+
+### Features
+
+* Centralize logging setup with structlog integration ([#179](https://github.com/Flagsmith/flagsmith-common/issues/179)) ([2e0459d](https://github.com/Flagsmith/flagsmith-common/commit/2e0459d6f7df4a849d7b04c2651ce682c1177e5f))
+
+
+### Bug Fixes
+
+* Noise in tracebacks ([#181](https://github.com/Flagsmith/flagsmith-common/issues/181)) ([7c65cd9](https://github.com/Flagsmith/flagsmith-common/commit/7c65cd94c046e619c624b788434e2f6fd0d1a96d))
+* Remove unused logging code ([#186](https://github.com/Flagsmith/flagsmith-common/issues/186)) ([9539d4f](https://github.com/Flagsmith/flagsmith-common/commit/9539d4f0b0876c03c9af3d15671dfc1951801365))
+
 ## [3.4.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.3.0...v3.4.0) (2026-03-12)
 
 
