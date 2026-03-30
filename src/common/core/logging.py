@@ -101,6 +101,8 @@ def map_event_to_json_record(
     event_dict: EventDict,
 ) -> EventDict:
     """Map structlog fields to match :class:`JsonRecord` output schema."""
+    # Remove foreign record args injected by pass_foreign_args so they
+    # don't leak into the rendered JSON output.
     event_dict.pop("positional_args", None)
     record: JsonRecord = {
         "message": event_dict.pop("event", ""),
