@@ -152,7 +152,7 @@ def test_structlog_otel_log_record__w3c_baggage__propagated_to_log_attributes(
     assert attrs["amplitude.session_id"] == "session-456"
 
 
-def test_structlog_otel_log_record__instrumentation_scope__matches_logger_name(
+def test_structlog_otel_log_record__instrumentation_scope__identifies_flagsmith_common(
     log_exporter: InMemoryLogExporter,
 ) -> None:
     # Given / When
@@ -161,7 +161,8 @@ def test_structlog_otel_log_record__instrumentation_scope__matches_logger_name(
     # Then
     scope = log_exporter.get_finished_logs()[0].instrumentation_scope
     assert scope is not None
-    assert scope.name == "code_references"
+    assert scope.name == "common.core.otel"
+    assert scope.version is not None
 
 
 def test_structlog_otel_log_record__non_primitive_values__serialised_to_json(

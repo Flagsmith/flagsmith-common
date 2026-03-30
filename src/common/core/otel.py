@@ -2,6 +2,7 @@ import contextlib
 import json
 from collections.abc import Generator
 from datetime import datetime, timezone
+from importlib.metadata import version
 
 import inflection
 import structlog
@@ -52,6 +53,7 @@ def make_structlog_otel_processor(logger_provider: LoggerProvider) -> Processor:
     Pass the returned processor to :func:`~common.core.logging.setup_logging`
     via ``otel_processor``.
     """
+    otel_logger = logger_provider.get_logger(__name__, version("flagsmith-common"))
 
     def processor(
         logger: structlog.types.WrappedLogger,
@@ -72,7 +74,6 @@ def make_structlog_otel_processor(logger_provider: LoggerProvider) -> Processor:
         if logger_name:
             event_name = f"{logger_name}.{event_name}"
 
-        otel_logger = logger_provider.get_logger(logger_name or __name__)
         otel_logger.emit(
             timestamp=int(datetime.now(timezone.utc).timestamp() * 1e9),
             context=otel_context.get_current(),
