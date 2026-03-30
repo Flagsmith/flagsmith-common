@@ -2,7 +2,7 @@ from typing import Generator
 
 import pytest
 import structlog
-from opentelemetry import baggage, context, trace
+from opentelemetry import baggage, context
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.propagate import get_global_textmap
@@ -189,21 +189,22 @@ def test_structlog_otel_log_record__non_primitive_values__serialised_to_json(
 
 def test_structlog_otel_log_record__active_span__trace_context_on_log_record(
     log_exporter: InMemoryLogExporter,
-    span_exporter: InMemorySpanExporter,
 ) -> None:
     # Given
-    tracer = trace.get_tracer(__name__)
+    provider = TracerProvider()
+    tracer = provider.get_tracer(__name__)
 
-    # When
-    with tracer.start_as_current_span("test-span"):
+    # When — emit a structlog event inside an active span
+    with tracer.start_as_current_span("test-span") as span:
         structlog.get_logger("mylogger").info("inside-span")
+        expected_trace_id = span.get_span_context().trace_id
+        expected_span_id = span.get_span_context().span_id
 
     # Then — trace context is on the LogRecord itself (via otel_context),
     # not duplicated in attributes (trace_id/span_id are reserved keys).
     log_record = log_exporter.get_finished_logs()[0].log_record
-    span = span_exporter.get_finished_spans()[0]
-    assert log_record.trace_id == span.context.trace_id
-    assert log_record.span_id == span.context.span_id
+    assert log_record.trace_id == expected_trace_id
+    assert log_record.span_id == expected_span_id
     assert log_record.attributes is not None
     assert "trace_id" not in log_record.attributes
     assert "span_id" not in log_record.attributes
