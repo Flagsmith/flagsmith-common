@@ -11,7 +11,7 @@ import structlog
 from sentry_sdk.envelope import Envelope
 from sentry_sdk.transport import Transport
 
-from common.core.logging import JsonFormatter, setup_logging
+from common.core.logging import setup_logging
 
 if TYPE_CHECKING:
     from sentry_sdk._types import Event
@@ -47,61 +47,6 @@ def sentry_transport_mock() -> Generator[MockSentryTransport, None, None]:
     yield transport
     sentry_sdk.flush()
     sentry_sdk.init(transport=None)
-
-
-@pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
-def test_json_formatter__format_log__outputs_expected(
-    caplog: pytest.LogCaptureFixture,
-    request: pytest.FixtureRequest,
-) -> None:
-    # Given
-    json_formatter = JsonFormatter()
-
-    caplog.handler.setFormatter(json_formatter)
-    logger = logging.getLogger("test_json_formatter__outputs_expected")
-    logger.setLevel(logging.INFO)
-
-    expected_pid = os.getpid()
-    expected_module_path = os.path.abspath(request.path)
-
-    def _log_traceback() -> None:
-        try:
-            raise Exception()
-        except Exception as exc:
-            logger.error("this is an error", exc_info=exc)
-
-    expected_lineno = _log_traceback.__code__.co_firstlineno + 2
-    expected_tb_string = (
-        "Traceback (most recent call last):\n"
-        f'  File "{expected_module_path}",'
-        f" line {expected_lineno}, in _log_traceback\n"
-        "    raise Exception()\nException"
-    )
-
-    # When
-    logger.info("hello %s, %d", "arg1", 22.22)
-    _log_traceback()
-
-    # Then
-    assert [json.loads(message) for message in caplog.text.split("\n") if message] == [
-        {
-            "levelname": "INFO",
-            "message": "hello arg1, 22",
-            "timestamp": "2023-12-08 06:05:47,000",
-            "logger_name": "test_json_formatter__outputs_expected",
-            "pid": expected_pid,
-            "thread_name": "MainThread",
-        },
-        {
-            "levelname": "ERROR",
-            "message": "this is an error",
-            "timestamp": "2023-12-08 06:05:47,000",
-            "logger_name": "test_json_formatter__outputs_expected",
-            "pid": expected_pid,
-            "thread_name": "MainThread",
-            "exc_info": expected_tb_string,
-        },
-    ]
 
 
 def test_setup_logging__generic_format__configures_stdlib(
@@ -352,26 +297,7 @@ def test_setup_logging__stdlib_error__sentry_captures_clean_message(
     test_app_loggers: list[str],
     sentry_transport_mock: "MockSentryTransport",
 ) -> None:
-    """Verify Sentry receives the original message, not the rendered output.
-
-    Sentry's ``LoggingIntegration`` monkey-patches ``Logger.callHandlers``
-    and reads ``record.msg`` / ``record.args`` in a ``finally`` block
-    *after* all handlers (and formatters) have run::
-
-        try:
-            old_callhandlers(self, record)  # formatters run here
-        finally:
-            integration._handle_record(record)  # reads record.msg
-
-    structlog's ``ProcessorFormatter.format()`` replaces ``record.msg``
-    with rendered output (JSON/console) and clears ``record.args`` to
-    ``()``.  Without ``_SentryFriendlyProcessorFormatter``, Sentry would
-    see a JSON blob as the message — breaking event grouping because every
-    rendered string (containing timestamps, PIDs, …) is unique.
-
-    ``_SentryFriendlyProcessorFormatter`` snapshots and restores the
-    originals so Sentry sees the clean message template and args.
-    """
+    """Verify Sentry receives the original message, not the rendered output."""
     # Given
     setup_logging(
         log_level="DEBUG", log_format="json", application_loggers=test_app_loggers
@@ -388,34 +314,184 @@ def test_setup_logging__stdlib_error__sentry_captures_clean_message(
 
     # And — Sentry received the original message template, not the JSON blob.
     assert len(sentry_transport_mock.events) == 1
-    logentry = sentry_transport_mock.events[0]["logentry"]
-    assert logentry["message"] == "order %s failed for %s"
-    assert logentry["params"] == ["ORD-123", "alice"]
-    assert logentry["formatted"] == "order ORD-123 failed for alice"
+    assert (
+        sentry_transport_mock.events[0].items()
+        >= {
+            "level": "error",
+            "logger": "test.sentry_compat",
+            "logentry": {
+                "message": "order %s failed for %s",
+                "formatted": "order ORD-123 failed for alice",
+                "params": ["ORD-123", "alice"],
+            },
+        }.items()
+    )
 
 
-def test_setup_logging__structlog_error__sentry_captures_with_context(
+def test_setup_logging__structlog_exception__sentry_captures_with_context(
     capsys: pytest.CaptureFixture[str],
     test_app_loggers: list[str],
     sentry_transport_mock: "MockSentryTransport",
 ) -> None:
-    """Verify structlog errors reach Sentry with context from sentry_processor."""
+    """Verify structlog exceptions reach Sentry with context and traceback."""
     # Given
     setup_logging(
-        log_level="DEBUG", log_format="json", application_loggers=test_app_loggers
+        log_level="DEBUG",
+        log_format="json",
+        application_loggers=test_app_loggers,
     )
     structured_logger = structlog.get_logger("test.sentry_structlog")
+    expected_module_path = os.path.abspath(__file__)
+
+    def _raise_and_log() -> None:
+        try:
+            raise RuntimeError("payment gateway timeout")
+        except RuntimeError:
+            structured_logger.exception("payment failed", order_id="ORD-456")
+
+    expected_lineno = _raise_and_log.__code__.co_firstlineno + 2
+    expected_tb_string = (
+        "Traceback (most recent call last):\n"
+        f'  File "{expected_module_path}",'
+        f" line {expected_lineno}, in _raise_and_log\n"
+        '    raise RuntimeError("payment gateway timeout")\n'
+        "RuntimeError: payment gateway timeout"
+    )
 
     # When
-    structured_logger.error("payment failed", order_id="ORD-456")
+    _raise_and_log()
 
-    # Then — Sentry captured the event
+    # Then — Sentry captured the event with exception and structlog context
     assert len(sentry_transport_mock.events) == 1
     event = sentry_transport_mock.events[0]
+    assert (
+        event.items()
+        >= {
+            "level": "error",
+            "logger": "test.sentry_structlog",
+            "platform": "python",
+        }.items()
+    )
+
+    # And — exception traceback is correct
+    exc = event["exception"]["values"][0]
+    assert (
+        exc.items()
+        >= {
+            "mechanism": {"type": "logging", "handled": True},
+            "module": None,
+            "type": "RuntimeError",
+            "value": "payment gateway timeout",
+        }.items()
+    )
+    frame = exc["stacktrace"]["frames"][-1]
+    assert (
+        frame.items()
+        >= {
+            "abs_path": expected_module_path,
+            "function": "_raise_and_log",
+            "module": "tests.unit.common.core.test_logging",
+            "lineno": expected_lineno,
+            "context_line": '            raise RuntimeError("payment gateway timeout")',
+            "in_app": True,
+        }.items()
+    )
 
     # And — sentry_processor set the structlog context
-    assert "structlog" in event["contexts"]
-    assert event["contexts"]["structlog"]["order_id"] == "ORD-456"
+    assert event["contexts"]["structlog"] == {
+        "order_id": "ORD-456",
+        "logger": "test.sentry_structlog",
+        "exception": expected_tb_string,
+    }
+
+
+@pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
+def test_setup_logging__stdlib_exception__sentry_captures_exc_info(
+    capsys: pytest.CaptureFixture[str],
+    test_app_loggers: list[str],
+    sentry_transport_mock: "MockSentryTransport",
+) -> None:
+    """Verify Sentry receives full exception info from stdlib loggers."""
+    # Given
+    setup_logging(
+        log_level="DEBUG",
+        log_format="json",
+        application_loggers=test_app_loggers,
+    )
+    test_logger = logging.getLogger("test.sentry_exc")
+    expected_module_path = os.path.abspath(__file__)
+
+    def _raise_and_log() -> None:
+        try:
+            raise ValueError("something broke")
+        except ValueError:
+            test_logger.error("request failed", exc_info=True)
+
+    expected_lineno = _raise_and_log.__code__.co_firstlineno + 2
+    expected_tb_string = (
+        "Traceback (most recent call last):\n"
+        f'  File "{expected_module_path}",'
+        f" line {expected_lineno}, in _raise_and_log\n"
+        '    raise ValueError("something broke")\n'
+        "ValueError: something broke"
+    )
+
+    # When
+    _raise_and_log()
+
+    # Then — Sentry captured the exception with full traceback
+    assert len(sentry_transport_mock.events) == 1
+    event = sentry_transport_mock.events[0]
+    assert (
+        event.items()
+        >= {
+            "level": "error",
+            "logger": "test.sentry_exc",
+            "logentry": {
+                "message": "request failed",
+                "formatted": "request failed",
+                "params": [],
+            },
+            "platform": "python",
+        }.items()
+    )
+
+    # And — exception traceback is correct
+    exc = event["exception"]["values"][0]
+    assert (
+        exc.items()
+        >= {
+            "mechanism": {"type": "logging", "handled": True},
+            "module": None,
+            "type": "ValueError",
+            "value": "something broke",
+        }.items()
+    )
+    frame = exc["stacktrace"]["frames"][-1]
+    assert (
+        frame.items()
+        >= {
+            "abs_path": expected_module_path,
+            "function": "_raise_and_log",
+            "module": "tests.unit.common.core.test_logging",
+            "lineno": expected_lineno,
+            "context_line": '            raise ValueError("something broke")',
+            "in_app": True,
+        }.items()
+    )
+
+    # And — the JSON output has a formatted traceback string, not a list
+    output = capsys.readouterr().out.strip()
+    parsed = json.loads(output)
+    assert parsed == {
+        "timestamp": "2023-12-08T06:05:47Z",
+        "message": "request failed",
+        "levelname": "ERROR",
+        "logger_name": "test.sentry_exc",
+        "pid": os.getpid(),
+        "thread_name": "MainThread",
+        "exc_info": expected_tb_string,
+    }
 
 
 def test_setup_logging__default_args__root_at_warning() -> None:
