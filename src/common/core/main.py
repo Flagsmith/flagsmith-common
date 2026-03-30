@@ -58,7 +58,8 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
             endpoint=f"{otel_endpoint}/v1/traces",
             service_name=service_name,
         )
-        setup_tracing(tracer_provider)
+        excluded_urls = env.str("OTEL_TRACING_EXCLUDED_URL_PATHS", None)
+        ctx.enter_context(setup_tracing(tracer_provider, excluded_urls=excluded_urls))
         ctx.callback(log_provider.shutdown)
 
     # Set up logging early, before Django settings are loaded.

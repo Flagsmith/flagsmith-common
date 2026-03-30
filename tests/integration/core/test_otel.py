@@ -5,7 +5,6 @@ import structlog
 from opentelemetry import baggage, context
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
-from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.propagate import get_global_textmap
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.sdk._logs import LoggerProvider
@@ -26,8 +25,6 @@ from rest_framework.test import APIClient
 
 from common.core.otel import make_structlog_otel_processor, setup_tracing
 
-# -- Fixtures ----------------------------------------------------------------
-
 
 @pytest.fixture()
 def log_exporter() -> InMemoryLogExporter:
@@ -41,25 +38,6 @@ def log_provider(log_exporter: InMemoryLogExporter) -> LoggerProvider:
     )
     provider.add_log_record_processor(SimpleLogRecordProcessor(log_exporter))
     return provider
-
-
-@pytest.fixture()
-def span_exporter(_setup_tracing: InMemorySpanExporter) -> InMemorySpanExporter:
-    _setup_tracing.clear()
-    return _setup_tracing
-
-
-@pytest.fixture(scope="module")
-def _setup_tracing() -> Generator[InMemorySpanExporter, None, None]:
-    exporter = InMemorySpanExporter()
-    provider = TracerProvider(
-        resource=Resource.create({"service.name": "test-service"}),
-    )
-    provider.add_span_processor(SimpleSpanProcessor(exporter))
-    setup_tracing(provider)
-    yield exporter
-    DjangoInstrumentor().uninstrument()
-    provider.shutdown()
 
 
 @pytest.fixture(autouse=True)
@@ -85,10 +63,34 @@ def _configure_structlog(
     structlog.reset_defaults()
 
 
-# -- Structlog → OTel log record tests --------------------------------------
+@pytest.fixture(scope="module", name="setup_tracing")
+def setup_tracing_fixture() -> Generator[InMemorySpanExporter, None, None]:
+    """Set up OTel tracing for the test module, yielding the in-memory span exporter.
+
+    Module-scoped because OTel only allows setting the global TracerProvider once per process.
+    Use the ``span_exporter`` fixture for per-test isolation.
+
+    This exercises the real ``setup_tracing`` context manager. Its behaviour can be
+    verified indirectly by asserting on the effects: spans created by Django,
+    trace context propagation, and propagator wiring.
+    """
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider(
+        resource=Resource.create({"service.name": "test-service"}),
+    )
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+
+    with setup_tracing(provider, excluded_urls="health/liveness"):
+        yield exporter
 
 
-def test_otel_log_record__basic_event__body_event_name_severity_attributes(
+@pytest.fixture()
+def span_exporter(setup_tracing: InMemorySpanExporter) -> InMemorySpanExporter:
+    setup_tracing.clear()
+    return setup_tracing
+
+
+def test_structlog_otel_log_record__basic_event__body_event_name_severity_attributes(
     log_exporter: InMemoryLogExporter,
 ) -> None:
     # Given / When
@@ -113,7 +115,7 @@ def test_otel_log_record__basic_event__body_event_name_severity_attributes(
     assert attrs["feature.count"] == 2
 
 
-def test_otel_log_record__reserved_keys__excluded_from_attributes(
+def test_structlog_otel_log_record__reserved_keys__excluded_from_attributes(
     log_exporter: InMemoryLogExporter,
 ) -> None:
     # Given / When
@@ -129,7 +131,7 @@ def test_otel_log_record__reserved_keys__excluded_from_attributes(
     assert attrs["extra_key"] == "val"
 
 
-def test_otel_log_record__w3c_baggage__propagated_to_log_attributes(
+def test_structlog_otel_log_record__w3c_baggage__propagated_to_log_attributes(
     log_exporter: InMemoryLogExporter,
 ) -> None:
     # Given
@@ -150,7 +152,7 @@ def test_otel_log_record__w3c_baggage__propagated_to_log_attributes(
     assert attrs["amplitude.session_id"] == "session-456"
 
 
-def test_otel_log_record__instrumentation_scope__matches_logger_name(
+def test_structlog_otel_log_record__instrumentation_scope__matches_logger_name(
     log_exporter: InMemoryLogExporter,
 ) -> None:
     # Given / When
@@ -162,7 +164,7 @@ def test_otel_log_record__instrumentation_scope__matches_logger_name(
     assert scope.name == "code_references"
 
 
-def test_otel_log_record__non_primitive_values__serialised_to_json(
+def test_structlog_otel_log_record__non_primitive_values__serialised_to_json(
     log_exporter: InMemoryLogExporter,
 ) -> None:
     # Given / When
@@ -179,15 +181,13 @@ def test_otel_log_record__non_primitive_values__serialised_to_json(
     assert attrs["items"] == "[1, 2, 3]"
 
 
-# -- Django tracing tests ---------------------------------------------------
-
-
+@pytest.mark.django_db
 def test_django_tracing__get_request__creates_span_with_http_attributes(
     client: APIClient,
     span_exporter: InMemorySpanExporter,
 ) -> None:
     # Given / When
-    response = client.get("/health/liveness/")
+    response = client.get("/version/")
 
     # Then
     assert response.status_code == 200
@@ -198,16 +198,17 @@ def test_django_tracing__get_request__creates_span_with_http_attributes(
     span = spans[0]
     attrs = dict(span.attributes or {})
     assert attrs["http.method"] == "GET"
-    assert attrs["http.url"] == "http://testserver/health/liveness/"
+    assert attrs["http.url"] == "http://testserver/version/"
     assert attrs["http.status_code"] == 200
 
 
+@pytest.mark.django_db
 def test_django_tracing__request__span_has_service_name_resource(
     client: APIClient,
     span_exporter: InMemorySpanExporter,
 ) -> None:
     # Given / When
-    client.get("/health/liveness/")
+    client.get("/version/")
 
     # Then
     span = span_exporter.get_finished_spans()[0]
@@ -215,6 +216,7 @@ def test_django_tracing__request__span_has_service_name_resource(
     assert service_name == "test-service"
 
 
+@pytest.mark.django_db
 def test_django_tracing__request_with_traceparent__propagates_trace_context(
     client: APIClient,
     span_exporter: InMemorySpanExporter,
@@ -225,7 +227,7 @@ def test_django_tracing__request_with_traceparent__propagates_trace_context(
     traceparent = f"00-{trace_id}-{parent_span_id}-01"
 
     # When
-    client.get("/health/liveness/", HTTP_TRACEPARENT=traceparent)
+    client.get("/version/", HTTP_TRACEPARENT=traceparent)
 
     # Then
     span = span_exporter.get_finished_spans()[0]
@@ -234,6 +236,7 @@ def test_django_tracing__request_with_traceparent__propagates_trace_context(
     assert f"{span.parent.span_id:016x}" == parent_span_id
 
 
+@pytest.mark.django_db
 def test_django_tracing__request_with_baggage__baggage_propagated(
     client: APIClient,
     span_exporter: InMemorySpanExporter,
@@ -244,7 +247,7 @@ def test_django_tracing__request_with_baggage__baggage_propagated(
 
     # When
     client.get(
-        "/health/liveness/",
+        "/version/",
         HTTP_TRACEPARENT=traceparent,
         HTTP_BAGGAGE=baggage_header,
     )
@@ -255,6 +258,19 @@ def test_django_tracing__request_with_baggage__baggage_propagated(
     span = span_exporter.get_finished_spans()[0]
     trace_id = "0af7651916cd43dd8448eb211c80319c"
     assert f"{span.context.trace_id:032x}" == trace_id
+
+
+def test_django_tracing__excluded_url__produces_no_span(
+    client: APIClient,
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    # Given — health/liveness is excluded in the setup_tracing fixture
+    # When
+    response = client.get("/health/liveness/")
+
+    # Then
+    assert response.status_code == 200
+    assert len(span_exporter.get_finished_spans()) == 0
 
 
 def test_django_tracing__propagators__composite_with_tracecontext_and_baggage(

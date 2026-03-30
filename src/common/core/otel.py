@@ -1,4 +1,6 @@
+import contextlib
 import json
+from collections.abc import Generator
 from datetime import datetime, timezone
 
 import inflection
@@ -128,14 +130,26 @@ def build_tracer_provider(*, endpoint: str, service_name: str) -> TracerProvider
     return tracer_provider
 
 
-def setup_tracing(tracer_provider: TracerProvider) -> None:
-    """Set up OTel distributed tracing with Django instrumentation.
+@contextlib.contextmanager
+def setup_tracing(
+    tracer_provider: TracerProvider,
+    excluded_urls: str | None = None,
+) -> Generator[None, None, None]:
+    """Set up and tear down OTel distributed tracing with Django instrumentation.
 
     Sets the global TracerProvider, configures W3C trace context +
     baggage propagation, and instruments Django so that every request
     creates a span with the incoming trace context.
 
+    On exit, uninstruments Django and shuts down the tracer provider.
+
     Must be called *before* Django's WSGI app is created.
+
+    Args:
+        tracer_provider: The TracerProvider to use.
+        excluded_urls: Comma-separated URL paths to exclude from tracing
+            (e.g. ``"health/liveness,health/readiness"``). If not provided,
+            falls back to the ``OTEL_PYTHON_DJANGO_EXCLUDED_URLS`` env var.
     """
     trace.set_tracer_provider(tracer_provider)
 
@@ -147,4 +161,9 @@ def setup_tracing(tracer_provider: TracerProvider) -> None:
     )
     set_global_textmap(propagator)
 
-    DjangoInstrumentor().instrument()
+    DjangoInstrumentor().instrument(excluded_urls=excluded_urls)
+    try:
+        yield
+    finally:
+        DjangoInstrumentor().uninstrument()
+        tracer_provider.shutdown()
