@@ -15,6 +15,7 @@ from structlog.typing import EventDict, Processor, WrappedLogger
 from typing_extensions import TypedDict
 
 from common.core.constants import LOGGING_DEFAULT_ROOT_LOG_LEVEL
+from common.core.sentry import sentry_processor
 
 logger = logging.getLogger(__name__)
 
@@ -27,27 +28,6 @@ class JsonRecord(TypedDict, extra_items=Any, total=False):  # type: ignore[call-
     pid: int | None
     thread_name: str | None
     exc_info: str
-
-
-class JsonFormatter(logging.Formatter):
-    """Custom formatter for json logs."""
-
-    def get_json_record(self, record: logging.LogRecord) -> JsonRecord:
-        formatted_message = record.getMessage()
-        json_record: JsonRecord = {
-            "levelname": record.levelname,
-            "message": formatted_message,
-            "timestamp": self.formatTime(record, self.datefmt),
-            "logger_name": record.name,
-            "pid": record.process,
-            "thread_name": record.threadName,
-        }
-        if record.exc_info:
-            json_record["exc_info"] = self.formatException(record.exc_info)
-        return json_record
-
-    def format(self, record: logging.LogRecord) -> str:
-        return json.dumps(self.get_json_record(record))
 
 
 def setup_logging(
@@ -120,7 +100,7 @@ def map_event_to_json_record(
     method_name: str,
     event_dict: EventDict,
 ) -> EventDict:
-    """Map structlog fields to match :class:`JsonFormatter` output schema."""
+    """Map structlog fields to match :class:`JsonRecord` output schema."""
     event_dict.pop("positional_args", None)
     record: JsonRecord = {
         "message": event_dict.pop("event", ""),
@@ -148,7 +128,6 @@ def setup_structlog(
     record, leaving the original ``msg``, ``args``, and ``exc_info``
     intact for Sentry's ``LoggingIntegration`` hook.
     """
-    from common.core.sentry import sentry_processor
 
     if log_format == "json":
         renderer_processors: list[Processor] = [

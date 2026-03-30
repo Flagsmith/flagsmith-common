@@ -11,7 +11,7 @@ import structlog
 from sentry_sdk.envelope import Envelope
 from sentry_sdk.transport import Transport
 
-from common.core.logging import JsonFormatter, setup_logging
+from common.core.logging import setup_logging
 
 if TYPE_CHECKING:
     from sentry_sdk._types import Event
@@ -47,61 +47,6 @@ def sentry_transport_mock() -> Generator[MockSentryTransport, None, None]:
     yield transport
     sentry_sdk.flush()
     sentry_sdk.init(transport=None)
-
-
-@pytest.mark.freeze_time("2023-12-08T06:05:47+00:00")
-def test_json_formatter__format_log__outputs_expected(
-    caplog: pytest.LogCaptureFixture,
-    request: pytest.FixtureRequest,
-) -> None:
-    # Given
-    json_formatter = JsonFormatter()
-
-    caplog.handler.setFormatter(json_formatter)
-    logger = logging.getLogger("test_json_formatter__outputs_expected")
-    logger.setLevel(logging.INFO)
-
-    expected_pid = os.getpid()
-    expected_module_path = os.path.abspath(request.path)
-
-    def _log_traceback() -> None:
-        try:
-            raise Exception()
-        except Exception as exc:
-            logger.error("this is an error", exc_info=exc)
-
-    expected_lineno = _log_traceback.__code__.co_firstlineno + 2
-    expected_tb_string = (
-        "Traceback (most recent call last):\n"
-        f'  File "{expected_module_path}",'
-        f" line {expected_lineno}, in _log_traceback\n"
-        "    raise Exception()\nException"
-    )
-
-    # When
-    logger.info("hello %s, %d", "arg1", 22.22)
-    _log_traceback()
-
-    # Then
-    assert [json.loads(message) for message in caplog.text.split("\n") if message] == [
-        {
-            "levelname": "INFO",
-            "message": "hello arg1, 22",
-            "timestamp": "2023-12-08 06:05:47,000",
-            "logger_name": "test_json_formatter__outputs_expected",
-            "pid": expected_pid,
-            "thread_name": "MainThread",
-        },
-        {
-            "levelname": "ERROR",
-            "message": "this is an error",
-            "timestamp": "2023-12-08 06:05:47,000",
-            "logger_name": "test_json_formatter__outputs_expected",
-            "pid": expected_pid,
-            "thread_name": "MainThread",
-            "exc_info": expected_tb_string,
-        },
-    ]
 
 
 def test_setup_logging__generic_format__configures_stdlib(
