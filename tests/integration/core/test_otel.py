@@ -23,6 +23,7 @@ from opentelemetry.trace.propagation.tracecontext import (
 )
 from rest_framework.test import APIClient
 
+from common.core.logging import setup_logging
 from common.core.otel import (
     add_otel_trace_context,
     make_structlog_otel_processor,
@@ -45,25 +46,17 @@ def log_provider(log_exporter: InMemoryLogExporter) -> LoggerProvider:
 
 
 @pytest.fixture(autouse=True)
-def _configure_structlog(
+def setup_logging_fixture(
     log_provider: LoggerProvider,
 ) -> Generator[None, None, None]:
-    otel_processor = make_structlog_otel_processor(log_provider)
-    structlog.configure(
-        processors=[
-            structlog.contextvars.merge_contextvars,
-            structlog.stdlib.add_logger_name,
-            structlog.stdlib.add_log_level,
-            structlog.processors.TimeStamper(fmt="iso"),
-            add_otel_trace_context,
-            otel_processor,
-            structlog.dev.ConsoleRenderer(),
-        ],
-        wrapper_class=structlog.stdlib.BoundLogger,
-        context_class=dict,
-        logger_factory=structlog.stdlib.LoggerFactory(),
-        cache_logger_on_first_use=False,
-    )
+    otel_processors = [
+        add_otel_trace_context,
+        make_structlog_otel_processor(log_provider),
+    ]
+    setup_logging(log_level="DEBUG", otel_processors=otel_processors)
+    # Override cache_logger_on_first_use so each test gets a fresh logger
+    # bound to the current fixture's exporter.
+    structlog.configure(cache_logger_on_first_use=False)
     yield
     structlog.reset_defaults()
 
