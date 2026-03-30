@@ -196,6 +196,7 @@ def test_django_tracing__get_request__creates_span_with_http_attributes(
     assert len(spans) == 1
 
     span = spans[0]
+    assert span.name == "GET /version/"
     attrs = dict(span.attributes or {})
     assert attrs["http.method"] == "GET"
     assert attrs["http.url"] == "http://testserver/version/"
