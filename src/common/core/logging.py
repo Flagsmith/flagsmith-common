@@ -123,13 +123,7 @@ def setup_structlog(
     log_format: str,
     extra_foreign_processors: list[Processor] | None = None,
 ) -> None:
-    """Configure structlog to route through stdlib logging.
-
-    Sentry compatibility is handled by structlog itself: since 24.1,
-    ``ProcessorFormatter.format()`` operates on a shallow copy of the
-    record, leaving the original ``msg``, ``args``, and ``exc_info``
-    intact for Sentry's ``LoggingIntegration`` hook.
-    """
+    """Configure structlog to route through stdlib logging."""
 
     if log_format == "json":
         renderer_processors: list[Processor] = [
