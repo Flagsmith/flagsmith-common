@@ -10,8 +10,13 @@ from opentelemetry.sdk._logs.export import (
     SimpleLogRecordProcessor,
 )
 from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
 
-from common.core.otel import make_structlog_otel_processor
+from common.core.otel import (
+    build_otel_log_provider,
+    build_tracer_provider,
+    make_structlog_otel_processor,
+)
 
 
 @pytest.fixture()
@@ -196,3 +201,27 @@ def test_otel_processor__w3c_baggage__propagated_to_attributes(
     assert attrs is not None
     assert attrs["amplitude.device_id"] == "device-123"
     assert attrs["amplitude.session_id"] == "session-456"
+
+
+def test_build_otel_log_provider__valid_args__returns_configured_provider() -> None:
+    # Given / When
+    provider = build_otel_log_provider(
+        endpoint="http://localhost:4318/v1/logs",
+        service_name="test-service",
+    )
+
+    # Then
+    assert isinstance(provider, LoggerProvider)
+    assert provider.resource.attributes["service.name"] == "test-service"
+
+
+def test_build_tracer_provider__valid_args__returns_configured_provider() -> None:
+    # Given / When
+    provider = build_tracer_provider(
+        endpoint="http://localhost:4318/v1/traces",
+        service_name="test-service",
+    )
+
+    # Then
+    assert isinstance(provider, TracerProvider)
+    assert provider.resource.attributes["service.name"] == "test-service"
