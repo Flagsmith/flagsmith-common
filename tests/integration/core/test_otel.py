@@ -2,7 +2,7 @@ from typing import Generator
 
 import pytest
 import structlog
-from opentelemetry import baggage, context
+from opentelemetry import baggage, context, trace
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.propagate import get_global_textmap
@@ -23,7 +23,11 @@ from opentelemetry.trace.propagation.tracecontext import (
 )
 from rest_framework.test import APIClient
 
-from common.core.otel import make_structlog_otel_processor, setup_tracing
+from common.core.otel import (
+    add_otel_trace_context,
+    make_structlog_otel_processor,
+    setup_tracing,
+)
 
 
 @pytest.fixture()
@@ -51,6 +55,7 @@ def _configure_structlog(
             structlog.stdlib.add_logger_name,
             structlog.stdlib.add_log_level,
             structlog.processors.TimeStamper(fmt="iso"),
+            add_otel_trace_context,
             otel_processor,
             structlog.dev.ConsoleRenderer(),
         ],
@@ -180,6 +185,28 @@ def test_structlog_otel_log_record__non_primitive_values__serialised_to_json(
     assert attrs is not None
     assert attrs["nested"] == '{"key": "value"}'
     assert attrs["items"] == "[1, 2, 3]"
+
+
+def test_structlog_otel_log_record__active_span__trace_context_on_log_record(
+    log_exporter: InMemoryLogExporter,
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    # Given
+    tracer = trace.get_tracer(__name__)
+
+    # When
+    with tracer.start_as_current_span("test-span"):
+        structlog.get_logger("mylogger").info("inside-span")
+
+    # Then — trace context is on the LogRecord itself (via otel_context),
+    # not duplicated in attributes (trace_id/span_id are reserved keys).
+    log_record = log_exporter.get_finished_logs()[0].log_record
+    span = span_exporter.get_finished_spans()[0]
+    assert log_record.trace_id == span.context.trace_id
+    assert log_record.span_id == span.context.span_id
+    assert log_record.attributes is not None
+    assert "trace_id" not in log_record.attributes
+    assert "span_id" not in log_record.attributes
 
 
 @pytest.mark.django_db

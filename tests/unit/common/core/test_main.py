@@ -29,7 +29,7 @@ def test_ensure_cli_env__env_vars_set__calls_setup_logging_with_env_values() -> 
         logging_configuration_file="/tmp/logging.json",
         application_loggers=["myapp", "mylib"],
         extra_foreign_processors=ANY,
-        otel_processor=None,
+        otel_processors=None,
     )
 
 
@@ -49,5 +49,5 @@ def test_ensure_cli_env__no_env_vars__calls_setup_logging_with_defaults() -> Non
         logging_configuration_file=None,
         application_loggers=None,
         extra_foreign_processors=ANY,
-        otel_processor=None,
+        otel_processors=None,
     )

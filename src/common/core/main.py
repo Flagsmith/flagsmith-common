@@ -38,10 +38,11 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     ctx = contextlib.ExitStack()
 
     # Set up OTel instrumentation (opt-in via OTEL_EXPORTER_OTLP_ENDPOINT).
-    otel_processor = None
+    otel_processors = None
     otel_endpoint = env.str("OTEL_EXPORTER_OTLP_ENDPOINT", None)
     if otel_endpoint:
         from common.core.otel import (
+            add_otel_trace_context,
             build_otel_log_provider,
             build_tracer_provider,
             make_structlog_otel_processor,
@@ -53,7 +54,10 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
             endpoint=f"{otel_endpoint}/v1/logs",
             service_name=service_name,
         )
-        otel_processor = make_structlog_otel_processor(log_provider)
+        otel_processors = [
+            add_otel_trace_context,
+            make_structlog_otel_processor(log_provider),
+        ]
         tracer_provider = build_tracer_provider(
             endpoint=f"{otel_endpoint}/v1/traces",
             service_name=service_name,
@@ -73,7 +77,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
                 env.list("ACCESS_LOG_EXTRA_ITEMS", []) or None,
             ),
         ],
-        otel_processor=otel_processor,
+        otel_processors=otel_processors,
     )
 
     # Prometheus multiproc support

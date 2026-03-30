@@ -39,7 +39,30 @@ _SEVERITY_MAP: dict[str, SeverityNumber] = {
     "critical": SeverityNumber.FATAL,
 }
 
-_RESERVED_KEYS = frozenset({"event", "level", "timestamp", "logger"})
+_RESERVED_KEYS = frozenset(
+    [
+        "event",
+        "level",
+        "timestamp",
+        "logger",
+        "trace_id",
+        "span_id",
+    ]
+)
+
+
+def add_otel_trace_context(
+    logger: structlog.types.WrappedLogger,
+    method_name: str,
+    event_dict: EventDict,
+) -> EventDict:
+    """Add ``trace_id`` and ``span_id`` from the active OTel span to the event dict."""
+    span = trace.get_current_span()
+    ctx = span.get_span_context()
+    if ctx and ctx.is_valid:
+        event_dict["trace_id"] = f"{ctx.trace_id:032x}"
+        event_dict["span_id"] = f"{ctx.span_id:016x}"
+    return event_dict
 
 
 def make_structlog_otel_processor(logger_provider: LoggerProvider) -> Processor:

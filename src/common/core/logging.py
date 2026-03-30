@@ -56,7 +56,7 @@ def setup_logging(
     logging_configuration_file: str | None = None,
     application_loggers: list[str] | None = None,
     extra_foreign_processors: list[Processor] | None = None,
-    otel_processor: Processor | None = None,
+    otel_processors: list[Processor] | None = None,
 ) -> None:
     """
     Set up logging for the application.
@@ -114,7 +114,7 @@ def setup_logging(
     setup_structlog(
         log_format=log_format,
         extra_foreign_processors=extra_foreign_processors,
-        otel_processor=otel_processor,
+        otel_processors=otel_processors,
     )
 
 
@@ -218,7 +218,7 @@ class _SentryFriendlyProcessorFormatter(structlog.stdlib.ProcessorFormatter):
 def setup_structlog(
     log_format: str,
     extra_foreign_processors: list[Processor] | None = None,
-    otel_processor: Processor | None = None,
+    otel_processors: list[Processor] | None = None,
 ) -> None:
     """Configure structlog to route through stdlib logging."""
     from common.core.sentry import sentry_processor
@@ -244,7 +244,7 @@ def setup_structlog(
             structlog.processors.format_exc_info,
             structlog.processors.TimeStamper(fmt="iso"),
             sentry_processor,
-            *([] if otel_processor is None else [otel_processor]),
+            *(otel_processors or []),
             structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
         ],
         wrapper_class=structlog.stdlib.BoundLogger,
