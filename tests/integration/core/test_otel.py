@@ -53,7 +53,10 @@ def setup_logging_fixture(
         add_otel_trace_context,
         make_structlog_otel_processor(log_provider),
     ]
-    setup_logging(log_level="DEBUG", otel_processors=otel_processors)
+    setup_logging(
+        application_loggers=["mylogger"],
+        otel_processors=otel_processors,
+    )
     # Override cache_logger_on_first_use so each test gets a fresh logger
     # bound to the current fixture's exporter.
     structlog.configure(cache_logger_on_first_use=False)
@@ -92,7 +95,7 @@ def test_structlog_otel_log_record__basic_event__body_event_name_severity_attrib
     log_exporter: InMemoryLogExporter,
 ) -> None:
     # Given / When
-    structlog.get_logger("code_references").info(
+    structlog.get_logger("mylogger").info(
         "scan-created",
         code_references__count=3,
         feature__count=2,
@@ -104,7 +107,7 @@ def test_structlog_otel_log_record__basic_event__body_event_name_severity_attrib
 
     log_record = records[0].log_record
     assert log_record.body == "scan-created"
-    assert log_record.event_name == "code_references.scan_created"
+    assert log_record.event_name == "mylogger.scan_created"
     assert log_record.severity_number == SeverityNumber.INFO
 
     attrs = log_record.attributes
@@ -139,7 +142,7 @@ def test_structlog_otel_log_record__w3c_baggage__propagated_to_log_attributes(
     # When
     token = context.attach(ctx)
     try:
-        structlog.get_logger("analytics").info("event-tracked")
+        structlog.get_logger("mylogger").info("event-tracked")
     finally:
         context.detach(token)
 
@@ -154,7 +157,7 @@ def test_structlog_otel_log_record__instrumentation_scope__identifies_flagsmith_
     log_exporter: InMemoryLogExporter,
 ) -> None:
     # Given / When
-    structlog.get_logger("code_references").info("scan-created")
+    structlog.get_logger("mylogger").info("scan-created")
 
     # Then
     scope = log_exporter.get_finished_logs()[0].instrumentation_scope
