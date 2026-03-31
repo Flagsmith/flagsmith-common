@@ -116,6 +116,7 @@ def test_structlog_otel_log_record__basic_event__body_event_name_severity_attrib
     assert attrs is not None
     assert attrs["code_references.count"] == 3
     assert attrs["feature.count"] == 2
+    assert attrs["flagsmith.event"] == "mylogger.scan_created"
 
 
 def test_structlog_otel_log_record__reserved_keys__excluded_from_attributes(

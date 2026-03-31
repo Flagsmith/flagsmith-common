@@ -100,6 +100,10 @@ def make_structlog_otel_processor(logger_provider: LoggerProvider) -> Processor:
         if logger_name:
             event_name = f"{logger_name}.{event_name}"
 
+        # Some observability platforms don't surface OTel's EventName.
+        # Keep a custom attribute for better visibility.
+        attributes["flagsmith.event"] = event_name
+
         otel_logger.emit(
             timestamp=int(datetime.now(timezone.utc).timestamp() * 1e9),
             context=otel_context.get_current(),

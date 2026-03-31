@@ -77,6 +77,7 @@ def test_otel_processor__event_with_logger_name__emits_namespaced_record(
     assert log_record.attributes is not None
     assert log_record.attributes["organisation.id"] == 42
     assert log_record.attributes["code_references.count"] == 3
+    assert log_record.attributes["flagsmith.event"] == "code_references.scan.created"
     assert "event" not in log_record.attributes
     assert "level" not in log_record.attributes
     assert "timestamp" not in log_record.attributes
