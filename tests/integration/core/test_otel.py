@@ -1,6 +1,7 @@
 from typing import Generator
 
 import pytest
+import pytest_mock
 import structlog
 from opentelemetry import baggage, context
 from opentelemetry._logs import SeverityNumber
@@ -18,6 +19,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
     InMemorySpanExporter,
 )
+from opentelemetry.trace import SpanKind
 from opentelemetry.trace.propagation.tracecontext import (
     TraceContextTextMapPropagator,
 )
@@ -207,43 +209,71 @@ def test_structlog_otel_log_record__active_span__trace_context_on_log_record(
 
 
 @pytest.mark.django_db
-def test_django_tracing__get_request__creates_span_with_http_attributes(
+def test_django_tracing__get_request__creates_http_and_db_spans(
     client: APIClient,
     span_exporter: InMemorySpanExporter,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
-    # Given / When
+    # Given
+    ANY = mocker.ANY
+
+    # When
     response = client.get("/version/")
 
     # Then
     assert response.status_code == 200
 
-    spans = span_exporter.get_finished_spans()
-    assert len(spans) == 1
+    spans = sorted(span_exporter.get_finished_spans(), key=lambda s: s.name)
+    assert [(s.name, s.kind) for s in spans] == [
+        ("GET /version/", SpanKind.SERVER),
+        ("SELECT", SpanKind.CLIENT),
+        ("SELECT", SpanKind.CLIENT),
+    ]
 
-    span = spans[0]
-    assert span.name == "GET /version/"
-    attrs = dict(span.attributes or {})
-    assert attrs["http.method"] == "GET"
-    assert attrs["http.url"] == "http://testserver/version/"
-    assert attrs["http.status_code"] == 200
+    http_span, db_span_1, db_span_2 = spans
+
+    assert dict(http_span.attributes or {}) == {
+        "http.method": "GET",
+        "http.url": "http://testserver/version/",
+        "http.route": "version/",
+        "http.scheme": "http",
+        "http.server_name": "testserver",
+        "http.flavor": "1.1",
+        "http.status_code": 200,
+        "net.host.port": 80,
+        "net.peer.ip": "127.0.0.1",
+    }
+    assert http_span.parent is None
+    assert http_span.resource.attributes["service.name"] == "test-service"
+
+    assert dict(db_span_1.attributes or {}) == {
+        "db.system": "postgresql",
+        "db.name": ANY,
+        "db.user": ANY,
+        "db.statement": 'SELECT %s AS "a" FROM "auth_user" LIMIT 1',
+        "net.peer.name": "localhost",
+        "net.peer.port": 6543,
+    }
+    assert db_span_1.parent is not None
+    assert db_span_1.parent.span_id == http_span.context.span_id
+
+    assert dict(db_span_2.attributes or {}) == {
+        "db.system": "postgresql",
+        "db.name": ANY,
+        "db.user": ANY,
+        "db.statement": (
+            'SELECT %s AS "a" FROM "auth_user"'
+            ' WHERE "auth_user"."last_login" IS NOT NULL LIMIT 1'
+        ),
+        "net.peer.name": "localhost",
+        "net.peer.port": 6543,
+    }
+    assert db_span_2.parent is not None
+    assert db_span_2.parent.span_id == http_span.context.span_id
 
 
 @pytest.mark.django_db
-def test_django_tracing__request__span_has_service_name_resource(
-    client: APIClient,
-    span_exporter: InMemorySpanExporter,
-) -> None:
-    # Given / When
-    client.get("/version/")
-
-    # Then
-    span = span_exporter.get_finished_spans()[0]
-    service_name = span.resource.attributes.get("service.name")
-    assert service_name == "test-service"
-
-
-@pytest.mark.django_db
-def test_django_tracing__request_with_traceparent__propagates_trace_context(
+def test_django_tracing__request_with_traceparent__propagates_to_all_spans(
     client: APIClient,
     span_exporter: InMemorySpanExporter,
 ) -> None:
@@ -256,19 +286,30 @@ def test_django_tracing__request_with_traceparent__propagates_trace_context(
     client.get("/version/", HTTP_TRACEPARENT=traceparent)
 
     # Then
-    span = span_exporter.get_finished_spans()[0]
-    assert f"{span.context.trace_id:032x}" == trace_id
-    assert span.parent is not None
-    assert f"{span.parent.span_id:016x}" == parent_span_id
+    spans = sorted(span_exporter.get_finished_spans(), key=lambda s: s.name)
+    assert len(spans) == 3
+
+    http_span = spans[0]
+    assert http_span.name == "GET /version/"
+    assert f"{http_span.context.trace_id:032x}" == trace_id
+    assert http_span.parent is not None
+    assert f"{http_span.parent.span_id:016x}" == parent_span_id
+
+    for db_span in spans[1:]:
+        assert db_span.name == "SELECT"
+        assert f"{db_span.context.trace_id:032x}" == trace_id
+        assert db_span.parent is not None
+        assert db_span.parent.span_id == http_span.context.span_id
 
 
 @pytest.mark.django_db
-def test_django_tracing__request_with_baggage__baggage_propagated(
+def test_django_tracing__request_with_baggage__propagates_trace_context(
     client: APIClient,
     span_exporter: InMemorySpanExporter,
 ) -> None:
     # Given
-    traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+    trace_id = "0af7651916cd43dd8448eb211c80319c"
+    traceparent = f"00-{trace_id}-b7ad6b7169203331-01"
     baggage_header = "amplitude.device_id=dev-42,amplitude.session_id=sess-99"
 
     # When
@@ -278,12 +319,11 @@ def test_django_tracing__request_with_baggage__baggage_propagated(
         HTTP_BAGGAGE=baggage_header,
     )
 
-    # Then — the span is created within the propagated trace context.
-    # Baggage doesn't appear on spans directly, but we verify the
-    # trace context was propagated (proving the composite propagator works).
-    span = span_exporter.get_finished_spans()[0]
-    trace_id = "0af7651916cd43dd8448eb211c80319c"
-    assert f"{span.context.trace_id:032x}" == trace_id
+    # Then — all spans share the propagated trace ID
+    spans = span_exporter.get_finished_spans()
+    assert len(spans) == 3
+    for span in spans:
+        assert f"{span.context.trace_id:032x}" == trace_id
 
 
 def test_django_tracing__excluded_url__produces_no_span(

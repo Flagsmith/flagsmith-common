@@ -1,6 +1,7 @@
 from typing import Generator
 
 import pytest
+import pytest_mock
 import structlog
 from opentelemetry import baggage, context
 from opentelemetry._logs import SeverityNumber
@@ -16,6 +17,7 @@ from common.core.otel import (
     build_otel_log_provider,
     build_tracer_provider,
     make_structlog_otel_processor,
+    setup_tracing,
 )
 
 
@@ -225,3 +227,31 @@ def test_build_tracer_provider__valid_args__returns_configured_provider() -> Non
     # Then
     assert isinstance(provider, TracerProvider)
     assert provider.resource.attributes["service.name"] == "test-service"
+
+
+def test_setup_tracing__called__instruments_and_uninstruments_all_libraries(
+    mocker: pytest_mock.MockerFixture,
+) -> None:
+    # Given
+    mocker.patch("common.core.otel.DjangoInstrumentor.instrument")
+    mocker.patch("common.core.otel.DjangoInstrumentor.uninstrument")
+    psycopg2_instrument = mocker.patch(
+        "common.core.otel.Psycopg2Instrumentor.instrument"
+    )
+    psycopg2_uninstrument = mocker.patch(
+        "common.core.otel.Psycopg2Instrumentor.uninstrument"
+    )
+    redis_instrument = mocker.patch("common.core.otel.RedisInstrumentor.instrument")
+    redis_uninstrument = mocker.patch("common.core.otel.RedisInstrumentor.uninstrument")
+    provider = TracerProvider()
+
+    # When
+    with setup_tracing(provider):
+        psycopg2_instrument.assert_called_once_with(
+            enable_commenter=True, skip_dep_check=True
+        )
+        redis_instrument.assert_called_once()
+
+    # Then — uninstrumented on exit
+    psycopg2_uninstrument.assert_called_once()
+    redis_uninstrument.assert_called_once()

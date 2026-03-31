@@ -116,7 +116,10 @@ Standard `OTEL_*` env vars (e.g. `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_EXPORTER_OTLP
 
 When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, `ensure_cli_env()` sets up:
 
-- **Tracing**: `TracerProvider` with OTLP/HTTP span export, W3C `TraceContext` + `Baggage` propagation, and Django auto-instrumentation via `DjangoInstrumentor`. Span names are formatted as `{METHOD} {route_template}` (e.g. `GET /api/v1/projects/{pk}/`).
+- **Tracing**: `TracerProvider` with OTLP/HTTP span export, W3C `TraceContext` + `Baggage` propagation, and auto-instrumentation for:
+  - **Django** (`DjangoInstrumentor`): creates a root span per HTTP request with span names formatted as `{METHOD} {route_template}` (e.g. `GET /api/v1/projects/{pk}/`).
+  - **psycopg2** (`Psycopg2Instrumentor`): creates child spans for each SQL query with `db.system`, `db.statement`, and `db.name` attributes. SQL commenter is enabled, adding trace context as SQL comments for database-side correlation.
+  - **Redis** (`RedisInstrumentor`): creates child spans for each Redis command with `db.system` and `db.statement` attributes.
 - **Structured log export**: A structlog processor that routes log events to an OTLP log endpoint.
 
 #### Emitting OTel log events via structlog

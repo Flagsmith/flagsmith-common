@@ -17,6 +17,8 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter,
 )
 from opentelemetry.instrumentation.django import DjangoInstrumentor
+from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.propagate import set_global_textmap
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.propagators.textmap import TextMapPropagator
@@ -186,8 +188,12 @@ def setup_tracing(
     set_global_textmap(propagator)
 
     DjangoInstrumentor().instrument(excluded_urls=excluded_urls)
+    Psycopg2Instrumentor().instrument(enable_commenter=True, skip_dep_check=True)
+    RedisInstrumentor().instrument()
     try:
         yield
     finally:
+        RedisInstrumentor().uninstrument()
+        Psycopg2Instrumentor().uninstrument()
         DjangoInstrumentor().uninstrument()
         tracer_provider.shutdown()
