@@ -31,5 +31,6 @@ class RouteLoggerMiddleware:
             span = trace.get_current_span()
             if span.is_recording():
                 span.update_name(f"{request.method} {route_template}")
+                span.set_attribute("http.route", route_template)
 
         return response

@@ -236,7 +236,7 @@ def test_django_tracing__get_request__creates_http_and_db_spans(
     assert dict(http_span.attributes or {}) == {
         "http.method": "GET",
         "http.url": "http://testserver/version/",
-        "http.route": "version/",
+        "http.route": "/version/",
         "http.scheme": "http",
         "http.server_name": "testserver",
         "http.flavor": "1.1",
