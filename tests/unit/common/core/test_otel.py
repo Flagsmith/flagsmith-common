@@ -205,6 +205,37 @@ def test_otel_processor__w3c_baggage__propagated_to_attributes(
     assert attrs["amplitude.session_id"] == "session-456"
 
 
+def test_otel_processor__active_span__adds_span_event(
+    otel_exporter: InMemoryLogExporter,
+) -> None:
+    # Given
+    provider = TracerProvider()
+    tracer = provider.get_tracer(__name__)
+
+    # When
+    with tracer.start_as_current_span("test-span") as span:
+        structlog.get_logger("mylogger").info("something-happened", detail="value")
+
+    # Then — span event is added with the same name and attributes
+    events = span.events  # type: ignore[attr-defined]
+    assert len(events) == 1
+    assert events[0].name == "mylogger.something_happened"
+    assert events[0].attributes is not None
+    assert events[0].attributes["detail"] == "value"
+
+
+def test_otel_processor__no_active_span__no_span_event(
+    otel_exporter: InMemoryLogExporter,
+) -> None:
+    # Given / When — no active span
+    structlog.get_logger("mylogger").info("no-span-event")
+
+    # Then — log record is still emitted
+    records = otel_exporter.get_finished_logs()
+    assert len(records) == 1
+    assert records[0].log_record.body == "no-span-event"
+
+
 def test_build_otel_log_provider__valid_args__returns_configured_provider() -> None:
     # Given / When
     provider = build_otel_log_provider(

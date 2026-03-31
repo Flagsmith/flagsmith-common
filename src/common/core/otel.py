@@ -3,6 +3,7 @@ import json
 from collections.abc import Generator
 from datetime import datetime, timezone
 from importlib.metadata import version
+from typing import cast
 
 import inflection
 import structlog
@@ -30,7 +31,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace.propagation.tracecontext import (
     TraceContextTextMapPropagator,
 )
-from opentelemetry.util.types import AnyValue
+from opentelemetry.util.types import AnyValue, Attributes
 from structlog.typing import EventDict, Processor
 
 _SEVERITY_MAP: dict[str, SeverityNumber] = {
@@ -110,6 +111,14 @@ def make_structlog_otel_processor(logger_provider: LoggerProvider) -> Processor:
             event_name=event_name,
             attributes=attributes,
         )
+
+        # Also attach as a span event if there's an active span.
+        span = trace.get_current_span()
+        if span.is_recording():
+            # AnyValue is a superset of AttributeValue at runtime;
+            # the cast keeps mypy happy.
+            span.add_event(event_name, attributes=cast(Attributes, attributes))
+
         return event_dict
 
     return processor

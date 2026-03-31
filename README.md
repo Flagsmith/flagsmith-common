@@ -120,7 +120,7 @@ When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, `ensure_cli_env()` sets up:
   - **Django** (`DjangoInstrumentor`): creates a root span per HTTP request with span names formatted as `{METHOD} {route_template}` (e.g. `GET /api/v1/projects/{pk}/`).
   - **psycopg2** (`Psycopg2Instrumentor`): creates child spans for each SQL query with `db.system`, `db.statement`, and `db.name` attributes. SQL commenter is enabled, adding trace context as SQL comments for database-side correlation.
   - **Redis** (`RedisInstrumentor`): creates child spans for each Redis command with `db.system` and `db.statement` attributes.
-- **Structured log export**: A structlog processor that routes log events to an OTLP log endpoint.
+- **Structured log export**: A structlog processor that emits each log event as both an OTLP log record and a span event (when an active span exists).
 
 #### Emitting OTel log events via structlog
 
@@ -133,13 +133,16 @@ log = structlog.get_logger("code_references")
 log.info("scan-created", code_references__count=3, feature__count=2)
 ```
 
-This produces an OTLP log record with:
+This produces:
 
-- `Body: scan-created`
-- `EventName: code_references.scan_created` (logger name + `inflection.underscore` of the event)
-- `Severity: INFO`
-- `Attributes: code_references.count=3, feature.count=2` (double underscores are converted to dots)
-- W3C Baggage entries from the current OTel context are copied into log attributes (e.g. `amplitude.device_id`, `amplitude.session_id`).
+1. An **OTLP log record** with:
+   - `Body: scan-created`
+   - `EventName: code_references.scan_created` (logger name + `inflection.underscore` of the event)
+   - `Severity: INFO`
+   - `Attributes: code_references.count=3, feature.count=2` (double underscores are converted to dots)
+   - W3C Baggage entries from the current OTel context are copied into log attributes (e.g. `amplitude.device_id`, `amplitude.session_id`).
+
+2. A **span event** on the active span (if one exists) with the same name and attributes. This makes structlog events visible in trace backends (e.g. SigNoz's "Events" tab) without requiring separate log correlation. When no span is active (e.g. during startup or management commands), only the OTLP log record is emitted.
 
 ### Metrics
 
