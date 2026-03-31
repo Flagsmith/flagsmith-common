@@ -104,13 +104,13 @@ def make_structlog_otel_processor(logger_provider: LoggerProvider) -> Processor:
         # Keep a custom attribute for better visibility.
         attributes["flagsmith.event"] = event_name
 
+        log_level = event_dict.get("level", method_name)
+
         otel_logger.emit(
             timestamp=int(datetime.now(timezone.utc).timestamp() * 1e9),
             context=otel_context.get_current(),
-            severity_number=map_event_dict_to_otel_severity_number(
-                event_dict=event_dict,
-                method_name=method_name,
-            ),
+            severity_text=log_level,
+            severity_number=_SEVERITY_MAP.get(log_level, SeverityNumber.TRACE),
             body=body,
             event_name=event_name,
             attributes=attributes,
@@ -126,14 +126,6 @@ def make_structlog_otel_processor(logger_provider: LoggerProvider) -> Processor:
         return event_dict
 
     return processor
-
-
-def map_event_dict_to_otel_severity_number(
-    event_dict: EventDict,
-    method_name: str,
-) -> SeverityNumber:
-    level = event_dict.get("level", method_name)
-    return _SEVERITY_MAP.get(level, SeverityNumber.INFO)
 
 
 def map_event_dict_to_otel_attributes(event_dict: EventDict) -> dict[str, AnyValue]:

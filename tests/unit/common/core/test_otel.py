@@ -74,6 +74,7 @@ def test_otel_processor__event_with_logger_name__emits_namespaced_record(
     assert log_record.body == "scan.created"
     assert log_record.event_name == "code_references.scan.created"
     assert log_record.severity_number == SeverityNumber.INFO
+    assert log_record.severity_text == "info"
     assert log_record.attributes is not None
     assert log_record.attributes["organisation.id"] == 42
     assert log_record.attributes["code_references.count"] == 3

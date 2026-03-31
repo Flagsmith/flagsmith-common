@@ -111,6 +111,7 @@ def test_structlog_otel_log_record__basic_event__body_event_name_severity_attrib
     assert log_record.body == "scan-created"
     assert log_record.event_name == "mylogger.scan_created"
     assert log_record.severity_number == SeverityNumber.INFO
+    assert log_record.severity_text == "info"
 
     attrs = log_record.attributes
     assert attrs is not None
