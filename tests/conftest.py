@@ -4,7 +4,14 @@ from typing import Generator
 
 import prometheus_client
 import pytest
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+    InMemorySpanExporter,
+)
 
+from common.core.otel import setup_tracing
 from tests import GetLogsFixture
 
 pytest_plugins = "flagsmith-test-tools"
@@ -53,6 +60,23 @@ def prometheus_multiprocess_mode_marked(request: pytest.FixtureRequest) -> None:
         if marker.name == "prometheus_multiprocess_mode":
             request.getfixturevalue("prometheus_multiproc_dir")
             return
+
+
+@pytest.fixture(scope="session", autouse=True)
+def otel_tracing() -> Generator[InMemorySpanExporter, None, None]:
+    """Session-scoped OTel tracing setup.
+
+    Autouse + session-scoped ensures Psycopg2Instrumentor patches
+    ``psycopg2.connect`` before any Django DB connections are created.
+    """
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider(
+        resource=Resource.create({"service.name": "test-service"}),
+    )
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+
+    with setup_tracing(provider, excluded_urls="health/liveness"):
+        yield exporter
 
 
 @pytest.fixture(scope="session")

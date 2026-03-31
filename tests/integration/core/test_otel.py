@@ -15,7 +15,6 @@ from opentelemetry.sdk._logs.export import (
 )
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
     InMemorySpanExporter,
 )
@@ -29,7 +28,6 @@ from common.core.logging import setup_logging
 from common.core.otel import (
     add_otel_trace_context,
     make_structlog_otel_processor,
-    setup_tracing,
 )
 
 
@@ -66,31 +64,10 @@ def setup_logging_fixture(
     structlog.reset_defaults()
 
 
-@pytest.fixture(scope="module", name="setup_tracing")
-def setup_tracing_fixture() -> Generator[InMemorySpanExporter, None, None]:
-    """Set up OTel tracing for the test module, yielding the in-memory span exporter.
-
-    Module-scoped because OTel only allows setting the global TracerProvider once per process.
-    Use the ``span_exporter`` fixture for per-test isolation.
-
-    This exercises the real ``setup_tracing`` context manager. Its behaviour can be
-    verified indirectly by asserting on the effects: spans created by Django,
-    trace context propagation, and propagator wiring.
-    """
-    exporter = InMemorySpanExporter()
-    provider = TracerProvider(
-        resource=Resource.create({"service.name": "test-service"}),
-    )
-    provider.add_span_processor(SimpleSpanProcessor(exporter))
-
-    with setup_tracing(provider, excluded_urls="health/liveness"):
-        yield exporter
-
-
 @pytest.fixture()
-def span_exporter(setup_tracing: InMemorySpanExporter) -> InMemorySpanExporter:
-    setup_tracing.clear()
-    return setup_tracing
+def span_exporter(otel_tracing: InMemorySpanExporter) -> InMemorySpanExporter:
+    otel_tracing.clear()
+    return otel_tracing
 
 
 def test_structlog_otel_log_record__basic_event__body_event_name_severity_attributes(
