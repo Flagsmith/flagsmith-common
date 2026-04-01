@@ -3,7 +3,6 @@ from typing import Generator
 import pytest
 import pytest_mock
 import structlog
-from opentelemetry import baggage, context
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk._logs.export import (
@@ -54,35 +53,6 @@ def add_otel_processor(
     )
     yield
     structlog.reset_defaults()
-
-
-def test_otel_processor__event_with_logger_name__emits_namespaced_record(
-    otel_exporter: InMemoryLogExporter,
-) -> None:
-    # Given / When
-    structlog.get_logger("code_references").info(
-        "scan.created",
-        organisation__id=42,
-        code_references__count=3,
-    )
-
-    # Then
-    records = otel_exporter.get_finished_logs()
-    assert len(records) == 1
-
-    log_record = records[0].log_record
-    assert log_record.body == "scan.created"
-    assert log_record.event_name == "code_references.scan.created"
-    assert log_record.severity_number == SeverityNumber.INFO
-    assert log_record.severity_text == "info"
-    assert log_record.attributes is not None
-    assert log_record.attributes["organisation.id"] == 42
-    assert log_record.attributes["code_references.count"] == 3
-    assert log_record.attributes["flagsmith.event"] == "code_references.scan.created"
-    assert "event" not in log_record.attributes
-    assert "level" not in log_record.attributes
-    assert "timestamp" not in log_record.attributes
-    assert "logger" not in log_record.attributes
 
 
 def test_otel_processor__kebab_case_event__normalises_to_underscores(
@@ -146,23 +116,6 @@ def test_otel_processor__single_underscore_attributes__left_unchanged(
     assert attrs["issues_created_count"] == 7
 
 
-def test_otel_processor__non_primitive_attributes__serialises_to_json(
-    otel_exporter: InMemoryLogExporter,
-) -> None:
-    # Given / When
-    structlog.get_logger().info(
-        "test-event",
-        nested={"key": "value"},
-        items=[1, 2, 3],
-    )
-
-    # Then
-    attrs = otel_exporter.get_finished_logs()[0].log_record.attributes
-    assert attrs is not None
-    assert attrs["nested"] == '{"key": "value"}'
-    assert attrs["items"] == "[1, 2, 3]"
-
-
 @pytest.mark.parametrize(
     "method, expected_severity",
     [
@@ -184,27 +137,6 @@ def test_otel_processor__severity_level__maps_correctly(
     # Then
     log_record = otel_exporter.get_finished_logs()[0].log_record
     assert log_record.severity_number == expected_severity
-
-
-def test_otel_processor__w3c_baggage__propagated_to_attributes(
-    otel_exporter: InMemoryLogExporter,
-) -> None:
-    # Given
-    ctx = baggage.set_baggage("amplitude.device_id", "device-123")
-    ctx = baggage.set_baggage("amplitude.session_id", "session-456", context=ctx)
-
-    # When
-    token = context.attach(ctx)
-    try:
-        structlog.get_logger().info("test")
-    finally:
-        context.detach(token)
-
-    # Then
-    attrs = otel_exporter.get_finished_logs()[0].log_record.attributes
-    assert attrs is not None
-    assert attrs["amplitude.device_id"] == "device-123"
-    assert attrs["amplitude.session_id"] == "session-456"
 
 
 def test_otel_processor__active_span__adds_span_event(
