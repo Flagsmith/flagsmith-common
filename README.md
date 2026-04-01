@@ -106,7 +106,7 @@ OTel instrumentation is opt-in, controlled by environment variables:
 
 | Variable                          | Description                                                                                                           | Default         |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------- |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`     | Base OTLP endpoint (e.g. `http://collector:4318`). If unset, no OTel setup occurs and OTel packages are not imported. | _(disabled)_    |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`     | Base OTLP endpoint (e.g. `http://collector:4318`). If unset, no OTel setup occurs.                                    | _(disabled)_    |
 | `OTEL_SERVICE_NAME`               | The `service.name` resource attribute.                                                                                | `flagsmith-api` |
 | `OTEL_TRACING_EXCLUDED_URL_PATHS` | Comma-separated URL paths to exclude from tracing (e.g. `health/liveness,health/readiness`).                          | _(none)_        |
 
