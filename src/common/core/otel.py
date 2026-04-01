@@ -96,7 +96,7 @@ def make_structlog_otel_processor(logger_provider: LoggerProvider) -> Processor:
 
         body = event_dict.get("event", "")
         logger_name = event_dict.get("logger")
-        event_name = inflection.underscore(body)
+        event_name = inflection.underscore(body) if body else "unknown"
         if logger_name:
             event_name = f"{logger_name}.{event_name}"
 

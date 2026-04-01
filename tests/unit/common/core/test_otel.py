@@ -67,6 +67,18 @@ def test_otel_processor__kebab_case_event__normalises_to_underscores(
     assert log_record.event_name == "code_references.scan_created"
 
 
+def test_otel_processor__empty_event__defaults_to_unknown(
+    otel_exporter: InMemoryLogExporter,
+) -> None:
+    # Given / When
+    structlog.get_logger("mylogger").info("")
+
+    # Then
+    log_record = otel_exporter.get_finished_logs()[0].log_record
+    assert log_record.body == ""
+    assert log_record.event_name == "mylogger.unknown"
+
+
 def test_otel_processor__no_explicit_logger_name__uses_module_name_as_prefix(
     otel_exporter: InMemoryLogExporter,
 ) -> None:
