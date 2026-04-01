@@ -37,6 +37,35 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     """
     ctx = contextlib.ExitStack()
 
+    # Set up OTel instrumentation (opt-in via OTEL_EXPORTER_OTLP_ENDPOINT).
+    otel_processors = None
+    otel_endpoint = env.str("OTEL_EXPORTER_OTLP_ENDPOINT", None)
+    if otel_endpoint:
+        from common.core.otel import (
+            add_otel_trace_context,
+            build_otel_log_provider,
+            build_tracer_provider,
+            make_structlog_otel_processor,
+            setup_tracing,
+        )
+
+        service_name = env.str("OTEL_SERVICE_NAME", "flagsmith-api")
+        log_provider = build_otel_log_provider(
+            endpoint=f"{otel_endpoint}/v1/logs",
+            service_name=service_name,
+        )
+        otel_processors = [
+            add_otel_trace_context,
+            make_structlog_otel_processor(log_provider),
+        ]
+        tracer_provider = build_tracer_provider(
+            endpoint=f"{otel_endpoint}/v1/traces",
+            service_name=service_name,
+        )
+        excluded_urls = env.str("OTEL_TRACING_EXCLUDED_URL_PATHS", None)
+        ctx.enter_context(setup_tracing(tracer_provider, excluded_urls=excluded_urls))
+        ctx.callback(log_provider.shutdown)
+
     # Set up logging early, before Django settings are loaded.
     setup_logging(
         log_level=env.str("LOG_LEVEL", "INFO"),
@@ -48,6 +77,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
                 env.list("ACCESS_LOG_EXTRA_ITEMS", []) or None,
             ),
         ],
+        otel_processors=otel_processors,
     )
 
     # Prometheus multiproc support

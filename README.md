@@ -96,6 +96,54 @@ Use this mark to auto-use the `saas_mode` fixture.
 
 Use this mark to auto-use the `enterprise_mode` fixture.
 
+### OpenTelemetry
+
+Flagsmith supports exporting traces and structured logs over OTLP.
+
+#### Configuration
+
+OTel instrumentation is opt-in, controlled by environment variables:
+
+| Variable                          | Description                                                                                                           | Default         |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`     | Base OTLP endpoint (e.g. `http://collector:4318`). If unset, no OTel setup occurs.                                    | _(disabled)_    |
+| `OTEL_SERVICE_NAME`               | The `service.name` resource attribute.                                                                                | `flagsmith-api` |
+| `OTEL_TRACING_EXCLUDED_URL_PATHS` | Comma-separated URL paths to exclude from tracing (e.g. `health/liveness,health/readiness`).                          | _(none)_        |
+
+Standard `OTEL_*` env vars (e.g. `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_EXPORTER_OTLP_HEADERS`) are also respected by the OTel SDK.
+
+#### What gets configured
+
+When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, `ensure_cli_env()` sets up:
+
+- **Tracing**: `TracerProvider` with OTLP/HTTP span export, W3C `TraceContext` + `Baggage` propagation, and auto-instrumentation for:
+  - **Django** (`DjangoInstrumentor`): creates a root span per HTTP request with span names formatted as `{METHOD} {route_template}` (e.g. `GET /api/v1/projects/{pk}/`).
+  - **psycopg2** (`Psycopg2Instrumentor`): creates child spans for each SQL query with `db.system`, `db.statement`, and `db.name` attributes. SQL commenter is enabled, adding trace context as SQL comments for database-side correlation.
+  - **Redis** (`RedisInstrumentor`): creates child spans for each Redis command with `db.system` and `db.statement` attributes.
+- **Structured log export**: A structlog processor that emits each log event as both an OTLP log record and a span event (when an active span exists).
+
+#### Emitting OTel log events via structlog
+
+Use structlog as usual. The OTel processor captures events and maps them to OTLP log records:
+
+```python
+import structlog
+
+log = structlog.get_logger("code_references")
+log.info("scan-created", code_references__count=3, feature__count=2)
+```
+
+This produces:
+
+1. An **OTLP log record** with:
+   - `Body: scan-created`
+   - `EventName: code_references.scan_created` (logger name + `inflection.underscore` of the event)
+   - `Severity: INFO`
+   - `Attributes: code_references.count=3, feature.count=2` (double underscores are converted to dots)
+   - W3C Baggage entries from the current OTel context are copied into log attributes (e.g. `amplitude.device_id`, `amplitude.session_id`).
+
+2. A **span event** on the active span (if one exists) with the same name and attributes. This makes structlog events visible in trace backends (e.g. SigNoz's "Events" tab) without requiring separate log correlation. When no span is active (e.g. during startup or management commands), only the OTLP log record is emitted.
+
 ### Metrics
 
 Flagsmith uses Prometheus to track performance metrics.
