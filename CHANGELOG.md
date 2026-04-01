@@ -2,6 +2,18 @@
 
 <a name="v1.5.2"></a>
 
+## [3.6.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.5.0...v3.6.0) (2026-04-01)
+
+
+### CI
+
+* pre-commit autoupdate ([#187](https://github.com/Flagsmith/flagsmith-common/issues/187)) ([275cf59](https://github.com/Flagsmith/flagsmith-common/commit/275cf59f232e24d9d16b63cfb2fc06ae85906982))
+
+
+### Features
+
+* Integrate OpenTelemetry ([#189](https://github.com/Flagsmith/flagsmith-common/issues/189)) ([2134b53](https://github.com/Flagsmith/flagsmith-common/commit/2134b53afcd26bb6d5bcc729bfa1ce068cbda0cb))
+
 ## [3.5.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.4.0...v3.5.0) (2026-03-30)
 
 
