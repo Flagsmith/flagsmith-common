@@ -122,10 +122,8 @@ def test_structlog_otel_log_record__w3c_baggage__propagated_to_log_attributes(
 
     # When
     token = context.attach(ctx)
-    try:
-        structlog.get_logger("mylogger").info("event-tracked")
-    finally:
-        context.detach(token)
+    structlog.get_logger("mylogger").info("event-tracked")
+    context.detach(token)
 
     # Then
     attrs = log_exporter.get_finished_logs()[0].log_record.attributes
