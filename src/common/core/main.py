@@ -37,7 +37,24 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     """
     ctx = contextlib.ExitStack()
 
+    # Currently we don't install Flagsmith modules as a package, so we need to add
+    # $CWD to the Python path to be able to import them
+    sys.path.append(os.getcwd())
+
+    # TODO @khvn26 We should find a better way to pre-set the Django settings module
+    # without resorting to it being set outside of the application
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.dev")
+
+    if "docgen" in sys.argv:
+        os.environ["DOCGEN_MODE"] = "true"
+
+    if "task-processor" in sys.argv:
+        # A hacky way to signal we're not running the API
+        os.environ["RUN_BY_PROCESSOR"] = "true"
+
     # Set up OTel instrumentation (opt-in via OTEL_EXPORTER_OTLP_ENDPOINT).
+    # Must come after sys.path / DJANGO_SETTINGS_MODULE setup because
+    # DjangoInstrumentor accesses settings.MIDDLEWARE.
     otel_processors = None
     otel_endpoint = env.str("OTEL_EXPORTER_OTLP_ENDPOINT", None)
     if otel_endpoint:
@@ -83,21 +100,6 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     # Prometheus multiproc support
     if not os.environ.get("PROMETHEUS_MULTIPROC_DIR"):
         os.environ["PROMETHEUS_MULTIPROC_DIR"] = mkdtemp(prefix="flagsmith-prometheus-")
-
-    # Currently we don't install Flagsmith modules as a package, so we need to add
-    # $CWD to the Python path to be able to import them
-    sys.path.append(os.getcwd())
-
-    # TODO @khvn26 We should find a better way to pre-set the Django settings module
-    # without resorting to it being set outside of the application
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.dev")
-
-    if "docgen" in sys.argv:
-        os.environ["DOCGEN_MODE"] = "true"
-
-    if "task-processor" in sys.argv:
-        # A hacky way to signal we're not running the API
-        os.environ["RUN_BY_PROCESSOR"] = "true"
 
     with ctx:
         yield
