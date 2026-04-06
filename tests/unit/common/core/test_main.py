@@ -1,30 +1,30 @@
 import os
-from unittest.mock import ANY, MagicMock, patch
 
+import pytest
 from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk.trace import TracerProvider
+from pytest_mock import MockerFixture
 from structlog.typing import Processor
 
 from common.core.main import ensure_cli_env
 from common.core.otel import add_otel_trace_context
 
 
-def test_ensure_cli_env__env_vars_set__calls_setup_logging_with_env_values() -> None:
+def test_ensure_cli_env__env_vars_set__calls_setup_logging_with_env_values(
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+) -> None:
     # Given
-    env = {
-        "LOG_LEVEL": "WARNING",
-        "LOG_FORMAT": "json",
-        "LOGGING_CONFIGURATION_FILE": "/tmp/logging.json",
-        "APPLICATION_LOGGERS": "myapp,mylib",
-        "ACCESS_LOG_EXTRA_ITEMS": "{flagsmith.route}e,{origin}i",
-    }
+    monkeypatch.setenv("LOG_LEVEL", "WARNING")
+    monkeypatch.setenv("LOG_FORMAT", "json")
+    monkeypatch.setenv("LOGGING_CONFIGURATION_FILE", "/tmp/logging.json")
+    monkeypatch.setenv("APPLICATION_LOGGERS", "myapp,mylib")
+    monkeypatch.setenv("ACCESS_LOG_EXTRA_ITEMS", "{flagsmith.route}e,{origin}i")
+
+    mock_setup = mocker.patch("common.core.main.setup_logging")
 
     # When
-    with (
-        patch.dict(os.environ, env),
-        patch("common.core.main.setup_logging") as mock_setup,
-        ensure_cli_env(),
-    ):
+    with ensure_cli_env():
         pass
 
     # Then
@@ -33,18 +33,18 @@ def test_ensure_cli_env__env_vars_set__calls_setup_logging_with_env_values() -> 
         log_format="json",
         logging_configuration_file="/tmp/logging.json",
         application_loggers=["myapp", "mylib"],
-        extra_foreign_processors=ANY,
+        extra_foreign_processors=mocker.ANY,
         otel_processors=None,
     )
 
 
-def test_ensure_cli_env__no_env_vars__calls_setup_logging_with_defaults() -> None:
+def test_ensure_cli_env__no_env_vars__calls_setup_logging_with_defaults(
+    mocker: MockerFixture,
+) -> None:
     # Given / When
-    with (
-        patch.dict(os.environ, {}),
-        patch("common.core.main.setup_logging") as mock_setup,
-        ensure_cli_env(),
-    ):
+    mock_setup = mocker.patch("common.core.main.setup_logging")
+
+    with ensure_cli_env():
         pass
 
     # Then
@@ -53,37 +53,39 @@ def test_ensure_cli_env__no_env_vars__calls_setup_logging_with_defaults() -> Non
         log_format="generic",
         logging_configuration_file=None,
         application_loggers=None,
-        extra_foreign_processors=ANY,
+        extra_foreign_processors=mocker.ANY,
         otel_processors=None,
     )
 
 
-def test_ensure_cli_env__otel_endpoint_set__configures_otel_processors() -> None:
+def test_ensure_cli_env__otel_endpoint_set__configures_otel_processors(
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+) -> None:
     # Given
-    env = {"OTEL_EXPORTER_OTLP_ENDPOINT": "http://collector:4318"}
-    mock_log_provider = MagicMock(spec=LoggerProvider)
-    mock_tracer_provider = MagicMock(spec=TracerProvider)
-    mock_otel_log_processor = MagicMock(spec=Processor)
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318")
+
+    mock_log_provider = mocker.MagicMock(spec=LoggerProvider)
+    mock_tracer_provider = mocker.MagicMock(spec=TracerProvider)
+    mock_otel_log_processor = mocker.MagicMock(spec=Processor)
+
+    mock_setup = mocker.patch("common.core.main.setup_logging")
+    mock_build_log = mocker.patch(
+        "common.core.otel.build_otel_log_provider",
+        return_value=mock_log_provider,
+    )
+    mock_build_tracer = mocker.patch(
+        "common.core.otel.build_tracer_provider",
+        return_value=mock_tracer_provider,
+    )
+    mock_make_processor = mocker.patch(
+        "common.core.otel.make_structlog_otel_processor",
+        return_value=mock_otel_log_processor,
+    )
+    mock_setup_tracing = mocker.patch("common.core.otel.setup_tracing")
 
     # When
-    with (
-        patch.dict(os.environ, env),
-        patch("common.core.main.setup_logging") as mock_setup,
-        patch(
-            "common.core.otel.build_otel_log_provider",
-            return_value=mock_log_provider,
-        ) as mock_build_log,
-        patch(
-            "common.core.otel.build_tracer_provider",
-            return_value=mock_tracer_provider,
-        ) as mock_build_tracer,
-        patch(
-            "common.core.otel.make_structlog_otel_processor",
-            return_value=mock_otel_log_processor,
-        ) as mock_make_processor,
-        patch("common.core.otel.setup_tracing") as mock_setup_tracing,
-        ensure_cli_env(),
-    ):
+    with ensure_cli_env():
         pass
 
     # Then — OTel providers are built with the right endpoint and service name
@@ -106,31 +108,29 @@ def test_ensure_cli_env__otel_endpoint_set__configures_otel_processors() -> None
     ]
 
 
-def test_ensure_cli_env__otel_custom_service_name_and_excluded_urls__passes_to_providers() -> (
-    None
-):
+def test_ensure_cli_env__otel_custom_service_name_and_excluded_urls__passes_to_providers(
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+) -> None:
     # Given
-    env = {
-        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://collector:4318",
-        "OTEL_SERVICE_NAME": "my-service",
-        "OTEL_TRACING_EXCLUDED_URL_PATHS": "health/liveness,health/readiness",
-    }
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318")
+    monkeypatch.setenv("OTEL_SERVICE_NAME", "my-service")
+    monkeypatch.setenv(
+        "OTEL_TRACING_EXCLUDED_URL_PATHS", "health/liveness,health/readiness"
+    )
+
+    mock_build_log = mocker.patch(
+        "common.core.otel.build_otel_log_provider",
+        return_value=mocker.MagicMock(spec=LoggerProvider),
+    )
+    mock_build_tracer = mocker.patch(
+        "common.core.otel.build_tracer_provider",
+        return_value=mocker.MagicMock(spec=TracerProvider),
+    )
+    mock_setup_tracing = mocker.patch("common.core.otel.setup_tracing")
 
     # When
-    with (
-        patch.dict(os.environ, env),
-        patch("common.core.main.setup_logging"),
-        patch(
-            "common.core.otel.build_otel_log_provider",
-            return_value=MagicMock(spec=LoggerProvider),
-        ) as mock_build_log,
-        patch(
-            "common.core.otel.build_tracer_provider",
-            return_value=MagicMock(spec=TracerProvider),
-        ) as mock_build_tracer,
-        patch("common.core.otel.setup_tracing") as mock_setup_tracing,
-        ensure_cli_env(),
-    ):
+    with ensure_cli_env():
         pass
 
     # Then
@@ -146,3 +146,25 @@ def test_ensure_cli_env__otel_custom_service_name_and_excluded_urls__passes_to_p
         mock_build_tracer.return_value,
         excluded_urls="health/liveness,health/readiness",
     )
+
+
+def test_ensure_cli_env__docgen_in_argv__sets_docgen_mode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    monkeypatch.setattr("sys.argv", ["flagsmith", "docgen", "metrics"])
+
+    # When / Then
+    with ensure_cli_env():
+        assert os.environ.get("DOCGEN_MODE") == "true"
+
+
+def test_ensure_cli_env__task_processor_in_argv__sets_run_by_processor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    monkeypatch.setattr("sys.argv", ["flagsmith", "task-processor"])
+
+    # When / Then
+    with ensure_cli_env():
+        assert os.environ.get("RUN_BY_PROCESSOR") == "true"
