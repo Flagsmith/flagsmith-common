@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [3.6.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.6.0...v3.6.1) (2026-04-06)
+
+
+### Bug Fixes
+
+* DjangoInstrumentor poisons settings when OTEL_EXPORTER_OTLP_ENDPOINT is set ([#192](https://github.com/Flagsmith/flagsmith-common/issues/192)) ([404031a](https://github.com/Flagsmith/flagsmith-common/commit/404031ada2e30ac4ada0693cad1b36e43e6dd674)), closes [#191](https://github.com/Flagsmith/flagsmith-common/issues/191)
+
 ## [3.6.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.5.0...v3.6.0) (2026-04-01)
 
 
