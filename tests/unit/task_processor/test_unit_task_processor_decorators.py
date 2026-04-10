@@ -259,8 +259,7 @@ def test_create_task__with_priority__sets_expected_priority(
 def test_delay__active_trace__persists_trace_context_on_task() -> None:
     # Given
     @register_task_handler()
-    def my_function() -> None:
-        pass
+    def my_function() -> None: ...
 
     tracer = trace.get_tracer("test")
 
@@ -278,8 +277,7 @@ def test_delay__active_trace__persists_trace_context_on_task() -> None:
 def test_delay__no_active_trace__persists_empty_trace_context() -> None:
     # Given
     @register_task_handler()
-    def my_function() -> None:
-        pass
+    def my_function() -> None: ...
 
     # When
     task = my_function.delay()
@@ -293,8 +291,7 @@ def test_delay__no_active_trace__persists_empty_trace_context() -> None:
 def test_delay__baggage__persists_baggage_in_trace_context() -> None:
     # Given
     @register_task_handler()
-    def my_function() -> None:
-        pass
+    def my_function() -> None: ...
 
     tracer = trace.get_tracer("test")
     ctx = baggage.set_baggage("amplitude.device_id", "device-123")
