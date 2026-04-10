@@ -66,7 +66,12 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
             setup_tracing,
         )
 
-        service_name = env.str("OTEL_SERVICE_NAME", "flagsmith-api")
+        default_service_name = (
+            "flagsmith-task-processor"
+            if "task-processor" in sys.argv
+            else "flagsmith-api"
+        )
+        service_name = env.str("OTEL_SERVICE_NAME", default_service_name)
         log_provider = build_otel_log_provider(
             endpoint=f"{otel_endpoint}/v1/logs",
             service_name=service_name,

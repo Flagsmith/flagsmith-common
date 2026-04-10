@@ -5,6 +5,7 @@ from datetime import timedelta
 from unittest.mock import MagicMock
 
 import pytest
+from opentelemetry import baggage, context, trace
 from pytest_django import DjangoCaptureOnCommitCallbacks
 from pytest_django.fixtures import SettingsWrapper
 from pytest_mock import MockerFixture
@@ -252,3 +253,59 @@ def test_create_task__with_priority__sets_expected_priority(
     # Then
     assert task
     assert task.priority == TaskPriority.HIGH
+
+
+@pytest.mark.django_db
+def test_delay__active_trace__persists_trace_context_on_task() -> None:
+    # Given
+    @register_task_handler()
+    def my_function() -> None:
+        pass
+
+    tracer = trace.get_tracer("test")
+
+    # When
+    with tracer.start_as_current_span("test-request"):
+        task = my_function.delay()
+
+    # Then
+    assert task is not None
+    assert task.trace_context is not None
+    assert "traceparent" in task.trace_context
+
+
+@pytest.mark.django_db
+def test_delay__no_active_trace__persists_empty_trace_context() -> None:
+    # Given
+    @register_task_handler()
+    def my_function() -> None:
+        pass
+
+    # When
+    task = my_function.delay()
+
+    # Then
+    assert task is not None
+    assert task.trace_context is None
+
+
+@pytest.mark.django_db
+def test_delay__baggage__persists_baggage_in_trace_context() -> None:
+    # Given
+    @register_task_handler()
+    def my_function() -> None:
+        pass
+
+    tracer = trace.get_tracer("test")
+    ctx = baggage.set_baggage("amplitude.device_id", "device-123")
+    context.attach(ctx)
+
+    # When
+    with tracer.start_as_current_span("test-request"):
+        task = my_function.delay()
+
+    # Then
+    assert task is not None
+    assert task.trace_context is not None
+    assert "baggage" in task.trace_context
+    assert "amplitude.device_id=device-123" in task.trace_context["baggage"]

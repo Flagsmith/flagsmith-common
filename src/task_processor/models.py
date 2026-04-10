@@ -10,7 +10,7 @@ from django.utils import timezone
 from task_processor.exceptions import TaskQueueFullError
 from task_processor.managers import RecurringTaskManager, TaskManager
 from task_processor.task_registry import get_task, registered_tasks
-from task_processor.types import TaskCallable
+from task_processor.types import TaskCallable, TraceContext
 
 _django_json_encoder_default = DjangoJSONEncoder().default
 
@@ -31,6 +31,7 @@ class AbstractBaseTask(models.Model):
     serialized_kwargs = models.TextField(blank=True, null=True)
     is_locked = models.BooleanField(default=False)
     timeout = models.DurationField(blank=True, null=True)
+    trace_context = models.JSONField(null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -112,6 +113,7 @@ class Task(AbstractBaseTask):
         args: typing.Tuple[typing.Any, ...] | None = None,
         kwargs: typing.Dict[str, typing.Any] | None = None,
         timeout: timedelta | None = timedelta(seconds=60),
+        trace_context: TraceContext | None = None,
     ) -> "Task":
         if queue_size and cls._is_queue_full(task_identifier, queue_size):
             raise TaskQueueFullError(
@@ -125,6 +127,7 @@ class Task(AbstractBaseTask):
             serialized_args=cls.serialize_data(args or tuple()),
             serialized_kwargs=cls.serialize_data(kwargs or dict()),
             timeout=timeout,
+            trace_context=trace_context,
         )
 
     @classmethod

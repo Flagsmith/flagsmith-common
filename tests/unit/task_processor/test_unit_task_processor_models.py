@@ -117,3 +117,30 @@ def test_recurring_task_should_execute__first_run_time_before_midnight__returns_
 
     # When & Then
     assert task.should_execute is True
+
+
+@pytest.mark.parametrize(
+    "trace_context",
+    [
+        pytest.param(
+            {"traceparent": "00-abcdef-123456-01", "baggage": "key=val"},
+            id="with_trace_context",
+        ),
+        pytest.param(None, id="without_trace_context"),
+    ],
+)
+@pytest.mark.django_db
+def test_task_create__trace_context__persists_expected(
+    trace_context: dict[str, str] | None,
+) -> None:
+    # Given / When
+    task = Task.create(
+        task_identifier="test_task",
+        scheduled_for=timezone.now(),
+        trace_context=trace_context,
+    )
+    task.save()
+
+    # Then
+    task.refresh_from_db()
+    assert task.trace_context == trace_context

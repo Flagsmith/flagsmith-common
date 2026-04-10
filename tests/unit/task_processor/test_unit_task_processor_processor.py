@@ -8,10 +8,15 @@ import pytest
 from django.core.cache import cache
 from django.utils import timezone
 from freezegun import freeze_time
+from opentelemetry import trace
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+    InMemorySpanExporter,
+)
+from opentelemetry.trace import StatusCode
 from pytest_django.fixtures import SettingsWrapper
 from pytest_mock import MockerFixture
 
-from common.test_tools.types import AssertMetricFixture
+from common.test_tools.types import AssertMetricFixture, RunTasksFixture
 from task_processor.decorators import (
     TaskHandler,
     register_recurring_task,
@@ -1032,3 +1037,138 @@ def test_run_task__timeout__does_not_block(
     task.refresh_from_db(using=current_database)
     assert task.completed is False
     assert task.num_failures == 1
+
+
+PARENT_TRACE_ID = 0x0AF7651916CD43DD8448EB211C80319C
+PARENT_SPAN_ID = 0xB7AD6B7169203331
+TRACEPARENT = f"00-{PARENT_TRACE_ID:032x}-{PARENT_SPAN_ID:016x}-01"
+
+
+@pytest.mark.parametrize(
+    "trace_context, expected_parent_trace_id, expected_parent_span_id",
+    [
+        pytest.param(
+            {"traceparent": TRACEPARENT},
+            PARENT_TRACE_ID,
+            PARENT_SPAN_ID,
+            id="with_parent_span",
+        ),
+        pytest.param({}, None, None, id="empty_carrier"),
+        pytest.param(None, None, None, id="null"),
+    ],
+)
+def test_run_task__success__expected_span(
+    trace_context: dict[str, str] | None,
+    expected_parent_trace_id: int | None,
+    expected_parent_span_id: int | None,
+    run_tasks: RunTasksFixture,
+    dummy_task: TaskHandler[[str, str]],
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    # Given
+    task = Task.create(
+        dummy_task.task_identifier,
+        scheduled_for=timezone.now(),
+        trace_context=trace_context,
+    )
+    task.save()
+
+    # When
+    run_tasks()
+
+    # Then
+    spans = span_exporter.get_finished_spans()
+    task_spans = [s for s in spans if s.name == dummy_task.task_identifier]
+    assert len(task_spans) == 1
+
+    task_span = task_spans[0]
+    assert task_span.attributes is not None
+    assert task_span.attributes["task_identifier"] == dummy_task.task_identifier
+    assert task_span.attributes["task_type"] == "standard"
+    assert task_span.attributes["result"] == "success"
+    assert getattr(task_span.parent, "trace_id", None) == expected_parent_trace_id
+    assert getattr(task_span.parent, "span_id", None) == expected_parent_span_id
+
+
+@pytest.mark.parametrize(
+    "trace_context, expected_parent_trace_id, expected_parent_span_id",
+    [
+        pytest.param(
+            {"traceparent": TRACEPARENT},
+            PARENT_TRACE_ID,
+            PARENT_SPAN_ID,
+            id="with_parent_span",
+        ),
+        pytest.param({}, None, None, id="empty_carrier"),
+        pytest.param(None, None, None, id="null"),
+    ],
+)
+def test_run_task__failure__expected_span(
+    trace_context: dict[str, str] | None,
+    expected_parent_trace_id: int | None,
+    expected_parent_span_id: int | None,
+    run_tasks: RunTasksFixture,
+    raise_exception_task: TaskHandler[[str]],
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    # Given
+    task = Task.create(
+        raise_exception_task.task_identifier,
+        scheduled_for=timezone.now(),
+        args=("test error",),
+        trace_context=trace_context,
+    )
+    task.save()
+
+    # When
+    run_tasks()
+
+    # Then
+    spans = span_exporter.get_finished_spans()
+    task_spans = [s for s in spans if s.name == raise_exception_task.task_identifier]
+    assert len(task_spans) == 1
+
+    task_span = task_spans[0]
+    assert task_span.status.status_code == StatusCode.ERROR
+    assert task_span.attributes is not None
+    assert (
+        task_span.attributes["task_identifier"] == raise_exception_task.task_identifier
+    )
+    assert task_span.attributes["task_type"] == "standard"
+    assert task_span.attributes["result"] == "failure"
+    assert getattr(task_span.parent, "trace_id", None) == expected_parent_trace_id
+    assert getattr(task_span.parent, "span_id", None) == expected_parent_span_id
+
+
+def test_delay_and_run__active_trace__propagates_to_task_span(
+    run_tasks: RunTasksFixture,
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    # Given
+    @register_task_handler()
+    def _traced_task() -> None:
+        pass
+
+    tracer = trace.get_tracer("test")
+
+    # When — enqueue within an active span
+    with tracer.start_as_current_span("django-request") as request_span:
+        task = _traced_task.delay()
+
+    assert task is not None
+    assert task.trace_context is not None
+    assert "traceparent" in task.trace_context
+
+    # Run the task
+    run_tasks()
+
+    # Then — verify full trace linkage
+    spans = span_exporter.get_finished_spans()
+    task_spans = [s for s in spans if s.name == _traced_task.task_identifier]
+    assert len(task_spans) == 1
+
+    task_span = task_spans[0]
+    request_ctx = request_span.get_span_context()
+    assert task_span.context.trace_id == request_ctx.trace_id
+    assert task_span.parent is not None
+    assert task_span.parent.span_id == request_ctx.span_id

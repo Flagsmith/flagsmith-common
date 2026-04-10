@@ -6,6 +6,7 @@ from threading import Thread
 from django.conf import settings
 from django.db.transaction import on_commit
 from django.utils import timezone
+from opentelemetry import propagate
 
 from task_processor import metrics, task_registry
 from task_processor.exceptions import InvalidArgumentsError, TaskQueueFullError
@@ -92,6 +93,8 @@ class TaskHandler(typing.Generic[TaskParameters]):
                 task_identifier=task_identifier
             ).inc()
             try:
+                carrier: dict[str, str] = {}
+                propagate.inject(carrier)
                 task = Task.create(
                     task_identifier=task_identifier,
                     scheduled_for=delay_until or timezone.now(),
@@ -100,6 +103,7 @@ class TaskHandler(typing.Generic[TaskParameters]):
                     timeout=self.timeout,
                     args=args,
                     kwargs=kwargs,
+                    trace_context=carrier or None,
                 )
             except TaskQueueFullError as e:
                 logger.warning(e)
