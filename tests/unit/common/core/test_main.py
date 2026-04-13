@@ -170,12 +170,29 @@ def test_ensure_cli_env__task_processor_in_argv__sets_run_by_processor(
         assert os.environ.get("RUN_BY_PROCESSOR") == "true"
 
 
-def test_ensure_cli_env__task_processor__expected_otel_service_name(
+@pytest.mark.parametrize(
+    "argv,expected_otel_service_name",
+    [
+        pytest.param(
+            ["flagsmith", "task-processor"],
+            "flagsmith-task-processor",
+            id="task_processor",
+        ),
+        pytest.param(
+            ["flagsmith", "anything-else"],
+            "flagsmith-api",
+            id="anything_else",
+        ),
+    ],
+)
+def test_ensure_cli_env__argv__expected_otel_service_name(
     monkeypatch: pytest.MonkeyPatch,
     mocker: MockerFixture,
+    argv: list[str],
+    expected_otel_service_name: str,
 ) -> None:
     # Given
-    monkeypatch.setattr("sys.argv", ["flagsmith", "task-processor"])
+    monkeypatch.setattr("sys.argv", argv)
     monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318")
 
     mock_build_log = mocker.patch(
@@ -195,11 +212,11 @@ def test_ensure_cli_env__task_processor__expected_otel_service_name(
     # Then
     mock_build_log.assert_called_once_with(
         endpoint="http://collector:4318/v1/logs",
-        service_name="flagsmith-task-processor",
+        service_name=expected_otel_service_name,
     )
     mock_build_tracer.assert_called_once_with(
         endpoint="http://collector:4318/v1/traces",
-        service_name="flagsmith-task-processor",
+        service_name=expected_otel_service_name,
     )
 
 
