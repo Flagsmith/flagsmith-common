@@ -168,8 +168,8 @@ class V1IdentitiesRequest(TypedDict):
     Used to retrieve flags for an identity and store its traits.
     """
 
-    identifier: str
-    """Unique identifier for the identity."""
+    identifier: str | None
+    """Unique identifier for the identity. If `null`, a pseudorandom identifier is provided in the response."""
     traits: NotRequired[list[TraitInput] | None]
     """List of traits to set for the identity. If `null` or not provided, no traits are set or updated."""
     transient: NotRequired[bool | None]
