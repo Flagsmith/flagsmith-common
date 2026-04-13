@@ -2,6 +2,23 @@
 
 <a name="v1.5.2"></a>
 
+## [3.7.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.6.1...v3.7.0) (2026-04-13)
+
+
+### CI
+
+* pre-commit autoupdate ([#194](https://github.com/Flagsmith/flagsmith-common/issues/194)) ([1256e87](https://github.com/Flagsmith/flagsmith-common/commit/1256e87609bb18cf6cdee55d5507c3d89cc09297))
+
+
+### Dependency Updates
+
+* update dependency django to v5.2.13 [security] ([#196](https://github.com/Flagsmith/flagsmith-common/issues/196)) ([0e18547](https://github.com/Flagsmith/flagsmith-common/commit/0e18547a958e1d8773f90cd692ca7005873fc6a4))
+
+
+### Features
+
+* OTel: Task Processor ([#197](https://github.com/Flagsmith/flagsmith-common/issues/197)) ([ef4df55](https://github.com/Flagsmith/flagsmith-common/commit/ef4df553028c5bceaddf97a569a3b1bc05f0151d))
+
 ## [3.6.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.6.0...v3.6.1) (2026-04-06)
 
 
