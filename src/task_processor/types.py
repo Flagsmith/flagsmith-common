@@ -5,6 +5,8 @@ TaskParameters = ParamSpec("TaskParameters")
 
 TaskCallable: TypeAlias = Callable[TaskParameters, None]
 
+TraceContext: TypeAlias = dict[str, str]
+
 
 @dataclass
 class TaskProcessorConfig:

@@ -64,12 +64,6 @@ def setup_logging_fixture(
     structlog.reset_defaults()
 
 
-@pytest.fixture()
-def span_exporter(otel_tracing: InMemorySpanExporter) -> InMemorySpanExporter:
-    otel_tracing.clear()
-    return otel_tracing
-
-
 def test_structlog_otel_log_record__basic_event__body_event_name_severity_attributes(
     log_exporter: InMemoryLogExporter,
 ) -> None:

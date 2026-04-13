@@ -20,7 +20,7 @@ class AssertMetricFixture(Protocol):
 class RunTasksFixture(Protocol):
     def __call__(
         self,
-        num_tasks: int,
+        num_tasks: int = 1,
     ) -> "list[TaskRun]": ...
 
 

@@ -107,7 +107,7 @@ OTel instrumentation is opt-in, controlled by environment variables:
 | Variable                          | Description                                                                                                           | Default         |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------- |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`     | Base OTLP endpoint (e.g. `http://collector:4318`). If unset, no OTel setup occurs.                                    | _(disabled)_    |
-| `OTEL_SERVICE_NAME`               | The `service.name` resource attribute.                                                                                | `flagsmith-api` |
+| `OTEL_SERVICE_NAME`               | The `service.name` resource attribute. Defaults to `flagsmith-task-processor` when running the task processor.         | `flagsmith-api` |
 | `OTEL_TRACING_EXCLUDED_URL_PATHS` | Comma-separated URL paths to exclude from tracing (e.g. `health/liveness,health/readiness`).                          | _(none)_        |
 
 Standard `OTEL_*` env vars (e.g. `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_EXPORTER_OTLP_HEADERS`) are also respected by the OTel SDK.
@@ -121,6 +121,7 @@ When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, `ensure_cli_env()` sets up:
   - **psycopg2** (`Psycopg2Instrumentor`): creates child spans for each SQL query with `db.system`, `db.statement`, and `db.name` attributes. SQL commenter is enabled, adding trace context as SQL comments for database-side correlation.
   - **Redis** (`RedisInstrumentor`): creates child spans for each Redis command with `db.system` and `db.statement` attributes.
 - **Structured log export**: A structlog processor that emits each log event as both an OTLP log record and a span event (when an active span exists).
+- **Task processor trace propagation**: When a task is enqueued via `TaskHandler.delay()`, the current W3C trace context (including baggage) is serialized into the task's `trace_context` field. When the task processor executes the task, the context is extracted and a child span is created, linking the task execution back to the originating request trace. Span attributes (`task_identifier`, `task_type`, `result`) match the Prometheus metric labels for cross-signal correlation.
 
 #### Emitting OTel log events via structlog
 

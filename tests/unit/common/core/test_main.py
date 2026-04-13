@@ -168,3 +168,87 @@ def test_ensure_cli_env__task_processor_in_argv__sets_run_by_processor(
     # When / Then
     with ensure_cli_env():
         assert os.environ.get("RUN_BY_PROCESSOR") == "true"
+
+
+@pytest.mark.parametrize(
+    "argv,expected_otel_service_name",
+    [
+        pytest.param(
+            ["flagsmith", "task-processor"],
+            "flagsmith-task-processor",
+            id="task_processor",
+        ),
+        pytest.param(
+            ["flagsmith", "anything-else"],
+            "flagsmith-api",
+            id="anything_else",
+        ),
+    ],
+)
+def test_ensure_cli_env__argv__expected_otel_service_name(
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    argv: list[str],
+    expected_otel_service_name: str,
+) -> None:
+    # Given
+    monkeypatch.setattr("sys.argv", argv)
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318")
+
+    mock_build_log = mocker.patch(
+        "common.core.otel.build_otel_log_provider",
+        return_value=mocker.MagicMock(spec=LoggerProvider),
+    )
+    mock_build_tracer = mocker.patch(
+        "common.core.otel.build_tracer_provider",
+        return_value=mocker.MagicMock(spec=TracerProvider),
+    )
+    mocker.patch("common.core.otel.setup_tracing")
+
+    # When
+    with ensure_cli_env():
+        pass
+
+    # Then
+    mock_build_log.assert_called_once_with(
+        endpoint="http://collector:4318/v1/logs",
+        service_name=expected_otel_service_name,
+    )
+    mock_build_tracer.assert_called_once_with(
+        endpoint="http://collector:4318/v1/traces",
+        service_name=expected_otel_service_name,
+    )
+
+
+def test_ensure_cli_env__env_service_name__expected_otel_service_name(
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+) -> None:
+    # Given
+    monkeypatch.setattr("sys.argv", ["flagsmith", "task-processor"])
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318")
+    monkeypatch.setenv("OTEL_SERVICE_NAME", "my-custom")
+
+    mock_build_log = mocker.patch(
+        "common.core.otel.build_otel_log_provider",
+        return_value=mocker.MagicMock(spec=LoggerProvider),
+    )
+    mock_build_tracer = mocker.patch(
+        "common.core.otel.build_tracer_provider",
+        return_value=mocker.MagicMock(spec=TracerProvider),
+    )
+    mocker.patch("common.core.otel.setup_tracing")
+
+    # When
+    with ensure_cli_env():
+        pass
+
+    # Then
+    mock_build_log.assert_called_once_with(
+        endpoint="http://collector:4318/v1/logs",
+        service_name="my-custom",
+    )
+    mock_build_tracer.assert_called_once_with(
+        endpoint="http://collector:4318/v1/traces",
+        service_name="my-custom",
+    )

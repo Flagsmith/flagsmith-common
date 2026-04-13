@@ -79,6 +79,12 @@ def otel_tracing() -> Generator[InMemorySpanExporter, None, None]:
         yield exporter
 
 
+@pytest.fixture()
+def span_exporter(otel_tracing: InMemorySpanExporter) -> InMemorySpanExporter:
+    otel_tracing.clear()
+    return otel_tracing
+
+
 @pytest.fixture(scope="session")
 def test_metric() -> prometheus_client.Counter:
     return prometheus_client.Counter(

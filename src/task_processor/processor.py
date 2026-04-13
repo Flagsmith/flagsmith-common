@@ -4,9 +4,12 @@ import typing
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from datetime import timedelta
+from importlib.metadata import version
 
 from django.conf import settings
 from django.utils import timezone
+from opentelemetry import context as otel_context
+from opentelemetry import propagate, trace
 
 from task_processor import metrics
 from task_processor.exceptions import TaskBackoffError
@@ -130,6 +133,11 @@ def _run_task(
     result: str
     executor = None
 
+    extracted_ctx = propagate.extract(task.trace_context or {})
+    tracer = trace.get_tracer("task_processor", version("flagsmith-common"))
+    span = tracer.start_span(task_identifier, context=extracted_ctx)
+    otel_token = otel_context.attach(trace.set_span_in_context(span, extracted_ctx))
+
     try:
         # Use explicit executor management to avoid blocking on shutdown
         # when tasks timeout but continue running in worker threads.
@@ -150,6 +158,9 @@ def _run_task(
         # For errors that don't include a default message (e.g., TimeoutError),
         # fall back to using repr.
         err_msg = str(e) or repr(e)
+
+        span.set_status(trace.StatusCode.ERROR, err_msg)
+        span.record_exception(e)
 
         task.mark_failure()
 
@@ -198,5 +209,9 @@ def _run_task(
     ctx.close()
 
     metrics.flagsmith_task_processor_finished_tasks_total.labels(**labels).inc()
+
+    span.set_attributes(labels)
+    span.end()
+    otel_context.detach(otel_token)
 
     return task, task_run

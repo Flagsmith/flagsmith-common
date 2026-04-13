@@ -487,6 +487,7 @@ task-processor = [
     { name = "backoff" },
     { name = "django" },
     { name = "django-health-check" },
+    { name = "opentelemetry-api" },
     { name = "prometheus-client" },
 ]
 test-tools = [
@@ -532,6 +533,7 @@ requires-dist = [
     { name = "gunicorn", marker = "extra == 'common-core'", specifier = ">=19.1" },
     { name = "inflection", marker = "extra == 'common-core'" },
     { name = "opentelemetry-api", marker = "extra == 'common-core'", specifier = ">=1.25,<2" },
+    { name = "opentelemetry-api", marker = "extra == 'task-processor'", specifier = ">=1.25,<2" },
     { name = "opentelemetry-exporter-otlp-proto-http", marker = "extra == 'common-core'", specifier = ">=1.25,<2" },
     { name = "opentelemetry-instrumentation-django", marker = "extra == 'common-core'", specifier = ">=0.46b0,<1" },
     { name = "opentelemetry-instrumentation-psycopg2", marker = "extra == 'common-core'", specifier = ">=0.46b0,<1" },
