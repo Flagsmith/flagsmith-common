@@ -438,6 +438,36 @@ logger.info(event_name)
             ],
             id="dynamic-event-name-warns-and-skips",
         ),
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger("projects")
+
+
+class ProjectWorker:
+    organisation_id: str
+
+    def logger(self, project_id: str) -> structlog.BoundLogger:
+        return logger.bind(
+            organisation__id=self.organisation_id,
+            project__id=project_id,
+        )
+
+    def do_work(self, project_id: str) -> None:
+        self.logger(project_id=project_id).info("project.worked")
+""",
+            [
+                EventEntry(
+                    name="projects.project.worked",
+                    level="info",
+                    attributes=frozenset({"organisation.id", "project.id"}),
+                    locations=[SourceLocation(path=PATH, line=16)],
+                ),
+            ],
+            [],
+            id="self-method-accessor-resolves-via-class-scope",
+        ),
     ],
 )
 def test_get_event_entries_from_source__emit_log__expected_entries(

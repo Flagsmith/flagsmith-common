@@ -71,11 +71,26 @@ class _ScopeVisitor(ast.NodeVisitor):
         self.module_dotted = module_dotted
         self.path = path
         self._scope_stack: list[dict[str, _LoggerScope]] = [{}]
+        self._class_stack: list[dict[str, _LoggerScope]] = []
         self.entries: list[EventEntry] = []
 
     @property
     def _scope(self) -> dict[str, _LoggerScope]:
         return self._scope_stack[-1]
+
+    @property
+    def _class_scope(self) -> dict[str, _LoggerScope] | None:
+        return self._class_stack[-1] if self._class_stack else None
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        class_scope: dict[str, _LoggerScope] = {}
+        for stmt in node.body:
+            if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if accessor := _resolve_method_accessor(stmt, outer_scopes=self._scope):
+                    class_scope[stmt.name] = accessor
+        self._class_stack.append(class_scope)
+        self.generic_visit(node)
+        self._class_stack.pop()
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self._scope_stack.append(dict(self._scope))
@@ -101,7 +116,9 @@ class _ScopeVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
-        if entry := _build_entry_from_emit_call(node, self._scope, self.path):
+        if entry := _build_entry_from_emit_call(
+            node, self._scope, self.path, class_scope=self._class_scope
+        ):
             self.entries.append(entry)
         self.generic_visit(node)
 
@@ -173,13 +190,15 @@ def _build_entry_from_emit_call(
     node: ast.Call,
     logger_scopes: dict[str, _LoggerScope],
     path: Path,
+    *,
+    class_scope: dict[str, _LoggerScope] | None = None,
 ) -> EventEntry | None:
     func = node.func
     if not isinstance(func, ast.Attribute):
         return None
     if func.attr not in EMIT_METHOD_NAMES:
         return None
-    scope = _scope_for_emit_target(func.value, logger_scopes)
+    scope = _scope_for_emit_target(func.value, logger_scopes, class_scope=class_scope)
     if scope is None:
         return None
     if not node.args:
@@ -209,14 +228,38 @@ def _build_entry_from_emit_call(
 def _scope_for_emit_target(
     target: ast.expr,
     logger_scopes: dict[str, _LoggerScope],
+    *,
+    class_scope: dict[str, _LoggerScope] | None = None,
 ) -> _LoggerScope | None:
     if isinstance(target, ast.Name):
         return logger_scopes.get(target.id)
+    if isinstance(target, ast.Attribute):
+        # `self.<name>` — method/property accessor on the enclosing class.
+        if (
+            class_scope is not None
+            and isinstance(target.value, ast.Name)
+            and target.value.id in _SELF_OR_CLS
+            and target.attr in class_scope
+        ):
+            return class_scope[target.attr]
+        return None
     if isinstance(target, ast.Call):
         func = target.func
-        if not isinstance(func, ast.Attribute) or func.attr != "bind":
+        if not isinstance(func, ast.Attribute):
             return None
-        parent = _scope_for_emit_target(func.value, logger_scopes)
+        # `self.<name>(...)` — method accessor invocation.
+        if (
+            class_scope is not None
+            and isinstance(func.value, ast.Name)
+            and func.value.id in _SELF_OR_CLS
+            and func.attr in class_scope
+        ):
+            return class_scope[func.attr]
+        if func.attr != "bind":
+            return None
+        parent = _scope_for_emit_target(
+            func.value, logger_scopes, class_scope=class_scope
+        )
         if parent is None:
             return None
         return _LoggerScope(
@@ -226,11 +269,37 @@ def _scope_for_emit_target(
     return None
 
 
+_SELF_OR_CLS = frozenset({"self", "cls"})
+
+
+def _resolve_method_accessor(
+    func_def: ast.FunctionDef | ast.AsyncFunctionDef,
+    *,
+    outer_scopes: dict[str, _LoggerScope],
+) -> _LoggerScope | None:
+    """Return a scope for a method that just returns a bound logger."""
+    body = list(func_def.body)
+    # Allow a leading docstring.
+    if (
+        body
+        and isinstance(body[0], ast.Expr)
+        and isinstance(body[0].value, ast.Constant)
+        and isinstance(body[0].value.value, str)
+    ):
+        body = body[1:]
+    if len(body) != 1:
+        return None
+    stmt = body[0]
+    if not isinstance(stmt, ast.Return) or stmt.value is None:
+        return None
+    return _scope_for_emit_target(stmt.value, outer_scopes)
+
+
 def _describe_emit_target(target: ast.expr) -> str:
     if isinstance(target, ast.Name):
         return target.id
-    # `_scope_for_emit_target` already narrowed `target` to a bind-chain Call
-    # before any caller reaches this helper.
+    if isinstance(target, ast.Attribute):
+        return f"{_describe_emit_target(target.value)}.{target.attr}"
     assert isinstance(target, ast.Call)
     func = target.func
     assert isinstance(func, ast.Attribute)
