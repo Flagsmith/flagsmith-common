@@ -121,7 +121,7 @@ def _resolve_seed(
     if not isinstance(func.value, ast.Name) or func.value.id != "structlog":
         return None
     if not call.args:
-        return None
+        return _LoggerScope(domain="", bound_attrs=frozenset())
     target = node.targets[0]
     assert isinstance(target, ast.Name)
     domain = _resolve_domain(call.args[0], module_dotted=module_dotted)
@@ -197,8 +197,9 @@ def _build_entry_from_emit_call(
         )
         return None
     attributes = scope.bound_attrs | _kwargs_as_attributes(node.keywords)
+    name = f"{scope.domain}.{event_arg.value}" if scope.domain else event_arg.value
     return EventEntry(
-        name=f"{scope.domain}.{event_arg.value}",
+        name=name,
         level=func.attr,
         attributes=attributes,
         locations=[SourceLocation(path=path, line=node.lineno)],
@@ -228,8 +229,9 @@ def _scope_for_emit_target(
 def _describe_emit_target(target: ast.expr) -> str:
     if isinstance(target, ast.Name):
         return target.id
-    if isinstance(target, ast.Call):
-        func = target.func
-        if isinstance(func, ast.Attribute):
-            return f"{_describe_emit_target(func.value)}.{func.attr}(...)"
-    return "<logger>"
+    # `_scope_for_emit_target` already narrowed `target` to a bind-chain Call
+    # before any caller reaches this helper.
+    assert isinstance(target, ast.Call)
+    func = target.func
+    assert isinstance(func, ast.Attribute)
+    return f"{_describe_emit_target(func.value)}.{func.attr}(...)"

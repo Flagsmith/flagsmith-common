@@ -226,6 +226,109 @@ def publish_two() -> None:
             """\
 import structlog
 
+logger = structlog.get_logger("workflows")
+
+
+async def publish() -> None:
+    log = logger.bind(workflow_id=1)
+    log.info("published", status="ok")
+""",
+            [
+                EventEntry(
+                    name="workflows.published",
+                    level="info",
+                    attributes=frozenset({"workflow_id", "status"}),
+                    locations=[SourceLocation(path=PATH, line=8)],
+                ),
+            ],
+            [],
+            id="bind-inside-async-function",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger("code_references")
+event_name = "dyn"
+logger.bind(a=1).info(event_name)
+""",
+            [],
+            [
+                DocgenEventsWarning(
+                    f"{PATH}:5: cannot statically resolve event name"
+                    f" for `logger.bind(...).info(...)`; skipping."
+                    " Consider annotating the call site with a"
+                    " `# docgen: event=<name>` comment so the catalogue"
+                    " can still pick it up."
+                ),
+            ],
+            id="dynamic-event-name-in-chain-describes-chain",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger()
+logger.info("evt", x=1)
+""",
+            [
+                EventEntry(
+                    name="evt",
+                    level="info",
+                    attributes=frozenset({"x"}),
+                    locations=[SourceLocation(path=PATH, line=4)],
+                ),
+            ],
+            [],
+            id="structlog-get_logger-no-args-produces-domainless-entry",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+log = unknown.bind(x=1)
+log.info("evt")
+""",
+            [],
+            [],
+            id="bind-on-untracked-name-ignored",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger("code_references")
+logger.unbind("x").info("evt", y=1)
+""",
+            [],
+            [],
+            id="chain-with-non-bind-attr-ignored",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+unknown.bind(a=1).info("evt")
+""",
+            [],
+            [],
+            id="chain-bind-on-untracked-ignored",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+loggers = {}
+loggers["x"].info("evt")
+""",
+            [],
+            [],
+            id="subscript-target-ignored",
+        ),
+        pytest.param(
+            """\
+import structlog
+
 print("not a logger call")
 """,
             [],
