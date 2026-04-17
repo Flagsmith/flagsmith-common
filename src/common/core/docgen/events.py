@@ -2,7 +2,7 @@ import ast
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator
+from typing import Iterable, Iterator
 
 
 class DocgenEventsWarning(UserWarning):
@@ -46,6 +46,39 @@ class EventEntry:
 class _LoggerScope:
     domain: str
     bound_attrs: frozenset[str]
+
+
+def merge_event_entries(entries: Iterable[EventEntry]) -> list[EventEntry]:
+    """Collapse entries sharing an event name: union attributes and locations.
+
+    Diverging log levels trigger a `DocgenEventsWarning`; the first-seen level
+    wins. Output is sorted alphabetically by event name.
+    """
+    merged: dict[str, EventEntry] = {}
+    for entry in entries:
+        if existing := merged.get(entry.name):
+            if entry.level != existing.level:
+                original_location = existing.locations[0]
+                new_location = entry.locations[0]
+                warnings.warn(
+                    f"`{entry.name}` is emitted at diverging log levels:"
+                    f" `{existing.level}` at {original_location.path}:{original_location.line},"
+                    f" `{entry.level}` at {new_location.path}:{new_location.line}."
+                    f" Keeping first-seen level `{existing.level}`; reconcile"
+                    " the emission sites to silence this warning.",
+                    DocgenEventsWarning,
+                    stacklevel=2,
+                )
+            existing.attributes = existing.attributes | entry.attributes
+            existing.locations = existing.locations + entry.locations
+        else:
+            merged[entry.name] = EventEntry(
+                name=entry.name,
+                level=entry.level,
+                attributes=entry.attributes,
+                locations=list(entry.locations),
+            )
+    return sorted(merged.values(), key=lambda e: e.name)
 
 
 def get_event_entries_from_source(

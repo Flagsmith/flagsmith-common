@@ -8,6 +8,7 @@ from common.core.docgen.events import (
     EventEntry,
     SourceLocation,
     get_event_entries_from_source,
+    merge_event_entries,
 )
 
 PATH = Path("projects/code_references/views.py")
@@ -649,6 +650,141 @@ def test_get_event_entries_from_source__emit_log__expected_entries(
 
     # Then
     assert entries == expected_entries
+    assert [(w.category, str(w.message)) for w in recorded] == [
+        (type(expected), str(expected)) for expected in expected_warnings
+    ]
+
+
+OTHER_PATH = Path("projects/other.py")
+
+
+@pytest.mark.parametrize(
+    "entries, expected_merged, expected_warnings",
+    [
+        pytest.param(
+            [
+                EventEntry(
+                    name="code_references.scan.created",
+                    level="info",
+                    attributes=frozenset({"organisation.id"}),
+                    locations=[SourceLocation(path=PATH, line=10)],
+                ),
+                EventEntry(
+                    name="code_references.scan.created",
+                    level="info",
+                    attributes=frozenset({"code_references.count"}),
+                    locations=[SourceLocation(path=OTHER_PATH, line=20)],
+                ),
+            ],
+            [
+                EventEntry(
+                    name="code_references.scan.created",
+                    level="info",
+                    attributes=frozenset({"organisation.id", "code_references.count"}),
+                    locations=[
+                        SourceLocation(path=PATH, line=10),
+                        SourceLocation(path=OTHER_PATH, line=20),
+                    ],
+                ),
+            ],
+            [],
+            id="same-event-two-sites-collapses-with-union-attrs",
+        ),
+        pytest.param(
+            [
+                EventEntry(
+                    name="code_references.scan.created",
+                    level="info",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=PATH, line=10)],
+                ),
+                EventEntry(
+                    name="code_references.scan.created",
+                    level="debug",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=OTHER_PATH, line=20)],
+                ),
+            ],
+            [
+                EventEntry(
+                    name="code_references.scan.created",
+                    level="info",
+                    attributes=frozenset(),
+                    locations=[
+                        SourceLocation(path=PATH, line=10),
+                        SourceLocation(path=OTHER_PATH, line=20),
+                    ],
+                ),
+            ],
+            [
+                DocgenEventsWarning(
+                    "`code_references.scan.created` is emitted at diverging"
+                    f" log levels: `info` at {PATH}:10,"
+                    f" `debug` at {OTHER_PATH}:20."
+                    " Keeping first-seen level `info`; reconcile the emission"
+                    " sites to silence this warning."
+                ),
+            ],
+            id="diverging-level-warns-and-first-wins",
+        ),
+        pytest.param(
+            [
+                EventEntry(
+                    name="zulu",
+                    level="info",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=PATH, line=3)],
+                ),
+                EventEntry(
+                    name="alpha",
+                    level="info",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=PATH, line=1)],
+                ),
+                EventEntry(
+                    name="mike",
+                    level="info",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=PATH, line=2)],
+                ),
+            ],
+            [
+                EventEntry(
+                    name="alpha",
+                    level="info",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=PATH, line=1)],
+                ),
+                EventEntry(
+                    name="mike",
+                    level="info",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=PATH, line=2)],
+                ),
+                EventEntry(
+                    name="zulu",
+                    level="info",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=PATH, line=3)],
+                ),
+            ],
+            [],
+            id="output-sorted-alphabetically-by-event-name",
+        ),
+    ],
+)
+def test_merge_event_entries__various_entries__expected_merged_and_warnings(
+    entries: list[EventEntry],
+    expected_merged: list[EventEntry],
+    expected_warnings: list[DocgenEventsWarning],
+) -> None:
+    # Given / When
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always", DocgenEventsWarning)
+        merged = merge_event_entries(entries)
+
+    # Then
+    assert merged == expected_merged
     assert [(w.category, str(w.message)) for w in recorded] == [
         (type(expected), str(expected)) for expected in expected_warnings
     ]
