@@ -698,6 +698,32 @@ OTHER_PATH = Path("projects/other.py")
                 EventEntry(
                     name="code_references.scan.created",
                     level="info",
+                    attributes=frozenset({"organisation.id"}),
+                    locations=[SourceLocation(path=PATH, line=10)],
+                ),
+                EventEntry(
+                    name="code_references.scan.created",
+                    level="info",
+                    attributes=frozenset({"organisation.id"}),
+                    locations=[SourceLocation(path=PATH, line=10)],
+                ),
+            ],
+            [
+                EventEntry(
+                    name="code_references.scan.created",
+                    level="info",
+                    attributes=frozenset({"organisation.id"}),
+                    locations=[SourceLocation(path=PATH, line=10)],
+                ),
+            ],
+            [],
+            id="identical-locations-deduped",
+        ),
+        pytest.param(
+            [
+                EventEntry(
+                    name="code_references.scan.created",
+                    level="info",
                     attributes=frozenset(),
                     locations=[SourceLocation(path=PATH, line=10)],
                 ),

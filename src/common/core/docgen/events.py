@@ -116,7 +116,11 @@ def merge_event_entries(entries: Iterable[EventEntry]) -> list[EventEntry]:
                     stacklevel=2,
                 )
             existing.attributes = existing.attributes | entry.attributes
-            existing.locations = existing.locations + entry.locations
+            existing_locations = set(existing.locations)
+            for location in entry.locations:
+                if location not in existing_locations:
+                    existing.locations.append(location)
+                    existing_locations.add(location)
         else:
             merged[entry.name] = EventEntry(
                 name=entry.name,
