@@ -148,3 +148,29 @@ logger.info("something.happened")
     assert entries == []
     assert len(warning_records) == 1
     assert str(PATH) in str(warning_records[0].message)
+
+
+def test_get_event_entries_from_source__dynamic_event_name__warns_and_skips() -> None:
+    # Given
+    source = """\
+import structlog
+
+logger = structlog.get_logger("code_references")
+event_name = "scan." + "created"
+logger.info(event_name)
+"""
+
+    # When
+    with pytest.warns(DocgenEventsWarning, match="event name") as warning_records:
+        entries = list(
+            get_event_entries_from_source(
+                source,
+                module_dotted=MODULE_DOTTED,
+                path=PATH,
+            )
+        )
+
+    # Then
+    assert entries == []
+    assert len(warning_records) == 1
+    assert str(PATH) in str(warning_records[0].message)

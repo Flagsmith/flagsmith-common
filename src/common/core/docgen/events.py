@@ -88,6 +88,14 @@ def _build_entry_from_emit_call(
         return None
     event_arg = node.args[0]
     if not (isinstance(event_arg, ast.Constant) and isinstance(event_arg.value, str)):
+        warnings.warn(
+            f"{path}:{node.lineno}: cannot statically resolve event name"
+            f" for `{value.id}.{func.attr}(...)`; skipping."
+            " Consider annotating the call site with a `# docgen: event=<name>`"
+            " comment so the catalogue can still pick it up.",
+            DocgenEventsWarning,
+            stacklevel=2,
+        )
         return None
     attributes = frozenset(
         kw.arg.replace("__", ".") for kw in node.keywords if kw.arg is not None
