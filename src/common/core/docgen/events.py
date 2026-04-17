@@ -72,6 +72,7 @@ class _ScopeVisitor(ast.NodeVisitor):
         self.path = path
         self._scope_stack: list[dict[str, _LoggerScope]] = [{}]
         self._class_stack: list[dict[str, _LoggerScope]] = []
+        self._module_classes: dict[str, dict[str, _LoggerScope]] = {}
         self.entries: list[EventEntry] = []
 
     @property
@@ -84,10 +85,17 @@ class _ScopeVisitor(ast.NodeVisitor):
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         class_scope: dict[str, _LoggerScope] = {}
+        # Own methods take precedence — register them first.
         for stmt in node.body:
             if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 if accessor := _resolve_method_accessor(stmt, outer_scopes=self._scope):
                     class_scope[stmt.name] = accessor
+        # Inherit from same-file parents declared earlier (Name-typed bases only).
+        for base in node.bases:
+            if isinstance(base, ast.Name) and base.id in self._module_classes:
+                for method_name, method_scope in self._module_classes[base.id].items():
+                    class_scope.setdefault(method_name, method_scope)
+        self._module_classes[node.name] = class_scope
         self._class_stack.append(class_scope)
         self.generic_visit(node)
         self._class_stack.pop()
@@ -200,6 +208,16 @@ def _build_entry_from_emit_call(
         return None
     scope = _scope_for_emit_target(func.value, logger_scopes, class_scope=class_scope)
     if scope is None:
+        if accessor_name := _self_cls_accessor_name(func.value):
+            warnings.warn(
+                f"{path}:{node.lineno}: cannot resolve"
+                f" `{_describe_emit_target(func.value)}.{func.attr}(...)`:"
+                f" `{accessor_name}` isn't a tracked accessor on this class"
+                " or any same-file parent. Consider inlining the bind at the"
+                " call site or moving the accessor into this file.",
+                DocgenEventsWarning,
+                stacklevel=2,
+            )
         return None
     if not node.args:
         return None
@@ -270,6 +288,19 @@ def _scope_for_emit_target(
 
 
 _SELF_OR_CLS = frozenset({"self", "cls"})
+
+
+def _self_cls_accessor_name(target: ast.expr) -> str | None:
+    """Name of the accessor in a `self.<X>` / `cls.<X>(...)` emit shape, else None."""
+    if isinstance(target, ast.Attribute):
+        if isinstance(target.value, ast.Name) and target.value.id in _SELF_OR_CLS:
+            return target.attr
+    if isinstance(target, ast.Call):
+        func = target.func
+        if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+            if func.value.id in _SELF_OR_CLS:
+                return func.attr
+    return None
 
 
 def _resolve_method_accessor(

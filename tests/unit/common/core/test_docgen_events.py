@@ -468,6 +468,167 @@ class ProjectWorker:
             [],
             id="self-method-accessor-resolves-via-class-scope",
         ),
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger("projects")
+
+
+class BaseWorker:
+    organisation_id: str
+
+    def logger(self, project_id: str) -> structlog.BoundLogger:
+        return logger.bind(
+            organisation__id=self.organisation_id,
+            project__id=project_id,
+        )
+
+
+class ProjectWorker(BaseWorker):
+    def do_work(self, project_id: str) -> None:
+        self.logger(project_id=project_id).info("project.worked")
+""",
+            [
+                EventEntry(
+                    name="projects.project.worked",
+                    level="info",
+                    attributes=frozenset({"organisation.id", "project.id"}),
+                    locations=[SourceLocation(path=PATH, line=18)],
+                ),
+            ],
+            [],
+            id="self-method-accessor-inherited-from-same-file-parent",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+
+class Worker:
+    def do_work(self) -> None:
+        self.logger.info("project.worked")
+        self.logger_factory().info("project.factoried")
+""",
+            [],
+            [
+                DocgenEventsWarning(
+                    f"{PATH}:6: cannot resolve `self.logger.info(...)`:"
+                    " `logger` isn't a tracked accessor on this class or any"
+                    " same-file parent. Consider inlining the bind at the"
+                    " call site or moving the accessor into this file."
+                ),
+                DocgenEventsWarning(
+                    f"{PATH}:7: cannot resolve"
+                    " `self.logger_factory(...).info(...)`:"
+                    " `logger_factory` isn't a tracked accessor on this class"
+                    " or any same-file parent. Consider inlining the bind at"
+                    " the call site or moving the accessor into this file."
+                ),
+            ],
+            id="unresolvable-self-emit-warns-and-skips",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger("projects")
+
+
+class ProjectWorker:
+    @classmethod
+    def logger(cls, project_id: str) -> structlog.BoundLogger:
+        return logger.bind(project__id=project_id)
+
+    @classmethod
+    def do_work(cls, project_id: str) -> None:
+        cls.logger(project_id=project_id).info("project.worked")
+""",
+            [
+                EventEntry(
+                    name="projects.project.worked",
+                    level="info",
+                    attributes=frozenset({"project.id"}),
+                    locations=[SourceLocation(path=PATH, line=13)],
+                ),
+            ],
+            [],
+            id="cls-method-accessor-resolves-via-class-scope",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger("projects")
+
+
+class ProjectWorker:
+    @property
+    def logger(self) -> structlog.BoundLogger:
+        \"\"\"Accessor with a docstring.\"\"\"
+        return logger.bind(worker="project")
+
+    def do_work(self) -> None:
+        self.logger.info("project.worked")
+""",
+            [
+                EventEntry(
+                    name="projects.project.worked",
+                    level="info",
+                    attributes=frozenset({"worker"}),
+                    locations=[SourceLocation(path=PATH, line=13)],
+                ),
+            ],
+            [],
+            id="property-accessor-with-docstring-resolves-via-class-scope",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+foo.bar.info("evt")
+""",
+            [],
+            [],
+            id="non-self-attribute-chain-ignored",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+some_factory().info("evt")
+""",
+            [],
+            [],
+            id="non-attribute-func-target-ignored",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger("projects")
+
+
+class Mixin:
+    def logger(self) -> structlog.BoundLogger:
+        return logger.bind(from_mixin=1)
+
+
+class ProjectWorker(UnknownExternalBase, Mixin):
+    def do_work(self) -> None:
+        self.logger().info("project.worked")
+""",
+            [
+                EventEntry(
+                    name="projects.project.worked",
+                    level="info",
+                    attributes=frozenset({"from_mixin"}),
+                    locations=[SourceLocation(path=PATH, line=13)],
+                ),
+            ],
+            [],
+            id="multiple-bases-skip-unknown-and-inherit-from-known",
+        ),
     ],
 )
 def test_get_event_entries_from_source__emit_log__expected_entries(
