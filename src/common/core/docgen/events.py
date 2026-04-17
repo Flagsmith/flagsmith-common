@@ -1,7 +1,12 @@
 import ast
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator
+
+
+class DocgenEventsWarning(UserWarning):
+    """Raised by the events scanner when a call site can't be resolved."""
 
 
 @dataclass(frozen=True)
@@ -25,7 +30,9 @@ def get_event_entries_from_source(
     path: Path,
 ) -> Iterator[EventEntry]:
     tree = ast.parse(source)
-    logger_domains = _collect_logger_domains(tree, module_dotted=module_dotted)
+    logger_domains = _collect_logger_domains(
+        tree, module_dotted=module_dotted, path=path
+    )
 
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
@@ -34,7 +41,9 @@ def get_event_entries_from_source(
             yield entry
 
 
-def _collect_logger_domains(tree: ast.AST, *, module_dotted: str) -> dict[str, str]:
+def _collect_logger_domains(
+    tree: ast.AST, *, module_dotted: str, path: Path
+) -> dict[str, str]:
     logger_domains: dict[str, str] = {}
     for node in ast.walk(tree):
         if not _is_logger_assignment(node):
@@ -43,8 +52,16 @@ def _collect_logger_domains(tree: ast.AST, *, module_dotted: str) -> dict[str, s
         target = node.targets[0]
         assert isinstance(target, ast.Name)
         domain_arg = node.value.args[0]  # type: ignore[attr-defined]
-        if domain := _resolve_domain(domain_arg, module_dotted=module_dotted):
-            logger_domains[target.id] = domain
+        domain = _resolve_domain(domain_arg, module_dotted=module_dotted)
+        if domain is None:
+            warnings.warn(
+                f"{path}:{node.lineno}: cannot statically resolve logger domain"
+                f" for `{target.id}`; skipping its events.",
+                DocgenEventsWarning,
+                stacklevel=2,
+            )
+            continue
+        logger_domains[target.id] = domain
     return logger_domains
 
 

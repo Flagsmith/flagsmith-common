@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from common.core.docgen.events import (
+    DocgenEventsWarning,
     EventEntry,
     SourceLocation,
     get_event_entries_from_source,
@@ -94,3 +95,31 @@ def test_get_event_entries_from_source__emit_log__expected_entries(
 
     # Then
     assert entries == expected_entries
+
+
+def test_get_event_entries_from_source__non_resolvable_domain__warns_and_skips() -> (
+    None
+):
+    # Given
+    source = """\
+import structlog
+
+domain = "sneaky"
+logger = structlog.get_logger(domain)
+logger.info("something.happened")
+"""
+
+    # When
+    with pytest.warns(DocgenEventsWarning, match="domain") as warning_records:
+        entries = list(
+            get_event_entries_from_source(
+                source,
+                module_dotted=MODULE_DOTTED,
+                path=PATH,
+            )
+        )
+
+    # Then
+    assert entries == []
+    assert len(warning_records) == 1
+    assert str(PATH) in str(warning_records[0].message)
