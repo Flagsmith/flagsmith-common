@@ -193,6 +193,39 @@ def publish() -> None:
             """\
 import structlog
 
+logger = structlog.get_logger("workflows")
+
+
+def publish_one() -> None:
+    log = logger.bind(one_attr=1)
+    log.info("evt.one", kwarg_one=True)
+
+
+def publish_two() -> None:
+    log = logger.bind(two_attr=2)
+    log.info("evt.two", kwarg_two=True)
+""",
+            [
+                EventEntry(
+                    name="workflows.evt.one",
+                    level="info",
+                    attributes=frozenset({"one_attr", "kwarg_one"}),
+                    locations=[SourceLocation(path=PATH, line=8)],
+                ),
+                EventEntry(
+                    name="workflows.evt.two",
+                    level="info",
+                    attributes=frozenset({"two_attr", "kwarg_two"}),
+                    locations=[SourceLocation(path=PATH, line=13)],
+                ),
+            ],
+            [],
+            id="binds-in-different-functions-do-not-leak",
+        ),
+        pytest.param(
+            """\
+import structlog
+
 print("not a logger call")
 """,
             [],

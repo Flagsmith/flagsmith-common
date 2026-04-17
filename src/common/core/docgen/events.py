@@ -55,38 +55,60 @@ def get_event_entries_from_source(
     path: Path,
 ) -> Iterator[EventEntry]:
     tree = ast.parse(source)
-    logger_scopes = _collect_logger_scopes(tree, module_dotted=module_dotted, path=path)
-
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Call):
-            continue
-        if entry := _build_entry_from_emit_call(node, logger_scopes, path):
-            yield entry
+    visitor = _ScopeVisitor(module_dotted=module_dotted, path=path)
+    visitor.visit(tree)
+    yield from visitor.entries
 
 
-def _collect_logger_scopes(
-    tree: ast.AST, *, module_dotted: str, path: Path
-) -> dict[str, _LoggerScope]:
-    logger_scopes: dict[str, _LoggerScope] = {}
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Assign):
-            continue
-        if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
-            continue
-        target_id = node.targets[0].id
-        if scope := _resolve_seed(
-            node, logger_scopes=logger_scopes, module_dotted=module_dotted, path=path
-        ):
-            logger_scopes[target_id] = scope
-        elif scope := _resolve_bind(node, logger_scopes=logger_scopes):
-            logger_scopes[target_id] = scope
-    return logger_scopes
+class _ScopeVisitor(ast.NodeVisitor):
+    """Walks the AST in source order with a stack of logger scopes.
+
+    Entering a function body pushes a copy of the enclosing scope so
+    binds that happen inside the function don't leak to sibling scopes.
+    """
+
+    def __init__(self, *, module_dotted: str, path: Path) -> None:
+        self.module_dotted = module_dotted
+        self.path = path
+        self._scope_stack: list[dict[str, _LoggerScope]] = [{}]
+        self.entries: list[EventEntry] = []
+
+    @property
+    def _scope(self) -> dict[str, _LoggerScope]:
+        return self._scope_stack[-1]
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self._scope_stack.append(dict(self._scope))
+        self.generic_visit(node)
+        self._scope_stack.pop()
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        self._scope_stack.append(dict(self._scope))
+        self.generic_visit(node)
+        self._scope_stack.pop()
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            target_id = node.targets[0].id
+            if scope := _resolve_seed(
+                node,
+                module_dotted=self.module_dotted,
+                path=self.path,
+            ):
+                self._scope[target_id] = scope
+            elif scope := _resolve_bind(node, logger_scopes=self._scope):
+                self._scope[target_id] = scope
+        self.generic_visit(node)
+
+    def visit_Call(self, node: ast.Call) -> None:
+        if entry := _build_entry_from_emit_call(node, self._scope, self.path):
+            self.entries.append(entry)
+        self.generic_visit(node)
 
 
 def _resolve_seed(
     node: ast.Assign,
     *,
-    logger_scopes: dict[str, _LoggerScope],
     module_dotted: str,
     path: Path,
 ) -> _LoggerScope | None:
