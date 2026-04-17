@@ -1,13 +1,16 @@
 import warnings
 from pathlib import Path
+from unittest.mock import ANY
 
 import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from common.core.docgen.events import (
     DocgenEventsWarning,
     EventEntry,
     SourceLocation,
     get_event_entries_from_source,
+    get_event_entries_from_tree,
     merge_event_entries,
 )
 
@@ -788,3 +791,161 @@ def test_merge_event_entries__various_entries__expected_merged_and_warnings(
     assert [(w.category, str(w.message)) for w in recorded] == [
         (type(expected), str(expected)) for expected in expected_warnings
     ]
+
+
+ROOT = Path("/fake/myapp")
+
+
+@pytest.mark.parametrize(
+    "tree, app_label, expected_entries",
+    [
+        pytest.param(
+            {
+                "views.py": """\
+import structlog
+logger = structlog.get_logger("myapp")
+logger.info("viewed")
+""",
+                "nested/models.py": """\
+import structlog
+logger = structlog.get_logger("myapp")
+logger.info("modeled")
+""",
+            },
+            "myapp",
+            [
+                EventEntry(
+                    name="myapp.modeled",
+                    level=ANY,
+                    attributes=ANY,
+                    locations=[
+                        SourceLocation(path=ROOT / "nested/models.py", line=3),
+                    ],
+                ),
+                EventEntry(
+                    name="myapp.viewed",
+                    level=ANY,
+                    attributes=ANY,
+                    locations=[SourceLocation(path=ROOT / "views.py", line=3)],
+                ),
+            ],
+            id="walks-all-py-files-across-subdirs",
+        ),
+        pytest.param(
+            {
+                "views.py": """\
+import structlog
+logger = structlog.get_logger("myapp")
+logger.info("included")
+""",
+                "migrations/0001_initial.py": """\
+import structlog
+logger = structlog.get_logger("myapp")
+logger.info("from_migration")
+""",
+                "tests/test_views.py": """\
+import structlog
+logger = structlog.get_logger("myapp")
+logger.info("from_test_subdir")
+""",
+                "conftest.py": """\
+import structlog
+logger = structlog.get_logger("myapp")
+logger.info("from_conftest")
+""",
+                "test_thing.py": """\
+import structlog
+logger = structlog.get_logger("myapp")
+logger.info("from_test_module")
+""",
+            },
+            "myapp",
+            [
+                EventEntry(
+                    name="myapp.included",
+                    level=ANY,
+                    attributes=ANY,
+                    locations=[SourceLocation(path=ROOT / "views.py", line=3)],
+                ),
+            ],
+            id="skips-migrations-tests-conftest-test-modules",
+        ),
+        pytest.param(
+            {
+                "views.py": """\
+import structlog
+logger = structlog.get_logger("myapp")
+logger.info("viewed")
+""",
+                "management/commands/do_thing.py": """\
+import structlog
+logger = structlog.get_logger("myapp")
+logger.info("from_command")
+""",
+            },
+            "myapp",
+            [
+                EventEntry(
+                    name="myapp.viewed",
+                    level=ANY,
+                    attributes=ANY,
+                    locations=[SourceLocation(path=ROOT / "views.py", line=3)],
+                ),
+            ],
+            id="skips-management-commands-by-default",
+        ),
+        pytest.param(
+            {
+                "views.py": """\
+import structlog
+logger = structlog.get_logger("task_processor")
+logger.info("setup")
+""",
+                "management/commands/run_processor.py": """\
+import structlog
+logger = structlog.get_logger("task_processor")
+logger.info("task.dispatched")
+""",
+            },
+            "task_processor",
+            [
+                EventEntry(
+                    name="task_processor.setup",
+                    level=ANY,
+                    attributes=ANY,
+                    locations=[SourceLocation(path=ROOT / "views.py", line=3)],
+                ),
+                EventEntry(
+                    name="task_processor.task.dispatched",
+                    level=ANY,
+                    attributes=ANY,
+                    locations=[
+                        SourceLocation(
+                            path=ROOT / "management/commands/run_processor.py",
+                            line=3,
+                        ),
+                    ],
+                ),
+            ],
+            id="includes-management-commands-for-task-processor-app",
+        ),
+    ],
+)
+def test_get_event_entries_from_tree__various_trees__expected_entries(
+    fs: FakeFilesystem,
+    tree: dict[str, str],
+    app_label: str,
+    expected_entries: list[EventEntry],
+) -> None:
+    # Given
+    for relative, source in tree.items():
+        fs.create_file(str(ROOT / relative), contents=source)
+
+    # When
+    entries = sorted(
+        get_event_entries_from_tree(ROOT, app_label=app_label, module_prefix=app_label),
+        key=lambda e: e.name,
+    )
+
+    # Then
+    assert entries == expected_entries

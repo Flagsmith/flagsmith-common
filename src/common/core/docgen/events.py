@@ -48,6 +48,52 @@ class _LoggerScope:
     bound_attrs: frozenset[str]
 
 
+_EXCLUDED_DIR_NAMES = frozenset({"migrations", "tests"})
+_EXCLUDED_MANAGEMENT_DIR = ("management", "commands")
+_TASK_PROCESSOR_APP_LABEL = "task_processor"
+
+
+def get_event_entries_from_tree(
+    root: Path,
+    *,
+    app_label: str,
+    module_prefix: str,
+) -> Iterator[EventEntry]:
+    """Walk every `*.py` under `root` and yield its scanned event entries.
+
+    Skips `migrations/`, `tests/`, `conftest.py`, and `test_*.py`. Also skips
+    `management/commands/` unless `app_label == "task_processor"`, where the
+    runner loop's events are operationally important.
+    """
+    for file_path in sorted(root.rglob("*.py")):
+        if _should_skip(file_path.relative_to(root), app_label=app_label):
+            continue
+        rel_parts = file_path.relative_to(root).with_suffix("").parts
+        module_dotted = ".".join((module_prefix, *rel_parts))
+        yield from get_event_entries_from_source(
+            file_path.read_text(),
+            module_dotted=module_dotted,
+            path=file_path,
+        )
+
+
+def _should_skip(relative: Path, *, app_label: str) -> bool:
+    parts = relative.parts
+    if any(part in _EXCLUDED_DIR_NAMES for part in parts[:-1]):
+        return True
+    filename = parts[-1]
+    if filename == "conftest.py" or filename.startswith("test_"):
+        return True
+    if (
+        len(parts) >= 3
+        and parts[0] == _EXCLUDED_MANAGEMENT_DIR[0]
+        and parts[1] == _EXCLUDED_MANAGEMENT_DIR[1]
+        and app_label != _TASK_PROCESSOR_APP_LABEL
+    ):
+        return True
+    return False
+
+
 def merge_event_entries(entries: Iterable[EventEntry]) -> list[EventEntry]:
     """Collapse entries sharing an event name: union attributes and locations.
 
