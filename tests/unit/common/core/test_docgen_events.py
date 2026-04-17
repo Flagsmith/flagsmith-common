@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 
 import pytest
@@ -95,6 +96,30 @@ def test_get_event_entries_from_source__emit_log__expected_entries(
 
     # Then
     assert entries == expected_entries
+
+
+def test_get_event_entries_from_source__stdlib_logging__ignored_silently() -> None:
+    # Given
+    source = """\
+import logging
+
+logger = logging.getLogger("code_references")
+logger.info("scan.created", extra={"organisation": 1})
+"""
+
+    # When
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DocgenEventsWarning)
+        entries = list(
+            get_event_entries_from_source(
+                source,
+                module_dotted=MODULE_DOTTED,
+                path=PATH,
+            )
+        )
+
+    # Then
+    assert entries == []
 
 
 def test_get_event_entries_from_source__non_resolvable_domain__warns_and_skips() -> (
