@@ -157,8 +157,8 @@ def _build_entry_from_emit_call(
         return None
     if func.attr not in EMIT_METHOD_NAMES:
         return None
-    value = func.value
-    if not isinstance(value, ast.Name) or value.id not in logger_scopes:
+    scope = _scope_for_emit_target(func.value, logger_scopes)
+    if scope is None:
         return None
     if not node.args:
         return None
@@ -166,14 +166,14 @@ def _build_entry_from_emit_call(
     if not (isinstance(event_arg, ast.Constant) and isinstance(event_arg.value, str)):
         warnings.warn(
             f"{path}:{node.lineno}: cannot statically resolve event name"
-            f" for `{value.id}.{func.attr}(...)`; skipping."
-            " Consider annotating the call site with a `# docgen: event=<name>`"
-            " comment so the catalogue can still pick it up.",
+            f" for `{_describe_emit_target(func.value)}.{func.attr}(...)`;"
+            " skipping. Consider annotating the call site with a"
+            " `# docgen: event=<name>` comment so the catalogue can still"
+            " pick it up.",
             DocgenEventsWarning,
             stacklevel=2,
         )
         return None
-    scope = logger_scopes[value.id]
     attributes = scope.bound_attrs | _kwargs_as_attributes(node.keywords)
     return EventEntry(
         name=f"{scope.domain}.{event_arg.value}",
@@ -181,3 +181,33 @@ def _build_entry_from_emit_call(
         attributes=attributes,
         locations=[SourceLocation(path=path, line=node.lineno)],
     )
+
+
+def _scope_for_emit_target(
+    target: ast.expr,
+    logger_scopes: dict[str, _LoggerScope],
+) -> _LoggerScope | None:
+    if isinstance(target, ast.Name):
+        return logger_scopes.get(target.id)
+    if isinstance(target, ast.Call):
+        func = target.func
+        if not isinstance(func, ast.Attribute) or func.attr != "bind":
+            return None
+        parent = _scope_for_emit_target(func.value, logger_scopes)
+        if parent is None:
+            return None
+        return _LoggerScope(
+            domain=parent.domain,
+            bound_attrs=parent.bound_attrs | _kwargs_as_attributes(target.keywords),
+        )
+    return None
+
+
+def _describe_emit_target(target: ast.expr) -> str:
+    if isinstance(target, ast.Name):
+        return target.id
+    if isinstance(target, ast.Call):
+        func = target.func
+        if isinstance(func, ast.Attribute):
+            return f"{_describe_emit_target(func.value)}.{func.attr}(...)"
+    return "<logger>"

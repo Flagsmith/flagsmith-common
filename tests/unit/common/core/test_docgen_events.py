@@ -128,6 +128,27 @@ def track() -> None:
             """\
 import structlog
 
+logger = structlog.get_logger("workflows")
+
+
+def publish() -> None:
+    logger.bind(workflow_id=1).info("published", status="ok")
+""",
+            [
+                EventEntry(
+                    name="workflows.published",
+                    level="info",
+                    attributes=frozenset({"workflow_id", "status"}),
+                    locations=[SourceLocation(path=PATH, line=7)],
+                ),
+            ],
+            [],
+            id="chained-bind-merges-attrs",
+        ),
+        pytest.param(
+            """\
+import structlog
+
 print("not a logger call")
 """,
             [],
