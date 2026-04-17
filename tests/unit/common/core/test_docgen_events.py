@@ -170,6 +170,29 @@ def publish() -> None:
             """\
 import structlog
 
+logger = structlog.get_logger("workflows")
+
+
+def publish() -> None:
+    log = logger.bind(workflow_id=1)
+    log = log.bind(actor_id=2)
+    log.info("published", status="ok")
+""",
+            [
+                EventEntry(
+                    name="workflows.published",
+                    level="info",
+                    attributes=frozenset({"workflow_id", "actor_id", "status"}),
+                    locations=[SourceLocation(path=PATH, line=9)],
+                ),
+            ],
+            [],
+            id="self-reassigned-bind-layers-further",
+        ),
+        pytest.param(
+            """\
+import structlog
+
 print("not a logger call")
 """,
             [],
