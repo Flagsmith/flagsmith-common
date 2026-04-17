@@ -64,10 +64,13 @@ def _build_entry_from_emit_call(
     event_arg = node.args[0]
     if not (isinstance(event_arg, ast.Constant) and isinstance(event_arg.value, str)):
         return None
+    attributes = frozenset(
+        kw.arg.replace("__", ".") for kw in node.keywords if kw.arg is not None
+    )
     return EventEntry(
         name=f"{logger_domains[value.id]}.{event_arg.value}",
         level=func.attr,
-        attributes=frozenset(),
+        attributes=attributes,
         locations=[SourceLocation(path=path, line=node.lineno)],
     )
 
