@@ -9,6 +9,25 @@ class DocgenEventsWarning(UserWarning):
     """Raised by the events scanner when a call site can't be resolved."""
 
 
+# Emission methods exposed by `structlog.stdlib.BoundLogger` whose first
+# positional argument is the event name. `log` is excluded because its
+# first argument is the level, not the event; `bind`/`unbind`/`new` are
+# not emissions.
+EMIT_METHOD_NAMES = frozenset(
+    {
+        "debug",
+        "info",
+        "warning",
+        "warn",
+        "error",
+        "critical",
+        "fatal",
+        "exception",
+        "msg",
+    }
+)
+
+
 @dataclass(frozen=True)
 class SourceLocation:
     path: Path
@@ -80,6 +99,8 @@ def _build_entry_from_emit_call(
 ) -> EventEntry | None:
     func = node.func
     if not isinstance(func, ast.Attribute):
+        return None
+    if func.attr not in EMIT_METHOD_NAMES:
         return None
     value = func.value
     if not isinstance(value, ast.Name) or value.id not in logger_domains:

@@ -150,6 +150,57 @@ logger.info("something.happened")
     assert str(PATH) in str(warning_records[0].message)
 
 
+@pytest.mark.parametrize(
+    "source, expected_entries",
+    [
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger("code_references")
+logger.exception("import.failed")
+""",
+            [
+                EventEntry(
+                    name="code_references.import.failed",
+                    level="exception",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=PATH, line=4)],
+                ),
+            ],
+            id="exception-method-is-recognised",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger("code_references")
+logger.bind_or_whatever("not.an.event")
+""",
+            [],
+            id="non-level-method-is-ignored-silently",
+        ),
+    ],
+)
+def test_get_event_entries_from_source__level_method__allowlist_enforced(
+    source: str,
+    expected_entries: list[EventEntry],
+) -> None:
+    # Given / When
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DocgenEventsWarning)
+        entries = list(
+            get_event_entries_from_source(
+                source,
+                module_dotted=MODULE_DOTTED,
+                path=PATH,
+            )
+        )
+
+    # Then
+    assert entries == expected_entries
+
+
 def test_get_event_entries_from_source__dynamic_event_name__warns_and_skips() -> None:
     # Given
     source = """\
