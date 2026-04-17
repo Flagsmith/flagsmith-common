@@ -60,6 +60,23 @@ logger.info(
             ],
             id="kwargs-with-double-underscore-substitution",
         ),
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger(__name__)
+logger.info("something.happened")
+""",
+            [
+                EventEntry(
+                    name=f"{MODULE_DOTTED}.something.happened",
+                    level="info",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=PATH, line=4)],
+                ),
+            ],
+            id="dunder-name-resolves-to-module-dotted",
+        ),
     ],
 )
 def test_get_event_entries_from_source__emit_log__expected_entries(

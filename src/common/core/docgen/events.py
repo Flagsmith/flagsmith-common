@@ -25,7 +25,7 @@ def get_event_entries_from_source(
     path: Path,
 ) -> Iterator[EventEntry]:
     tree = ast.parse(source)
-    logger_domains = _collect_logger_domains(tree)
+    logger_domains = _collect_logger_domains(tree, module_dotted=module_dotted)
 
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
@@ -34,7 +34,7 @@ def get_event_entries_from_source(
             yield entry
 
 
-def _collect_logger_domains(tree: ast.AST) -> dict[str, str]:
+def _collect_logger_domains(tree: ast.AST, *, module_dotted: str) -> dict[str, str]:
     logger_domains: dict[str, str] = {}
     for node in ast.walk(tree):
         if not _is_logger_assignment(node):
@@ -43,9 +43,17 @@ def _collect_logger_domains(tree: ast.AST) -> dict[str, str]:
         target = node.targets[0]
         assert isinstance(target, ast.Name)
         domain_arg = node.value.args[0]  # type: ignore[attr-defined]
-        if isinstance(domain_arg, ast.Constant) and isinstance(domain_arg.value, str):
-            logger_domains[target.id] = domain_arg.value
+        if domain := _resolve_domain(domain_arg, module_dotted=module_dotted):
+            logger_domains[target.id] = domain
     return logger_domains
+
+
+def _resolve_domain(node: ast.expr, *, module_dotted: str) -> str | None:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.Name) and node.id == "__name__":
+        return module_dotted
+    return None
 
 
 def _build_entry_from_emit_call(
