@@ -104,6 +104,30 @@ logger.exception("import.failed")
             """\
 import structlog
 
+logger = structlog.get_logger("sentry_change_tracking")
+
+
+def track() -> None:
+    log = logger.bind(sentry_action="trigger", feature_name="flag")
+    log.info("success", response_status=200)
+""",
+            [
+                EventEntry(
+                    name="sentry_change_tracking.success",
+                    level="info",
+                    attributes=frozenset(
+                        {"sentry_action", "feature_name", "response_status"}
+                    ),
+                    locations=[SourceLocation(path=PATH, line=8)],
+                ),
+            ],
+            [],
+            id="reassigned-bind-merges-attrs",
+        ),
+        pytest.param(
+            """\
+import structlog
+
 print("not a logger call")
 """,
             [],

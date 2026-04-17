@@ -42,6 +42,12 @@ class EventEntry:
     locations: list[SourceLocation] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class _LoggerScope:
+    domain: str
+    bound_attrs: frozenset[str]
+
+
 def get_event_entries_from_source(
     source: str,
     *,
@@ -49,39 +55,84 @@ def get_event_entries_from_source(
     path: Path,
 ) -> Iterator[EventEntry]:
     tree = ast.parse(source)
-    logger_domains = _collect_logger_domains(
-        tree, module_dotted=module_dotted, path=path
-    )
+    logger_scopes = _collect_logger_scopes(tree, module_dotted=module_dotted, path=path)
 
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
-        if entry := _build_entry_from_emit_call(node, logger_domains, path):
+        if entry := _build_entry_from_emit_call(node, logger_scopes, path):
             yield entry
 
 
-def _collect_logger_domains(
+def _collect_logger_scopes(
     tree: ast.AST, *, module_dotted: str, path: Path
-) -> dict[str, str]:
-    logger_domains: dict[str, str] = {}
+) -> dict[str, _LoggerScope]:
+    logger_scopes: dict[str, _LoggerScope] = {}
     for node in ast.walk(tree):
-        if not _is_logger_assignment(node):
+        if not isinstance(node, ast.Assign):
             continue
-        assert isinstance(node, ast.Assign)
-        target = node.targets[0]
-        assert isinstance(target, ast.Name)
-        domain_arg = node.value.args[0]  # type: ignore[attr-defined]
-        domain = _resolve_domain(domain_arg, module_dotted=module_dotted)
-        if domain is None:
-            warnings.warn(
-                f"{path}:{node.lineno}: cannot statically resolve logger domain"
-                f" for `{target.id}`; skipping its events.",
-                DocgenEventsWarning,
-                stacklevel=2,
-            )
+        if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
             continue
-        logger_domains[target.id] = domain
-    return logger_domains
+        target_id = node.targets[0].id
+        if scope := _resolve_seed(
+            node, logger_scopes=logger_scopes, module_dotted=module_dotted, path=path
+        ):
+            logger_scopes[target_id] = scope
+        elif scope := _resolve_bind(node, logger_scopes=logger_scopes):
+            logger_scopes[target_id] = scope
+    return logger_scopes
+
+
+def _resolve_seed(
+    node: ast.Assign,
+    *,
+    logger_scopes: dict[str, _LoggerScope],
+    module_dotted: str,
+    path: Path,
+) -> _LoggerScope | None:
+    call = node.value
+    if not isinstance(call, ast.Call):
+        return None
+    func = call.func
+    if not isinstance(func, ast.Attribute) or func.attr != "get_logger":
+        return None
+    if not isinstance(func.value, ast.Name) or func.value.id != "structlog":
+        return None
+    if not call.args:
+        return None
+    target = node.targets[0]
+    assert isinstance(target, ast.Name)
+    domain = _resolve_domain(call.args[0], module_dotted=module_dotted)
+    if domain is None:
+        warnings.warn(
+            f"{path}:{node.lineno}: cannot statically resolve logger domain"
+            f" for `{target.id}`; skipping its events.",
+            DocgenEventsWarning,
+            stacklevel=2,
+        )
+        return None
+    return _LoggerScope(domain=domain, bound_attrs=frozenset())
+
+
+def _resolve_bind(
+    node: ast.Assign,
+    *,
+    logger_scopes: dict[str, _LoggerScope],
+) -> _LoggerScope | None:
+    call = node.value
+    if not isinstance(call, ast.Call):
+        return None
+    func = call.func
+    if not isinstance(func, ast.Attribute) or func.attr != "bind":
+        return None
+    if not isinstance(func.value, ast.Name) or func.value.id not in logger_scopes:
+        return None
+    parent = logger_scopes[func.value.id]
+    new_attrs = _kwargs_as_attributes(call.keywords)
+    return _LoggerScope(
+        domain=parent.domain,
+        bound_attrs=parent.bound_attrs | new_attrs,
+    )
 
 
 def _resolve_domain(node: ast.expr, *, module_dotted: str) -> str | None:
@@ -92,9 +143,13 @@ def _resolve_domain(node: ast.expr, *, module_dotted: str) -> str | None:
     return None
 
 
+def _kwargs_as_attributes(keywords: list[ast.keyword]) -> frozenset[str]:
+    return frozenset(kw.arg.replace("__", ".") for kw in keywords if kw.arg is not None)
+
+
 def _build_entry_from_emit_call(
     node: ast.Call,
-    logger_domains: dict[str, str],
+    logger_scopes: dict[str, _LoggerScope],
     path: Path,
 ) -> EventEntry | None:
     func = node.func
@@ -103,7 +158,7 @@ def _build_entry_from_emit_call(
     if func.attr not in EMIT_METHOD_NAMES:
         return None
     value = func.value
-    if not isinstance(value, ast.Name) or value.id not in logger_domains:
+    if not isinstance(value, ast.Name) or value.id not in logger_scopes:
         return None
     if not node.args:
         return None
@@ -118,30 +173,11 @@ def _build_entry_from_emit_call(
             stacklevel=2,
         )
         return None
-    attributes = frozenset(
-        kw.arg.replace("__", ".") for kw in node.keywords if kw.arg is not None
-    )
+    scope = logger_scopes[value.id]
+    attributes = scope.bound_attrs | _kwargs_as_attributes(node.keywords)
     return EventEntry(
-        name=f"{logger_domains[value.id]}.{event_arg.value}",
+        name=f"{scope.domain}.{event_arg.value}",
         level=func.attr,
         attributes=attributes,
         locations=[SourceLocation(path=path, line=node.lineno)],
     )
-
-
-def _is_logger_assignment(node: ast.AST) -> bool:
-    if not isinstance(node, ast.Assign):
-        return False
-    if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
-        return False
-    call = node.value
-    if not isinstance(call, ast.Call):
-        return False
-    func = call.func
-    if not isinstance(func, ast.Attribute):
-        return False
-    if func.attr != "get_logger":
-        return False
-    if not isinstance(func.value, ast.Name) or func.value.id != "structlog":
-        return False
-    return bool(call.args)
