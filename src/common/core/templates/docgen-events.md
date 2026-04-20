@@ -8,7 +8,7 @@ Flagsmith backend emits [OpenTelemetry events](https://opentelemetry.io/docs/spe
 that can be ingested to downstream observability systems and/or a data warehouse of your choice via OTLP.
 To learn how to configure this, see [OpenTelemetry](deployment-self-hosting/scaling-and-performance/opentelemetry).
 
-## Event catalog
+## Event catalogue
 {% for event in flagsmith_events %}
 ### `{{ event.name }}`
 
