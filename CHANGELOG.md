@@ -2,6 +2,18 @@
 
 <a name="v1.5.2"></a>
 
+## [3.8.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.7.0...v3.8.0) (2026-04-20)
+
+
+### CI
+
+* pre-commit autoupdate ([#199](https://github.com/Flagsmith/flagsmith-common/issues/199)) ([49a9f73](https://github.com/Flagsmith/flagsmith-common/commit/49a9f73c7070111ad06950a80f6dc5ac11301a14))
+
+
+### Features
+
+* **OTel:** Scaffold a backend event catalogue ([#202](https://github.com/Flagsmith/flagsmith-common/issues/202)) ([9527a72](https://github.com/Flagsmith/flagsmith-common/commit/9527a72a7ece4a5d9010b559bd482591552a7b51))
+
 ## [3.7.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.6.1...v3.7.0) (2026-04-13)
 
 
