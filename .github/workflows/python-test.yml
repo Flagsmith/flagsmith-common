@@ -42,7 +42,7 @@ jobs:
         run: make test
 
       - name: Upload Coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         env:
           PYTHON: ${{ matrix.python-version }}
         with:
