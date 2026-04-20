@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [3.8.2](https://github.com/Flagsmith/flagsmith-common/compare/v3.8.1...v3.8.2) (2026-04-20)
+
+
+### Refactoring
+
+* Strip site-specific framing from docgen templates ([#210](https://github.com/Flagsmith/flagsmith-common/issues/210)) ([d45af91](https://github.com/Flagsmith/flagsmith-common/commit/d45af91617b5fda8526dae00fe8091b66f54bf41))
+
 ## [3.8.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.8.0...v3.8.1) (2026-04-20)
 
 
