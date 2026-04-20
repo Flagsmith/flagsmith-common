@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator
 
+from common.core.otel import get_otel_event_name
+
 
 class DocgenEventsWarning(UserWarning):
     """Raised by the events scanner when a call site can't be resolved."""
@@ -317,9 +319,11 @@ def _build_entry_from_emit_call(
         )
         return None
     attributes = scope.bound_attrs | _kwargs_as_attributes(node.keywords)
-    name = f"{scope.domain}.{event_arg.value}" if scope.domain else event_arg.value
     return EventEntry(
-        name=name,
+        name=get_otel_event_name(
+            logger_name=scope.domain or None,
+            body=event_arg.value,
+        ),
         level=func.attr,
         attributes=attributes,
         locations=[SourceLocation(path=path, line=node.lineno)],

@@ -54,6 +54,19 @@ _RESERVED_KEYS = frozenset(
 )
 
 
+def get_otel_event_name(*, logger_name: str | None, body: str) -> str:
+    """Build the event name that reaches OTel from a structlog `(logger, event)`.
+
+    The body is normalised via `inflection.underscore` so hyphens and CamelCase
+    collapse to snake_case. Empty bodies fall back to ``"unknown"``. The logger
+    name, when present, is prefixed verbatim.
+    """
+    normalised = inflection.underscore(body) if body else "unknown"
+    if logger_name:
+        return f"{logger_name}.{normalised}"
+    return normalised
+
+
 def add_otel_trace_context(
     logger: structlog.types.WrappedLogger,
     method_name: str,
@@ -95,10 +108,10 @@ def make_structlog_otel_processor(logger_provider: LoggerProvider) -> Processor:
             attributes[key] = str(value)
 
         body = event_dict.get("event", "")
-        logger_name = event_dict.get("logger")
-        event_name = inflection.underscore(body) if body else "unknown"
-        if logger_name:
-            event_name = f"{logger_name}.{event_name}"
+        event_name = get_otel_event_name(
+            logger_name=event_dict.get("logger"),
+            body=body,
+        )
 
         # Some observability platforms don't surface OTel's EventName.
         # Keep a custom attribute for better visibility.

@@ -108,6 +108,42 @@ logger.exception("import.failed")
             """\
 import structlog
 
+logger = structlog.get_logger("app_analytics")
+logger.warning("no-analytics-database-configured")
+""",
+            [
+                EventEntry(
+                    name="app_analytics.no_analytics_database_configured",
+                    level="warning",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=PATH, line=4)],
+                ),
+            ],
+            [],
+            id="hyphenated-event-body-normalised-to-snake_case",
+        ),
+        pytest.param(
+            """\
+import structlog
+
+logger = structlog.get_logger("segments")
+logger.info("NewSegmentRevision")
+""",
+            [
+                EventEntry(
+                    name="segments.new_segment_revision",
+                    level="info",
+                    attributes=frozenset(),
+                    locations=[SourceLocation(path=PATH, line=4)],
+                ),
+            ],
+            [],
+            id="camel-case-event-body-normalised-to-snake_case",
+        ),
+        pytest.param(
+            """\
+import structlog
+
 logger = structlog.get_logger("sentry_change_tracking")
 
 
