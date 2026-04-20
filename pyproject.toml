@@ -14,7 +14,7 @@ optional-dependencies = { test-tools = [
     "djangorestframework",
     "drf-spectacular (>=0.28.0,<1)",
     "drf-writable-nested",
-    "environs (<15)",
+    "environs (<16)",
     "gunicorn (>=19.1)",
     "inflection",
     "opentelemetry-api (>=1.25,<2)",
