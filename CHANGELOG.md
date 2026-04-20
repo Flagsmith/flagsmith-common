@@ -2,6 +2,20 @@
 
 <a name="v1.5.2"></a>
 
+## [3.8.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.8.0...v3.8.1) (2026-04-20)
+
+
+### Dependency Updates
+
+* update codecov/codecov-action action to v6 ([#205](https://github.com/Flagsmith/flagsmith-common/issues/205)) ([cf2643f](https://github.com/Flagsmith/flagsmith-common/commit/cf2643f4d25707e3768c1b71745cb661b551f226))
+* update dependency pytest to v9 [security] ([#200](https://github.com/Flagsmith/flagsmith-common/issues/200)) ([5efe151](https://github.com/Flagsmith/flagsmith-common/commit/5efe1513b1263c92e663590d8eaacf984619716c))
+* update postgres docker tag to v15.17 ([#176](https://github.com/Flagsmith/flagsmith-common/issues/176)) ([fce8370](https://github.com/Flagsmith/flagsmith-common/commit/fce83701c73edec117360ed8eb3be4335c60c06c))
+
+
+### Bug Fixes
+
+* **OTel:** Сatalogue event names don't match OTel's normalised form ([5c948bb](https://github.com/Flagsmith/flagsmith-common/commit/5c948bbe5602470fc2271ea48dc634e9c54d926e))
+
 ## [3.8.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.7.0...v3.8.0) (2026-04-20)
 
 
