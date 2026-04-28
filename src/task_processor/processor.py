@@ -73,41 +73,34 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
     # if the tasks take longer then `run_every` to execute. This is not
     # a problem for now, but we should be mindful of this limitation
     task_manager: RecurringTaskManager = RecurringTask.objects.db_manager(database)
-    tasks = task_manager.get_tasks_to_process()
-    if tasks:
-        logger.debug(f"Running {len(tasks)} recurring task(s)")
+    task = task_manager.get_task_to_process()
+    if task is None:
+        return []
 
-        task_runs = []
+    logger.debug("Running recurring task")
 
-        for task in tasks:
-            if not task.is_task_registered:
-                # This is necessary to ensure that old instances of the task processor,
-                # which may still be running during deployment, do not remove tasks added by new instances.
-                # Reference: https://github.com/Flagsmith/flagsmith/issues/2551
-                task_age = timezone.now() - task.created_at
-                if task_age > UNREGISTERED_RECURRING_TASK_GRACE_PERIOD:
-                    task.delete(using=database)
-                continue
+    if not task.is_task_registered:
+        # This is necessary to ensure that old instances of the task processor,
+        # which may still be running during deployment, do not remove tasks added by new instances.
+        # Reference: https://github.com/Flagsmith/flagsmith/issues/2551
+        task_age = timezone.now() - task.created_at
+        if task_age > UNREGISTERED_RECURRING_TASK_GRACE_PERIOD:
+            task.delete(using=database)
+        return []
 
-            if task.should_execute:
-                task, task_run = _run_task(task)
-                assert isinstance(task_run, RecurringTaskRun)
-                task_runs.append(task_run)
-            else:
-                task.unlock()
+    task_run = None
+    if task.should_execute:
+        task, task_run = _run_task(task)
+        assert isinstance(task_run, RecurringTaskRun)
+    else:
+        task.unlock()
 
-        # update all tasks that were not deleted
-        to_update = [task for task in tasks if task.id]
-        RecurringTask.objects.using(database).bulk_update(
-            to_update,
-            fields=["is_locked", "locked_at"],
-        )
+    task.save(using=database, update_fields=["is_locked", "locked_at"])
 
-        if task_runs:
-            RecurringTaskRun.objects.using(database).bulk_create(task_runs)
-            logger.debug(f"Finished running {len(task_runs)} recurring task(s)")
-
-        return task_runs
+    if task_run:
+        task_run.save(using=database)
+        logger.debug("Finished running recurring task")
+        return [task_run]
 
     return []
 
