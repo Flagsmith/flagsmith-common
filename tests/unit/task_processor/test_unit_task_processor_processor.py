@@ -183,7 +183,7 @@ def test_run_recurring_task__timeout__kills_task(
 
     # When
     start_time = time.time()
-    task_runs = run_recurring_tasks(current_database)
+    task_run = run_recurring_tasks(current_database)
     elapsed_time = time.time() - start_time
 
     # Then - the function should return quickly (within ~2 seconds)
@@ -193,12 +193,10 @@ def test_run_recurring_task__timeout__kills_task(
         "indicating it's waiting for the worker thread to finish"
     )
 
+    assert task_run is not None
     assert (
-        len(task_runs)
-        == RecurringTaskRun.objects.using(current_database).filter(task=task).count()
-        == 1
+        RecurringTaskRun.objects.using(current_database).filter(task=task).count() == 1
     )
-    task_run = task_runs[0]
     assert task_run.result == TaskResult.FAILURE.value
     assert task_run.started_at
     assert task_run.finished_at is None
@@ -233,17 +231,15 @@ def test_run_recurring_tasks__success__creates_recurring_task_run_object(
         task_identifier="test_unit_task_processor_processor._dummy_recurring_task",
     )
     # When
-    task_runs = run_recurring_tasks(current_database)
+    task_run = run_recurring_tasks(current_database)
 
     # Then
     assert cache.get(DEFAULT_CACHE_KEY)
 
+    assert task_run is not None
     assert (
-        len(task_runs)
-        == RecurringTaskRun.objects.using(current_database).filter(task=task).count()
-        == 1
+        RecurringTaskRun.objects.using(current_database).filter(task=task).count() == 1
     )
-    task_run = task_runs[0]
     assert task_run.result == TaskResult.SUCCESS.value
     assert task_run.started_at
     assert task_run.finished_at
@@ -272,17 +268,15 @@ def test_run_recurring_tasks__locked_task_after_timeout__runs_task(
 
     # When
     assert cache.get(DEFAULT_CACHE_KEY) is None
-    task_runs = run_recurring_tasks(current_database)
+    task_run = run_recurring_tasks(current_database)
 
     # Then
     assert cache.get(DEFAULT_CACHE_KEY) == DEFAULT_CACHE_VALUE
 
+    assert task_run is not None
     assert (
-        len(task_runs)
-        == RecurringTaskRun.objects.using(current_database).filter(task=task).count()
-        == 1
+        RecurringTaskRun.objects.using(current_database).filter(task=task).count() == 1
     )
-    task_run = task_runs[0]
     assert task_run.result == TaskResult.SUCCESS.value
     assert task_run.started_at
     assert task_run.finished_at
@@ -313,33 +307,30 @@ def test_run_recurring_tasks__multiple_runs__executes_expected_times(
     )
 
     # When
-    first_task_runs = run_recurring_tasks(current_database)
+    first_task_run = run_recurring_tasks(current_database)
 
     # run the process again before the task is scheduled to run again to ensure
     # that tasks are unlocked when they are picked up by the task processor but
     # not executed.
-    no_task_runs = run_recurring_tasks(current_database)
+    no_task_run = run_recurring_tasks(current_database)
 
     time.sleep(0.3)
 
-    second_task_runs = run_recurring_tasks(current_database)
+    second_task_run = run_recurring_tasks(current_database)
 
     # Then
-    assert len(first_task_runs) == 1
-    assert len(no_task_runs) == 0
-    assert len(second_task_runs) == 1
+    assert first_task_run is not None
+    assert no_task_run is None
+    assert second_task_run is not None
 
     # we should still only have 2 organisations, despite executing the
     # `run_recurring_tasks` function 3 times.
     assert cache.get(DEFAULT_CACHE_KEY) == 2
 
-    all_task_runs = first_task_runs + second_task_runs
     assert (
-        len(all_task_runs)
-        == RecurringTaskRun.objects.using(current_database).filter(task=task).count()
-        == 2
+        RecurringTaskRun.objects.using(current_database).filter(task=task).count() == 2
     )
-    for task_run in all_task_runs:
+    for task_run in (first_task_run, second_task_run):
         assert task_run.result == TaskResult.SUCCESS.value
         assert task_run.started_at
         assert task_run.finished_at
@@ -436,10 +427,10 @@ def test_run_recurring_tasks__unregistered_new_task__does_nothing(
     registered_tasks.pop(task_identifier)
 
     # When
-    task_runs = run_recurring_tasks(current_database)
+    task_run = run_recurring_tasks(current_database)
 
     # Then
-    assert len(task_runs) == 0
+    assert task_run is None
     assert (
         RecurringTask.objects.using(current_database)
         .filter(task_identifier=task_identifier)
@@ -471,10 +462,10 @@ def test_run_recurring_tasks__unregistered_old_task__deletes_task(
     registered_tasks.pop(task_identifier)
 
     # When
-    task_runs = run_recurring_tasks(current_database)
+    task_run = run_recurring_tasks(current_database)
 
     # Then
-    assert len(task_runs) == 0
+    assert task_run is None
     assert not (
         RecurringTask.objects.using(current_database)
         .filter(task_identifier=task_identifier)
@@ -590,11 +581,11 @@ def test_run_recurring_task__failure__creates_recurring_task_run_object(
     task = RecurringTask.objects.get(task_identifier=task_identifier)
 
     # When
-    task_runs = run_recurring_tasks(current_database)
+    task_run = run_recurring_tasks(current_database)
 
     # Then
-    assert len(task_runs) == RecurringTaskRun.objects.filter(task=task).count() == 1
-    task_run = task_runs[0]
+    assert task_run is not None
+    assert RecurringTaskRun.objects.filter(task=task).count() == 1
     assert task_run.result == TaskResult.FAILURE.value
     assert task_run.started_at
     assert task_run.finished_at is None
@@ -613,6 +604,20 @@ def test_run_task__no_tasks__does_nothing(current_database: str) -> None:
     # Then
     assert result == []
     assert not TaskRun.objects.using(current_database).exists()
+
+
+@pytest.mark.multi_database
+@pytest.mark.task_processor_mode
+def test_run_recurring_tasks__no_tasks__does_nothing(current_database: str) -> None:
+    # Given - no recurring tasks
+    pass
+
+    # When
+    task_run = run_recurring_tasks(current_database)
+
+    # Then
+    assert task_run is None
+    assert not RecurringTaskRun.objects.using(current_database).exists()
 
 
 @pytest.mark.multi_database(transaction=True)

@@ -68,14 +68,14 @@ def run_tasks(database: str, num_tasks: int = 1) -> list[TaskRun]:
     return []
 
 
-def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
+def run_recurring_tasks(database: str) -> RecurringTaskRun | None:
     # NOTE: We will probably see a lot of delay in the execution of recurring tasks
     # if the tasks take longer then `run_every` to execute. This is not
     # a problem for now, but we should be mindful of this limitation
     task_manager: RecurringTaskManager = RecurringTask.objects.db_manager(database)
     task = task_manager.get_task_to_process()
     if task is None:
-        return []
+        return None
 
     logger.debug(f"Running recurring task '{task.task_identifier}'")
 
@@ -86,7 +86,7 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
         task_age = timezone.now() - task.created_at
         if task_age > UNREGISTERED_RECURRING_TASK_GRACE_PERIOD:
             task.delete(using=database)
-        return []
+        return None
 
     task_run: RecurringTaskRun | None = None
     if task.should_execute:
@@ -101,9 +101,9 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
     if task_run:
         task_run.save(using=database)
         logger.debug(f"Finished running recurring task '{task.task_identifier}'")
-        return [task_run]
+        return task_run
 
-    return []
+    return None
 
 
 def _run_task(
