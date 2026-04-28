@@ -77,7 +77,7 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
     if task is None:
         return []
 
-    logger.debug("Running recurring task")
+    logger.debug(f"Running recurring task '{task.task_identifier}'")
 
     if not task.is_task_registered:
         # This is necessary to ensure that old instances of the task processor,
@@ -88,10 +88,11 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
             task.delete(using=database)
         return []
 
-    task_run = None
+    task_run: RecurringTaskRun | None = None
     if task.should_execute:
-        task, task_run = _run_task(task)
-        assert isinstance(task_run, RecurringTaskRun)
+        task, run = _run_task(task)
+        assert isinstance(run, RecurringTaskRun)
+        task_run = run
     else:
         task.unlock()
 
@@ -99,7 +100,7 @@ def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
 
     if task_run:
         task_run.save(using=database)
-        logger.debug("Finished running recurring task")
+        logger.debug(f"Finished running recurring task '{task.task_identifier}'")
         return [task_run]
 
     return []
