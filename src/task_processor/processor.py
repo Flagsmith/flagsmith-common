@@ -91,9 +91,14 @@ def run_recurring_task(database: str) -> RecurringTaskRun | None:
 
     task_run: RecurringTaskRun | None = None
     if task.should_execute:
-        task, run = _run_task(task)
-        assert isinstance(run, RecurringTaskRun)
-        task_run = run
+        # Persist the task run before execution so that, if the worker is
+        # killed mid-task, we still have a row we can later mark as timed
+        # out when the task is unlocked by the timeout-based reaper in
+        # `get_recurringtasks_to_process`.
+        task_run = RecurringTaskRun(started_at=timezone.now(), task=task)
+        task_run.save(using=database)
+        task, run = _run_task(task, task_run=task_run)
+        assert run is task_run
         # task.run() may have idled the DB connection past the server's
         # session timeout; drop stale connections so the saves below open
         # a fresh one. See Sentry FLAGSMITH-API-5EM.
@@ -104,7 +109,10 @@ def run_recurring_task(database: str) -> RecurringTaskRun | None:
     task.save(using=database, update_fields=["is_locked", "locked_at"])
 
     if task_run:
-        task_run.save(using=database)
+        task_run.save(
+            using=database,
+            update_fields=["finished_at", "result", "error_details"],
+        )
         logger.debug(f"Finished running recurring task '{task.task_identifier}'")
         return task_run
 
@@ -113,6 +121,7 @@ def run_recurring_task(database: str) -> RecurringTaskRun | None:
 
 def _run_task(
     task: T,
+    task_run: AnyTaskRun | None = None,
 ) -> typing.Tuple[T, AnyTaskRun]:
     assert settings.TASK_PROCESSOR_MODE, (
         "Attempt to run tasks in a non-task-processor environment"
@@ -128,7 +137,8 @@ def _run_task(
     logger.debug(
         f"Running task {task_identifier} id={task.pk} args={task.args} kwargs={task.kwargs}"
     )
-    task_run: AnyTaskRun = task.task_runs.model(started_at=timezone.now(), task=task)  # type: ignore[attr-defined]
+    if task_run is None:
+        task_run = task.task_runs.model(started_at=timezone.now(), task=task)  # type: ignore[attr-defined]
     result: str
     executor = None
 
