@@ -631,6 +631,106 @@ def test_run_recurring_task__failure__creates_recurring_task_run_object(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
+def test_run_recurring_task__disabled_task__not_picked_up(
+    current_database: str,
+) -> None:
+    # Given
+    @register_recurring_task(run_every=timedelta(seconds=1))
+    def _dummy_recurring_task() -> None:
+        cache.set(DEFAULT_CACHE_KEY, DEFAULT_CACHE_VALUE)
+
+    initialise()
+
+    task = RecurringTask.objects.using(current_database).get(
+        task_identifier="test_unit_task_processor_processor._dummy_recurring_task",
+    )
+    task.is_disabled = True
+    task.save(using=current_database)
+
+    # When
+    task_run = run_recurring_task(current_database)
+
+    # Then
+    assert task_run is None
+    assert (
+        RecurringTaskRun.objects.using(current_database).filter(task=task).count() == 0
+    )
+    assert cache.get(DEFAULT_CACHE_KEY) is None
+
+
+@pytest.mark.multi_database(transaction=True)
+@pytest.mark.task_processor_mode
+def test_run_recurring_task__four_consecutive_failures__auto_disables(
+    current_database: str,
+) -> None:
+    # Given - a task that always fails
+    task_identifier = (
+        "test_unit_task_processor_processor._auto_disable_raise_exception"
+    )
+
+    @register_recurring_task(run_every=timedelta(seconds=1))
+    def _auto_disable_raise_exception() -> None:
+        raise RuntimeError("test exception")
+
+    initialise()
+
+    task = RecurringTask.objects.using(current_database).get(
+        task_identifier=task_identifier,
+    )
+
+    # When - we run the failing task 4 times
+    for _ in range(RecurringTask.MAX_CONSECUTIVE_FAILURES):
+        run_recurring_task(current_database)
+
+    # Then - the task is disabled and the counter reflects every failure
+    task.refresh_from_db(using=current_database)
+    assert task.is_disabled is True
+    assert task.num_consecutive_failures == RecurringTask.MAX_CONSECUTIVE_FAILURES
+    assert (
+        RecurringTaskRun.objects.using(current_database).filter(task=task).count()
+        == RecurringTask.MAX_CONSECUTIVE_FAILURES
+    )
+
+    # And a subsequent pickup attempt is skipped at the SQL layer
+    assert run_recurring_task(current_database) is None
+    assert (
+        RecurringTaskRun.objects.using(current_database).filter(task=task).count()
+        == RecurringTask.MAX_CONSECUTIVE_FAILURES
+    )
+
+
+@pytest.mark.multi_database(transaction=True)
+@pytest.mark.task_processor_mode
+def test_run_recurring_task__success_resets_consecutive_failures(
+    current_database: str,
+) -> None:
+    # Given - a registered task with prior failures recorded on the row
+    @register_recurring_task(run_every=timedelta(seconds=1))
+    def _dummy_recurring_task() -> None:
+        cache.set(DEFAULT_CACHE_KEY, DEFAULT_CACHE_VALUE)
+
+    initialise()
+
+    task = RecurringTask.objects.using(current_database).get(
+        task_identifier="test_unit_task_processor_processor._dummy_recurring_task",
+    )
+    task.num_consecutive_failures = 2
+    task.save(using=current_database)
+
+    # When - the task runs successfully
+    task_run = run_recurring_task(current_database)
+
+    # Then - the failure counter is cleared and the task stays enabled
+    assert task_run is not None
+    assert task_run.result == TaskResult.SUCCESS.value
+
+    task.refresh_from_db(using=current_database)
+    assert task.num_consecutive_failures == 0
+    assert task.is_disabled is False
+
+
+@pytest.mark.multi_database
+@pytest.mark.task_processor_mode
 def test_run_task__no_tasks__does_nothing(current_database: str) -> None:
     # Given - no tasks
     pass

@@ -108,7 +108,15 @@ def run_recurring_task(database: str) -> RecurringTaskRun | None:
     else:
         task.unlock()
 
-    task.save(using=database, update_fields=["is_locked", "locked_at"])
+    task.save(
+        using=database,
+        update_fields=[
+            "is_locked",
+            "locked_at",
+            "is_disabled",
+            "num_consecutive_failures",
+        ],
+    )
 
     if task_run:
         task_run.save(using=database)

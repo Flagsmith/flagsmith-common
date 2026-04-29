@@ -16,7 +16,11 @@ class RecurringTaskAdmin(admin.ModelAdmin[RecurringTask]):
         "last_run_status",
         "last_run_finished_at",
         "is_locked",
+        "is_disabled",
+        "num_consecutive_failures",
     )
+    list_filter = ("is_disabled",)
+    actions = ("unlock", "enable")
     readonly_fields = ("args", "kwargs")
 
     def last_run_status(self, instance: RecurringTask) -> str | None:
@@ -36,3 +40,11 @@ class RecurringTaskAdmin(admin.ModelAdmin[RecurringTask]):
         queryset: QuerySet[RecurringTask],
     ) -> None:
         queryset.update(is_locked=False)
+
+    @admin.action(description="Re-enable selected tasks")
+    def enable(
+        self,
+        request: HttpRequest,
+        queryset: QuerySet[RecurringTask],
+    ) -> None:
+        queryset.update(is_disabled=False, num_consecutive_failures=0)

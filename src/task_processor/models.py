@@ -154,6 +154,8 @@ class Task(AbstractBaseTask):
 
 
 class RecurringTask(AbstractBaseTask):
+    MAX_CONSECUTIVE_FAILURES = 4
+
     run_every = models.DurationField()
     first_run_time = models.TimeField(blank=True, null=True)
 
@@ -161,6 +163,8 @@ class RecurringTask(AbstractBaseTask):
     timeout = models.DurationField(default=timedelta(minutes=30))
 
     last_picked_at = models.DateTimeField(blank=True, null=True)
+    is_disabled = models.BooleanField(default=False)
+    num_consecutive_failures = models.IntegerField(default=0)
     objects: RecurringTaskManager = RecurringTaskManager()
 
     class Meta:
@@ -195,6 +199,16 @@ class RecurringTask(AbstractBaseTask):
             self.task_identifier,
             abandoned_run.error_details,
         )
+
+    def mark_failure(self) -> None:
+        super().mark_failure()
+        self.num_consecutive_failures += 1
+        if self.num_consecutive_failures >= self.MAX_CONSECUTIVE_FAILURES:
+            self.is_disabled = True
+
+    def mark_success(self) -> None:
+        super().mark_success()
+        self.num_consecutive_failures = 0
 
     @property
     def should_execute(self) -> bool:
