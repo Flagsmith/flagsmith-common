@@ -699,7 +699,7 @@ def test_run_recurring_task__four_consecutive_failures__auto_disables(
 
 @pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-def test_run_recurring_task__success_resets_consecutive_failures(
+def test_run_recurring_task__success__resets_consecutive_failures(
     current_database: str,
 ) -> None:
     # Given - a registered task with prior failures recorded on the row
