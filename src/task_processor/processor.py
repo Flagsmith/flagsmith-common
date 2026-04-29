@@ -80,6 +80,8 @@ def run_recurring_task(database: str) -> RecurringTaskRun | None:
 
     logger.debug(f"Running recurring task '{task.task_identifier}'")
 
+    task.reconcile_abandoned_run()
+
     if not task.is_task_registered:
         # This is necessary to ensure that old instances of the task processor,
         # which may still be running during deployment, do not remove tasks added by new instances.
@@ -109,10 +111,7 @@ def run_recurring_task(database: str) -> RecurringTaskRun | None:
     task.save(using=database, update_fields=["is_locked", "locked_at"])
 
     if task_run:
-        task_run.save(
-            using=database,
-            update_fields=["finished_at", "result", "error_details"],
-        )
+        task_run.save(using=database)
         logger.debug(f"Finished running recurring task '{task.task_identifier}'")
         return task_run
 
