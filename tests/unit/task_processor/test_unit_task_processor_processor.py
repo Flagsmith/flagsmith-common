@@ -161,7 +161,7 @@ def test_run_task__timeout__kills_task(
     )
 
 
-@pytest.mark.multi_database
+@pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
 def test_run_recurring_task__timeout__kills_task(
     caplog: pytest.LogCaptureFixture,
@@ -214,7 +214,7 @@ def test_run_recurring_task__timeout__kills_task(
     )
 
 
-@pytest.mark.multi_database
+@pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
 def test_run_recurring_task__success__creates_recurring_task_run_object(
     current_database: str,
@@ -246,7 +246,7 @@ def test_run_recurring_task__success__creates_recurring_task_run_object(
     assert task_run.error_details is None
 
 
-@pytest.mark.multi_database
+@pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
 def test_run_recurring_task__locked_task_after_timeout__runs_task(
     current_database: str,
@@ -375,7 +375,7 @@ def test_run_recurring_task__multiple_tasks__loops_over_all(
         )
 
 
-@pytest.mark.multi_database
+@pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
 def test_run_recurring_task__called_before_interval__executes_only_once(
     current_database: str,
@@ -564,7 +564,7 @@ def test_run_task__failed_task__runs_again(
     assert task.is_locked is False
 
 
-@pytest.mark.multi_database
+@pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
 def test_run_recurring_task__failure__creates_recurring_task_run_object(
     current_database: str,

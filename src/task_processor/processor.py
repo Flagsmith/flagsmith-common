@@ -7,6 +7,7 @@ from datetime import timedelta
 from importlib.metadata import version
 
 from django.conf import settings
+from django.db import close_old_connections
 from django.utils import timezone
 from opentelemetry import context as otel_context
 from opentelemetry import propagate, trace
@@ -93,6 +94,10 @@ def run_recurring_task(database: str) -> RecurringTaskRun | None:
         task, run = _run_task(task)
         assert isinstance(run, RecurringTaskRun)
         task_run = run
+        # task.run() may have idled the DB connection past the server's
+        # session timeout; drop stale connections so the saves below open
+        # a fresh one. See Sentry FLAGSMITH-API-5EM.
+        close_old_connections()
     else:
         task.unlock()
 
