@@ -33,7 +33,7 @@ from task_processor.models import (
 )
 from task_processor.processor import (
     UNREGISTERED_RECURRING_TASK_GRACE_PERIOD,
-    run_recurring_tasks,
+    run_recurring_task,
     run_tasks,
 )
 from task_processor.task_registry import initialise, registered_tasks
@@ -183,13 +183,13 @@ def test_run_recurring_task__timeout__kills_task(
 
     # When
     start_time = time.time()
-    task_run = run_recurring_tasks(current_database)
+    task_run = run_recurring_task(current_database)
     elapsed_time = time.time() - start_time
 
     # Then - the function should return quickly (within ~2 seconds)
     # Not block for 10 seconds waiting for the worker thread
     assert elapsed_time < 2.0, (
-        f"run_recurring_tasks blocked for {elapsed_time:.2f} seconds, "
+        f"run_recurring_task blocked for {elapsed_time:.2f} seconds, "
         "indicating it's waiting for the worker thread to finish"
     )
 
@@ -216,7 +216,7 @@ def test_run_recurring_task__timeout__kills_task(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks__success__creates_recurring_task_run_object(
+def test_run_recurring_task__success__creates_recurring_task_run_object(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -231,7 +231,7 @@ def test_run_recurring_tasks__success__creates_recurring_task_run_object(
         task_identifier="test_unit_task_processor_processor._dummy_recurring_task",
     )
     # When
-    task_run = run_recurring_tasks(current_database)
+    task_run = run_recurring_task(current_database)
 
     # Then
     assert cache.get(DEFAULT_CACHE_KEY)
@@ -248,7 +248,7 @@ def test_run_recurring_tasks__success__creates_recurring_task_run_object(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks__locked_task_after_timeout__runs_task(
+def test_run_recurring_task__locked_task_after_timeout__runs_task(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -268,7 +268,7 @@ def test_run_recurring_tasks__locked_task_after_timeout__runs_task(
 
     # When
     assert cache.get(DEFAULT_CACHE_KEY) is None
-    task_run = run_recurring_tasks(current_database)
+    task_run = run_recurring_task(current_database)
 
     # Then
     assert cache.get(DEFAULT_CACHE_KEY) == DEFAULT_CACHE_VALUE
@@ -290,7 +290,7 @@ def test_run_recurring_tasks__locked_task_after_timeout__runs_task(
 
 @pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks__multiple_runs__executes_expected_times(
+def test_run_recurring_task__multiple_runs__executes_expected_times(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -307,16 +307,16 @@ def test_run_recurring_tasks__multiple_runs__executes_expected_times(
     )
 
     # When
-    first_task_run = run_recurring_tasks(current_database)
+    first_task_run = run_recurring_task(current_database)
 
     # run the process again before the task is scheduled to run again to ensure
     # that tasks are unlocked when they are picked up by the task processor but
     # not executed.
-    no_task_run = run_recurring_tasks(current_database)
+    no_task_run = run_recurring_task(current_database)
 
     time.sleep(0.3)
 
-    second_task_run = run_recurring_tasks(current_database)
+    second_task_run = run_recurring_task(current_database)
 
     # Then
     assert first_task_run is not None
@@ -324,7 +324,7 @@ def test_run_recurring_tasks__multiple_runs__executes_expected_times(
     assert second_task_run is not None
 
     # we should still only have 2 organisations, despite executing the
-    # `run_recurring_tasks` function 3 times.
+    # `run_recurring_task` function 3 times.
     assert cache.get(DEFAULT_CACHE_KEY) == 2
 
     assert (
@@ -339,7 +339,7 @@ def test_run_recurring_tasks__multiple_runs__executes_expected_times(
 
 @pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks__multiple_tasks__loops_over_all(
+def test_run_recurring_task__multiple_tasks__loops_over_all(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -358,9 +358,9 @@ def test_run_recurring_tasks__multiple_tasks__loops_over_all(
 
     initialise()
 
-    # When, we call run_recurring_tasks in a loop few times
+    # When, we call run_recurring_task in a loop few times
     for _ in range(4):
-        run_recurring_tasks(current_database)
+        run_recurring_task(current_database)
 
     # Then - we should have exactly one RecurringTaskRun for each task
     for i in range(1, 4):
@@ -377,7 +377,7 @@ def test_run_recurring_tasks__multiple_tasks__loops_over_all(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks__called_before_interval__executes_only_once(
+def test_run_recurring_task__called_before_interval__executes_only_once(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -393,9 +393,9 @@ def test_run_recurring_tasks__called_before_interval__executes_only_once(
         task_identifier="test_unit_task_processor_processor._dummy_recurring_task",
     )
 
-    # When - we call run_recurring_tasks twice
-    run_recurring_tasks(current_database)
-    run_recurring_tasks(current_database)
+    # When - we call run_recurring_task twice
+    run_recurring_task(current_database)
+    run_recurring_task(current_database)
 
     # Then - we expect the task to have been run once
 
@@ -408,7 +408,7 @@ def test_run_recurring_tasks__called_before_interval__executes_only_once(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks__unregistered_new_task__does_nothing(
+def test_run_recurring_task__unregistered_new_task__does_nothing(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -427,7 +427,7 @@ def test_run_recurring_tasks__unregistered_new_task__does_nothing(
     registered_tasks.pop(task_identifier)
 
     # When
-    task_run = run_recurring_tasks(current_database)
+    task_run = run_recurring_task(current_database)
 
     # Then
     assert task_run is None
@@ -440,7 +440,7 @@ def test_run_recurring_tasks__unregistered_new_task__does_nothing(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks__unregistered_old_task__deletes_task(
+def test_run_recurring_task__unregistered_old_task__deletes_task(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
@@ -462,7 +462,7 @@ def test_run_recurring_tasks__unregistered_old_task__deletes_task(
     registered_tasks.pop(task_identifier)
 
     # When
-    task_run = run_recurring_tasks(current_database)
+    task_run = run_recurring_task(current_database)
 
     # Then
     assert task_run is None
@@ -581,7 +581,7 @@ def test_run_recurring_task__failure__creates_recurring_task_run_object(
     task = RecurringTask.objects.get(task_identifier=task_identifier)
 
     # When
-    task_run = run_recurring_tasks(current_database)
+    task_run = run_recurring_task(current_database)
 
     # Then
     assert task_run is not None
@@ -608,12 +608,12 @@ def test_run_task__no_tasks__does_nothing(current_database: str) -> None:
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_recurring_tasks__no_tasks__does_nothing(current_database: str) -> None:
+def test_run_recurring_task__no_tasks__does_nothing(current_database: str) -> None:
     # Given - no recurring tasks
     pass
 
     # When
-    task_run = run_recurring_tasks(current_database)
+    task_run = run_recurring_task(current_database)
 
     # Then
     assert task_run is None
@@ -728,7 +728,7 @@ def test_run_task__backoff_recurring__raises_expected(
 
     # When / Then
     with pytest.raises(AssertionError) as exc_info:
-        run_recurring_tasks(current_database)
+        run_recurring_task(current_database)
 
     assert (
         str(exc_info.value)
@@ -823,7 +823,7 @@ def test_run_tasks__tasks_executed__expected_metrics(
 
     # When
     run_tasks(current_database, 2)
-    run_recurring_tasks(current_database)
+    run_recurring_task(current_database)
 
     # Then
     assert_metric(
@@ -993,7 +993,7 @@ def test_recurring_tasks__picked_up_but_not_executed__are_unlocked(
     )
 
     # When
-    run_recurring_tasks(current_database)
+    run_recurring_task(current_database)
 
     # Then
     recurring_task.refresh_from_db(using=current_database)

@@ -68,7 +68,7 @@ def run_tasks(database: str, num_tasks: int = 1) -> list[TaskRun]:
     return []
 
 
-def run_recurring_tasks(database: str) -> RecurringTaskRun | None:
+def run_recurring_task(database: str) -> RecurringTaskRun | None:
     # NOTE: We will probably see a lot of delay in the execution of recurring tasks
     # if the tasks take longer then `run_every` to execute. This is not
     # a problem for now, but we should be mindful of this limitation

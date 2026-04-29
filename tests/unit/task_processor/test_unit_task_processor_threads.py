@@ -54,7 +54,7 @@ def test_task_runner__multi_database___consumes_tasks_from_multiple_databases(
     # Given
     settings.TASK_PROCESSOR_DATABASES = ["default", "task_processor"]
     run_tasks = mocker.patch.object(threads, "run_tasks")
-    run_recurring_tasks = mocker.patch.object(threads, "run_recurring_tasks")
+    run_recurring_task = mocker.patch.object(threads, "run_recurring_task")
     task_runner = mocker.Mock()
 
     # When
@@ -65,7 +65,7 @@ def test_task_runner__multi_database___consumes_tasks_from_multiple_databases(
         mocker.call("default", task_runner.queue_pop_size),
         mocker.call("task_processor", task_runner.queue_pop_size),
     ]
-    assert run_recurring_tasks.call_args_list == [
+    assert run_recurring_task.call_args_list == [
         mocker.call("task_processor"),
     ]
 
@@ -78,7 +78,7 @@ def test_task_runner__single_database___consumes_tasks_from_one_databases(
 ) -> None:
     # Given
     run_tasks = mocker.patch.object(threads, "run_tasks")
-    run_recurring_tasks = mocker.patch.object(threads, "run_recurring_tasks")
+    run_recurring_task = mocker.patch.object(threads, "run_recurring_task")
     task_runner = mocker.Mock()
 
     # When
@@ -88,6 +88,6 @@ def test_task_runner__single_database___consumes_tasks_from_one_databases(
     assert run_tasks.call_args_list == [
         mocker.call(current_database, task_runner.queue_pop_size),
     ]
-    assert run_recurring_tasks.call_args_list == [
+    assert run_recurring_task.call_args_list == [
         mocker.call(current_database),
     ]
