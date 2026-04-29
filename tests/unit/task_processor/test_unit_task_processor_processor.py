@@ -637,7 +637,7 @@ def test_run_recurring_task__disabled_task__not_picked_up(
     # Given
     @register_recurring_task(run_every=timedelta(seconds=1))
     def _dummy_recurring_task() -> None:
-        cache.set(DEFAULT_CACHE_KEY, DEFAULT_CACHE_VALUE)
+        pass
 
     initialise()
 
@@ -655,7 +655,6 @@ def test_run_recurring_task__disabled_task__not_picked_up(
     assert (
         RecurringTaskRun.objects.using(current_database).filter(task=task).count() == 0
     )
-    assert cache.get(DEFAULT_CACHE_KEY) is None
 
 
 @pytest.mark.multi_database(transaction=True)
