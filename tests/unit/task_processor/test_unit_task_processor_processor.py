@@ -664,9 +664,7 @@ def test_run_recurring_task__four_consecutive_failures__auto_disables(
     current_database: str,
 ) -> None:
     # Given - a task that always fails
-    task_identifier = (
-        "test_unit_task_processor_processor._auto_disable_raise_exception"
-    )
+    task_identifier = "test_unit_task_processor_processor._auto_disable_raise_exception"
 
     @register_recurring_task(run_every=timedelta(seconds=1))
     def _auto_disable_raise_exception() -> None:
