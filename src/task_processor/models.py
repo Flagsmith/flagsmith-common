@@ -177,7 +177,7 @@ class RecurringTask(AbstractBaseTask):
 
     def reconcile_abandoned_run(self) -> None:
         # if for some reason the worker died before before writing the task run result
-        # we mark that run as explict failure here 
+        # we mark that run as explict failure here
         abandoned_run = self.task_runs.filter(result__isnull=True).first()
         if abandoned_run is None:
             return
