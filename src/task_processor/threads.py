@@ -8,7 +8,7 @@ from django.conf import settings
 from django.db import close_old_connections
 from django.utils import timezone
 
-from task_processor.processor import run_recurring_tasks, run_tasks
+from task_processor.processor import run_recurring_task, run_tasks
 from task_processor.task_registry import initialise
 from task_processor.types import TaskProcessorConfig
 
@@ -111,7 +111,7 @@ class TaskRunner(Thread):
 
                 # Recurring tasks are only run on one database
                 if (database == "default") ^ database_is_separate:
-                    run_recurring_tasks(database)
+                    run_recurring_task(database)
             except Exception as exception:
                 # To prevent task threads from dying if they get an error retrieving the tasks from the
                 # database this will allow the thread to continue trying to retrieve tasks if it can

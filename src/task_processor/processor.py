@@ -7,6 +7,7 @@ from datetime import timedelta
 from importlib.metadata import version
 
 from django.conf import settings
+from django.db import close_old_connections
 from django.utils import timezone
 from opentelemetry import context as otel_context
 from opentelemetry import propagate, trace
@@ -68,48 +69,46 @@ def run_tasks(database: str, num_tasks: int = 1) -> list[TaskRun]:
     return []
 
 
-def run_recurring_tasks(database: str) -> list[RecurringTaskRun]:
+def run_recurring_task(database: str) -> RecurringTaskRun | None:
     # NOTE: We will probably see a lot of delay in the execution of recurring tasks
     # if the tasks take longer then `run_every` to execute. This is not
     # a problem for now, but we should be mindful of this limitation
     task_manager: RecurringTaskManager = RecurringTask.objects.db_manager(database)
-    tasks = task_manager.get_tasks_to_process()
-    if tasks:
-        logger.debug(f"Running {len(tasks)} recurring task(s)")
+    task = task_manager.get_task_to_process()
+    if task is None:
+        return None
 
-        task_runs = []
+    logger.debug(f"Running recurring task '{task.task_identifier}'")
 
-        for task in tasks:
-            if not task.is_task_registered:
-                # This is necessary to ensure that old instances of the task processor,
-                # which may still be running during deployment, do not remove tasks added by new instances.
-                # Reference: https://github.com/Flagsmith/flagsmith/issues/2551
-                task_age = timezone.now() - task.created_at
-                if task_age > UNREGISTERED_RECURRING_TASK_GRACE_PERIOD:
-                    task.delete(using=database)
-                continue
+    if not task.is_task_registered:
+        # This is necessary to ensure that old instances of the task processor,
+        # which may still be running during deployment, do not remove tasks added by new instances.
+        # Reference: https://github.com/Flagsmith/flagsmith/issues/2551
+        task_age = timezone.now() - task.created_at
+        if task_age > UNREGISTERED_RECURRING_TASK_GRACE_PERIOD:
+            task.delete(using=database)
+        return None
 
-            if task.should_execute:
-                task, task_run = _run_task(task)
-                assert isinstance(task_run, RecurringTaskRun)
-                task_runs.append(task_run)
-            else:
-                task.unlock()
+    task_run: RecurringTaskRun | None = None
+    if task.should_execute:
+        task, run = _run_task(task)
+        assert isinstance(run, RecurringTaskRun)
+        task_run = run
+        # task.run() may have idled the DB connection past the server's
+        # session timeout; drop stale connections so the saves below open
+        # a fresh one. See Sentry FLAGSMITH-API-5EM.
+        close_old_connections()
+    else:
+        task.unlock()
 
-        # update all tasks that were not deleted
-        to_update = [task for task in tasks if task.id]
-        RecurringTask.objects.using(database).bulk_update(
-            to_update,
-            fields=["is_locked", "locked_at"],
-        )
+    task.save(using=database, update_fields=["is_locked", "locked_at"])
 
-        if task_runs:
-            RecurringTaskRun.objects.using(database).bulk_create(task_runs)
-            logger.debug(f"Finished running {len(task_runs)} recurring task(s)")
+    if task_run:
+        task_run.save(using=database)
+        logger.debug(f"Finished running recurring task '{task.task_identifier}'")
+        return task_run
 
-        return task_runs
-
-    return []
+    return None
 
 
 def _run_task(
