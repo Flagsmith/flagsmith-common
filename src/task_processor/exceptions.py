@@ -26,3 +26,13 @@ class TaskBackoffError(TaskProcessingError):
 
 class TaskQueueFullError(Exception):
     pass
+
+
+class TaskAbandonedError(TaskProcessingError):
+    """
+    Marker error for recurring task runs whose worker died before
+    recording the result (process killed, OOM, host evicted, DB
+    connection lost during the post-execution save). Never raised —
+    used as the prefix in `error_details` so monitoring and log scrapers
+    can match on a single authoritative class name.
+    """

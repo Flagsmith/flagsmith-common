@@ -1,3 +1,4 @@
+import logging
 import typing
 import uuid
 from datetime import datetime, timedelta
@@ -7,10 +8,12 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils import timezone
 
-from task_processor.exceptions import TaskQueueFullError
+from task_processor.exceptions import TaskAbandonedError, TaskQueueFullError
 from task_processor.managers import RecurringTaskManager, TaskManager
 from task_processor.task_registry import get_task, registered_tasks
 from task_processor.types import TaskCallable, TraceContext
+
+logger = logging.getLogger(__name__)
 
 _django_json_encoder_default = DjangoJSONEncoder().default
 
@@ -171,6 +174,27 @@ class RecurringTask(AbstractBaseTask):
     def unlock(self) -> None:
         self.is_locked = False
         self.locked_at = None
+
+    def reconcile_abandoned_run(self) -> None:
+        # if for some reason the worker died before before writing the task run result
+        # we mark that run as explict failure here
+        abandoned_run = self.task_runs.filter(result__isnull=True).first()
+        if abandoned_run is None:
+            return
+        abandoned_run.finished_at = timezone.now()
+        abandoned_run.result = TaskResult.FAILURE.value
+        abandoned_run.error_details = (
+            f"{TaskAbandonedError.__name__}: "
+            "no result was written before the SQL reaper unlocked the task"
+        )
+        abandoned_run.save(
+            update_fields=["finished_at", "result", "error_details"],
+        )
+        logger.error(
+            "Recurring task '%s' was abandoned: %s",
+            self.task_identifier,
+            abandoned_run.error_details,
+        )
 
     @property
     def should_execute(self) -> bool:

@@ -7,7 +7,7 @@ from freezegun import freeze_time
 from pytest_mock import MockerFixture
 
 from task_processor.decorators import register_task_handler
-from task_processor.models import RecurringTask, Task
+from task_processor.models import RecurringTask, RecurringTaskRun, Task, TaskResult
 from task_processor.task_registry import initialise
 
 now = timezone.now()
@@ -144,3 +144,65 @@ def test_task_create__trace_context__persists_expected(
     # Then
     task.refresh_from_db()
     assert task.trace_context == trace_context
+
+
+@pytest.mark.django_db
+def test_recurring_task_reconcile_abandoned_run__no_abandoned_run__noop() -> None:
+    # Given - a task with one completed run and no abandoned rows
+    task = RecurringTask.objects.create(
+        task_identifier="test_recurring_task",
+        run_every=timedelta(seconds=1),
+    )
+    finished_at = timezone.now()
+    finished_run = RecurringTaskRun.objects.create(
+        task=task,
+        started_at=finished_at - timedelta(seconds=1),
+        finished_at=finished_at,
+        result=TaskResult.SUCCESS.value,
+    )
+
+    # When
+    task.reconcile_abandoned_run()
+
+    # Then - the finished run is untouched
+    finished_run.refresh_from_db()
+    assert finished_run.result == TaskResult.SUCCESS.value
+    assert finished_run.finished_at == finished_at
+    assert finished_run.error_details is None
+
+
+@pytest.mark.django_db
+def test_recurring_task_reconcile_abandoned_run__finished_run_present__only_abandoned_touched() -> (
+    None
+):
+    # Given - a task with both a completed run and an abandoned run
+    task = RecurringTask.objects.create(
+        task_identifier="test_recurring_task",
+        run_every=timedelta(seconds=1),
+    )
+    finished_started_at = timezone.now() - timedelta(hours=2)
+    finished_at = timezone.now() - timedelta(hours=1)
+    finished_run = RecurringTaskRun.objects.create(
+        task=task,
+        started_at=finished_started_at,
+        finished_at=finished_at,
+        result=TaskResult.SUCCESS.value,
+    )
+    abandoned_run = RecurringTaskRun.objects.create(
+        task=task,
+        started_at=timezone.now() - timedelta(minutes=30),
+    )
+
+    # When
+    task.reconcile_abandoned_run()
+
+    # Then - only the abandoned row is marked FAILURE
+    abandoned_run.refresh_from_db()
+    assert abandoned_run.result == TaskResult.FAILURE.value
+    assert abandoned_run.finished_at is not None
+    assert abandoned_run.error_details
+
+    finished_run.refresh_from_db()
+    assert finished_run.result == TaskResult.SUCCESS.value
+    assert finished_run.finished_at == finished_at
+    assert finished_run.error_details is None

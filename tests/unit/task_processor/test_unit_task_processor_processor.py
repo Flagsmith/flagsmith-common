@@ -22,7 +22,7 @@ from task_processor.decorators import (
     register_recurring_task,
     register_task_handler,
 )
-from task_processor.exceptions import TaskBackoffError
+from task_processor.exceptions import TaskAbandonedError, TaskBackoffError
 from task_processor.models import (
     RecurringTask,
     RecurringTaskRun,
@@ -290,6 +290,43 @@ def test_run_recurring_task__locked_task_after_timeout__runs_task(
 
 @pytest.mark.multi_database(transaction=True)
 @pytest.mark.task_processor_mode
+def test_run_recurring_task__abandoned_run__reconciled_as_failure(
+    current_database: str,
+) -> None:
+    # Given - a recurring task with a stale lock and a pre-saved
+    # RecurringTaskRun row that a previous worker left behind when it
+    # died mid-task (result/finished_at still null).
+    @register_recurring_task(run_every=timedelta(seconds=1))
+    def _dummy_recurring_task() -> None:
+        pass
+
+    initialise()
+
+    task = RecurringTask.objects.using(current_database).get(
+        task_identifier="test_unit_task_processor_processor._dummy_recurring_task",
+    )
+    abandoned_run = RecurringTaskRun.objects.using(current_database).create(
+        task=task,
+        started_at=timezone.now() - timedelta(hours=1),
+    )
+    task.is_locked = True
+    task.locked_at = timezone.now() - timedelta(hours=1)
+    task.save(using=current_database)
+
+    # When
+    run_recurring_task(current_database)
+
+    # Then - the abandoned row is marked as FAILURE with a distinguishing
+    # error message
+    abandoned_run.refresh_from_db(using=current_database)
+    assert abandoned_run.result == TaskResult.FAILURE.value
+    assert abandoned_run.finished_at is not None
+    assert abandoned_run.error_details is not None
+    assert TaskAbandonedError.__name__ in abandoned_run.error_details
+
+
+@pytest.mark.multi_database(transaction=True)
+@pytest.mark.task_processor_mode
 def test_run_recurring_task__multiple_runs__executes_expected_times(
     current_database: str,
     settings: SettingsWrapper,
@@ -344,15 +381,15 @@ def test_run_recurring_task__multiple_tasks__loops_over_all(
     settings: SettingsWrapper,
 ) -> None:
     # Given, Three recurring tasks
-    @register_recurring_task(run_every=timedelta(milliseconds=200))
+    @register_recurring_task(run_every=timedelta(hours=1))
     def _dummy_recurring_task_1() -> None:
         pass
 
-    @register_recurring_task(run_every=timedelta(milliseconds=200))
+    @register_recurring_task(run_every=timedelta(hours=1))
     def _dummy_recurring_task_2() -> None:
         pass
 
-    @register_recurring_task(run_every=timedelta(milliseconds=200))
+    @register_recurring_task(run_every=timedelta(hours=1))
     def _dummy_recurring_task_3() -> None:
         pass
 
