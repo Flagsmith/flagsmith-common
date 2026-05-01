@@ -2,6 +2,29 @@
 
 <a name="v1.5.2"></a>
 
+## [3.9.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.8.2...v3.9.0) (2026-05-01)
+
+
+### CI
+
+* pre-commit autoupdate ([#212](https://github.com/Flagsmith/flagsmith-common/issues/212)) ([2a28cc8](https://github.com/Flagsmith/flagsmith-common/commit/2a28cc8e86c0ddbe8223994f0325e35d83ff9699))
+
+
+### Dependency Updates
+
+* update dependency environs to v15 ([#209](https://github.com/Flagsmith/flagsmith-common/issues/209)) ([273d3ad](https://github.com/Flagsmith/flagsmith-common/commit/273d3ade4cc4c96d977f832d738d19b016800aec))
+
+
+### Features
+
+* auto-disable recurring task after 4 consecutive failures ([#221](https://github.com/Flagsmith/flagsmith-common/issues/221)) ([8fe9ea3](https://github.com/Flagsmith/flagsmith-common/commit/8fe9ea34eadd335ad6cca5882c61a1d0ebba52eb))
+* persist RecurringTaskRun before run and reconcile abandoned rows ([#219](https://github.com/Flagsmith/flagsmith-common/issues/219)) ([7746773](https://github.com/Flagsmith/flagsmith-common/commit/7746773c809e7ed7a824b42dcf15ea0652a9fb87))
+
+
+### Refactoring
+
+* simplify run_recurring_tasks for single-task processing ([#218](https://github.com/Flagsmith/flagsmith-common/issues/218)) ([fdfd22b](https://github.com/Flagsmith/flagsmith-common/commit/fdfd22b10aee952a6cb142d4313bfc5f0ff0c7aa))
+
 ## [3.8.2](https://github.com/Flagsmith/flagsmith-common/compare/v3.8.1...v3.8.2) (2026-04-20)
 
 
