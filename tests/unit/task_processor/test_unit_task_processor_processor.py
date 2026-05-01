@@ -636,8 +636,7 @@ def test_run_recurring_task__disabled_task__not_picked_up(
 ) -> None:
     # Given
     @register_recurring_task(run_every=timedelta(seconds=1))
-    def _dummy_recurring_task() -> None:
-        pass
+    def _dummy_recurring_task() -> None: ...
 
     initialise()
 

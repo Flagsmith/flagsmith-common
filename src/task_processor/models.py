@@ -205,6 +205,11 @@ class RecurringTask(AbstractBaseTask):
         self.num_consecutive_failures += 1
         if self.num_consecutive_failures >= self.MAX_CONSECUTIVE_FAILURES:
             self.is_disabled = True
+            logger.error(
+                "Recurring task '%s' auto-disabled after %d consecutive failures",
+                self.task_identifier,
+                self.num_consecutive_failures,
+            )
 
     def mark_success(self) -> None:
         super().mark_success()
