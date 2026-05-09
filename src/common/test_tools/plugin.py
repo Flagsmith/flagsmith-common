@@ -31,10 +31,17 @@ def assert_metric_impl() -> Generator[AssertMetricFixture, None, None]:
     registry = prometheus_client.REGISTRY
     collectors = [*registry._collector_to_names]
 
-    # Reset registry state
+    # Reset registry state. `MetricWrapperBase.clear()` is implemented for
+    # parent metrics (those declared with labels) — calling it on an
+    # unlabeled metric raises AttributeError because `_lock` is only set on
+    # parents. Reset unlabeled metrics' observable state via `_metric_init`.
     for collector in collectors:
-        if isinstance(collector, prometheus_client.metrics.MetricWrapperBase):
+        if not isinstance(collector, prometheus_client.metrics.MetricWrapperBase):
+            continue
+        if collector._is_parent():  # type: ignore[no-untyped-call]
             collector.clear()
+        else:
+            collector._metric_init()  # type: ignore[no-untyped-call]
 
     def _assert_metric(
         *,

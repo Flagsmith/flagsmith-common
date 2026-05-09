@@ -92,3 +92,11 @@ def test_metric() -> prometheus_client.Counter:
         "Total number of tests run by pytest.",
         ["test_name"],
     )
+
+
+@pytest.fixture(scope="session")
+def test_unlabeled_metric() -> prometheus_client.Counter:
+    return prometheus_client.Counter(
+        "pytest_unlabeled_total",
+        "Total number of pytest unlabeled-metric assertions.",
+    )
