@@ -2,6 +2,23 @@
 
 <a name="v1.5.2"></a>
 
+## [3.9.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.9.0...v3.9.1) (2026-05-11)
+
+
+### CI
+
+* pre-commit autoupdate ([#217](https://github.com/Flagsmith/flagsmith-common/issues/217)) ([4142b3a](https://github.com/Flagsmith/flagsmith-common/commit/4142b3a26654c206994404c60fbf41c11249369d))
+
+
+### Dependency Updates
+
+* update dependency django to v5.2.14 [security] ([#223](https://github.com/Flagsmith/flagsmith-common/issues/223)) ([de305e4](https://github.com/Flagsmith/flagsmith-common/commit/de305e469074796e417a37e0587be7eb89bb2b6f))
+
+
+### Bug Fixes
+
+* **test_tools:** Reset unlabeled metrics in `assert_metric` ([#224](https://github.com/Flagsmith/flagsmith-common/issues/224)) ([8a53e67](https://github.com/Flagsmith/flagsmith-common/commit/8a53e67e984522b1d525e79c5258246bf894f935))
+
 ## [3.9.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.8.2...v3.9.0) (2026-05-01)
 
 
