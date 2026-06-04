@@ -483,6 +483,15 @@ flagsmith-schemas = [
     { name = "simplejson" },
     { name = "typing-extensions" },
 ]
+otel = [
+    { name = "inflection" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-exporter-otlp-proto-http" },
+    { name = "opentelemetry-sdk" },
+    { name = "sentry-sdk" },
+    { name = "structlog" },
+    { name = "typing-extensions" },
+]
 task-processor = [
     { name = "backoff" },
     { name = "django" },
@@ -532,13 +541,17 @@ requires-dist = [
     { name = "flagsmith-flag-engine", marker = "extra == 'flagsmith-schemas'", specifier = ">6" },
     { name = "gunicorn", marker = "extra == 'common-core'", specifier = ">=19.1" },
     { name = "inflection", marker = "extra == 'common-core'" },
+    { name = "inflection", marker = "extra == 'otel'" },
     { name = "opentelemetry-api", marker = "extra == 'common-core'", specifier = ">=1.25,<2" },
+    { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.25,<2" },
     { name = "opentelemetry-api", marker = "extra == 'task-processor'", specifier = ">=1.25,<2" },
     { name = "opentelemetry-exporter-otlp-proto-http", marker = "extra == 'common-core'", specifier = ">=1.25,<2" },
+    { name = "opentelemetry-exporter-otlp-proto-http", marker = "extra == 'otel'", specifier = ">=1.25,<2" },
     { name = "opentelemetry-instrumentation-django", marker = "extra == 'common-core'", specifier = ">=0.46b0,<1" },
     { name = "opentelemetry-instrumentation-psycopg2", marker = "extra == 'common-core'", specifier = ">=0.46b0,<1" },
     { name = "opentelemetry-instrumentation-redis", marker = "extra == 'common-core'", specifier = ">=0.46b0,<1" },
     { name = "opentelemetry-sdk", marker = "extra == 'common-core'", specifier = ">=1.25,<2" },
+    { name = "opentelemetry-sdk", marker = "extra == 'otel'", specifier = ">=1.25,<2" },
     { name = "prometheus-client", marker = "extra == 'common-core'", specifier = ">=0.0.16" },
     { name = "prometheus-client", marker = "extra == 'task-processor'", specifier = ">=0.0.16" },
     { name = "psycopg2-binary", marker = "extra == 'common-core'", specifier = ">=2.9,<3" },
@@ -547,13 +560,16 @@ requires-dist = [
     { name = "redis", marker = "extra == 'common-core'", specifier = ">=5,<6" },
     { name = "requests", marker = "extra == 'common-core'" },
     { name = "sentry-sdk", marker = "extra == 'common-core'", specifier = ">=2.0.0,<3.0.0" },
+    { name = "sentry-sdk", marker = "extra == 'otel'", specifier = ">=2.0.0,<3.0.0" },
     { name = "simplejson", marker = "extra == 'common-core'", specifier = ">=3,<4" },
     { name = "simplejson", marker = "extra == 'flagsmith-schemas'" },
     { name = "structlog", marker = "extra == 'common-core'", specifier = ">=24.4,<26" },
+    { name = "structlog", marker = "extra == 'otel'", specifier = ">=24.4,<26" },
     { name = "typing-extensions", marker = "extra == 'common-core'" },
     { name = "typing-extensions", marker = "extra == 'flagsmith-schemas'" },
+    { name = "typing-extensions", marker = "extra == 'otel'" },
 ]
-provides-extras = ["test-tools", "common-core", "task-processor", "flagsmith-schemas"]
+provides-extras = ["test-tools", "common-core", "otel", "task-processor", "flagsmith-schemas"]
 
 [package.metadata.requires-dev]
 dev = [
