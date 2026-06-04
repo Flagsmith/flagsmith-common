@@ -17,9 +17,6 @@ from opentelemetry.exporter.otlp.proto.http._log_exporter import (
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter,
 )
-from opentelemetry.instrumentation.django import DjangoInstrumentor
-from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
-from opentelemetry.instrumentation.redis import RedisInstrumentor
 from opentelemetry.propagate import set_global_textmap
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.propagators.textmap import TextMapPropagator
@@ -195,6 +192,10 @@ def setup_tracing(
             (e.g. ``"health/liveness,health/readiness"``). If not provided,
             falls back to the ``OTEL_PYTHON_DJANGO_EXCLUDED_URLS`` env var.
     """
+    from opentelemetry.instrumentation.django import DjangoInstrumentor
+    from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+    from opentelemetry.instrumentation.redis import RedisInstrumentor
+
     trace.set_tracer_provider(tracer_provider)
 
     propagator: TextMapPropagator = CompositePropagator(

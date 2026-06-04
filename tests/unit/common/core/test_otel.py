@@ -210,16 +210,20 @@ def test_setup_tracing__called__instruments_and_uninstruments_all_libraries(
     mocker: pytest_mock.MockerFixture,
 ) -> None:
     # Given
-    mocker.patch("common.core.otel.DjangoInstrumentor.instrument")
-    mocker.patch("common.core.otel.DjangoInstrumentor.uninstrument")
+    mocker.patch("opentelemetry.instrumentation.django.DjangoInstrumentor.instrument")
+    mocker.patch("opentelemetry.instrumentation.django.DjangoInstrumentor.uninstrument")
     psycopg2_instrument = mocker.patch(
-        "common.core.otel.Psycopg2Instrumentor.instrument"
+        "opentelemetry.instrumentation.psycopg2.Psycopg2Instrumentor.instrument"
     )
     psycopg2_uninstrument = mocker.patch(
-        "common.core.otel.Psycopg2Instrumentor.uninstrument"
+        "opentelemetry.instrumentation.psycopg2.Psycopg2Instrumentor.uninstrument"
     )
-    redis_instrument = mocker.patch("common.core.otel.RedisInstrumentor.instrument")
-    redis_uninstrument = mocker.patch("common.core.otel.RedisInstrumentor.uninstrument")
+    redis_instrument = mocker.patch(
+        "opentelemetry.instrumentation.redis.RedisInstrumentor.instrument"
+    )
+    redis_uninstrument = mocker.patch(
+        "opentelemetry.instrumentation.redis.RedisInstrumentor.uninstrument"
+    )
     provider = TracerProvider()
 
     # When
@@ -232,3 +236,13 @@ def test_setup_tracing__called__instruments_and_uninstruments_all_libraries(
     # Then — uninstrumented on exit
     psycopg2_uninstrument.assert_called_once()
     redis_uninstrument.assert_called_once()
+
+
+def test_otel_module__imported__no_module_level_instrumentor_references() -> None:
+    # Given / When
+    import common.core.otel as otel_module
+
+    # Then
+    assert not hasattr(otel_module, "DjangoInstrumentor")
+    assert not hasattr(otel_module, "Psycopg2Instrumentor")
+    assert not hasattr(otel_module, "RedisInstrumentor")
