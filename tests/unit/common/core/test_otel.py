@@ -239,7 +239,6 @@ def test_setup_tracing__called__instruments_and_uninstruments_all_libraries(
 
 
 def test_otel_module__imported__no_module_level_instrumentor_references() -> None:
-    """Lazy instrumentor imports keep the module importable without Django."""
     # Given / When
     import common.core.otel as otel_module
 
