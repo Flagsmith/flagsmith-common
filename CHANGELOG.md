@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [3.10.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.9.1...v3.10.0) (2026-06-04)
+
+
+### Features
+
+* Django-free structlog to OTel integration via otel extra ([#229](https://github.com/Flagsmith/flagsmith-common/issues/229)) ([01b8ed7](https://github.com/Flagsmith/flagsmith-common/commit/01b8ed7bee88580bb7856ceff740db65ba4ece07))
+
 ## [3.9.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.9.0...v3.9.1) (2026-05-11)
 
 
