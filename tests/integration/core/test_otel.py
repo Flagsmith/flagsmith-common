@@ -3,6 +3,7 @@ from typing import Generator
 import pytest
 import pytest_mock
 import structlog
+from django.test import RequestFactory
 from opentelemetry import baggage, context
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
@@ -295,6 +296,42 @@ def test_django_tracing__request_with_baggage__propagates_trace_context(
     assert len(spans) == 3
     for span in spans:
         assert f"{span.context.trace_id:032x}" == trace_id
+
+
+def test_django_tracing__request_with_baggage_header__copies_baggage_to_log_attributes(
+    rf: RequestFactory,
+    log_exporter: InMemoryLogExporter,
+) -> None:
+    # Given
+    baggage_header = "amplitude.device_id=dev-42,amplitude.session_id=sess-99"
+    request = rf.get("/", HTTP_BAGGAGE=baggage_header)
+    ctx = get_global_textmap().extract(request.headers)
+
+    # When
+    token = context.attach(ctx)
+    structlog.get_logger("mylogger").info("event-tracked")
+    context.detach(token)
+
+    # Then
+    attrs = log_exporter.get_finished_logs()[0].log_record.attributes
+    assert attrs is not None
+    assert attrs["amplitude.device_id"] == "dev-42"
+    assert attrs["amplitude.session_id"] == "sess-99"
+
+
+def test_global_textmap__request_with_baggage_header__extracts_baggage_to_context(
+    rf: RequestFactory,
+) -> None:
+    # Given
+    baggage_header = "amplitude.device_id=dev-42,amplitude.session_id=sess-99"
+    request = rf.get("/", HTTP_BAGGAGE=baggage_header)
+
+    # When
+    ctx = get_global_textmap().extract(request.headers)
+
+    # Then
+    assert baggage.get_baggage("amplitude.device_id", ctx) == "dev-42"
+    assert baggage.get_baggage("amplitude.session_id", ctx) == "sess-99"
 
 
 def test_django_tracing__excluded_url__produces_no_span(
