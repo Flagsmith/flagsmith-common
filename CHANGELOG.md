@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [3.10.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.10.0...v3.10.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **Telemetry:** Improve baggage relay tests ([#231](https://github.com/Flagsmith/flagsmith-common/issues/231)) ([f5a022b](https://github.com/Flagsmith/flagsmith-common/commit/f5a022b7a42cbf66665aca009456102aa669c841))
+
 ## [3.10.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.9.1...v3.10.0) (2026-06-04)
 
 
