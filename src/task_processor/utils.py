@@ -4,10 +4,14 @@ import logging
 from contextlib import contextmanager
 from typing import Any, Generator
 
+from environs import Env
+
 from task_processor.threads import TaskRunnerCoordinator
 from task_processor.types import TaskCallable, TaskProcessorConfig
 
 logger = logging.getLogger(__name__)
+
+env = Env()
 
 
 def get_task_identifier_from_function(
@@ -24,25 +28,28 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         "--numthreads",
         type=int,
         help="Number of worker threads to run.",
-        default=5,
+        default=env.int("TASK_PROCESSOR_NUM_THREADS", 5),
     )
     parser.add_argument(
         "--sleepintervalms",
         type=int,
         help="Number of millis each worker waits before checking for new tasks",
-        default=2000,
+        default=env.int(
+            "TASK_PROCESSOR_SLEEP_INTERVAL_MS",
+            env.int("TASK_PROCESSOR_SLEEP_INTERVAL", 500),
+        ),
     )
     parser.add_argument(
         "--graceperiodms",
         type=int,
         help="Number of millis before running task is considered 'stuck'.",
-        default=20000,
+        default=env.int("TASK_PROCESSOR_GRACE_PERIOD_MS", 20000),
     )
     parser.add_argument(
         "--queuepopsize",
         type=int,
         help="Number of tasks each worker will pop from the queue on each cycle.",
-        default=10,
+        default=env.int("TASK_PROCESSOR_QUEUE_POP_SIZE", 10),
     )
 
 
