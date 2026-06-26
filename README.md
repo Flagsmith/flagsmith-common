@@ -35,6 +35,33 @@ This enables the `route` label for Prometheus HTTP metrics.
 
 5. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
 
+### Startup commands
+
+`common.core` registers composite startup verbs on the `flagsmith` command, so a container entrypoint can sequence startup itself rather than via a shell script:
+
+- `flagsmith serve` — wait for the database, then start the API.
+- `flagsmith migrate` — migrate each configured database, then create the cache table. A bare invocation runs the full sequence; `flagsmith migrate <app> <name>` defers to Django for targeted migrations.
+- `flagsmith run-task-processor` — migrate, wait for migrations to be applied, then start the Task Processor.
+- `flagsmith migrate-and-serve` — migrate, run any configured startup commands, then start the API.
+
+The verbs are configured through these settings:
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `FLAGSMITH_MIGRATE_DATABASES` | `["default"]` | Database aliases the `migrate` step applies, in order. |
+| `FLAGSMITH_WAIT_FOR_MIGRATIONS_DATABASES` | `["default"]` | Database aliases `run-task-processor` waits on before starting. |
+| `FLAGSMITH_STARTUP_COMMANDS` | `[]` | Management commands run, in order, between migrate and serve in `migrate-and-serve`. |
+
+…and these environment variables:
+
+| Environment variable | Default | Purpose |
+| --- | --- | --- |
+| `SKIP_WAIT_FOR_DB` | unset | When set, skip waiting for the database. |
+| `TASK_PROCESSOR_NUM_THREADS` | `5` | Number of worker threads. |
+| `TASK_PROCESSOR_SLEEP_INTERVAL_MS` | `500` | Millis each worker waits before checking for new tasks (falls back to `TASK_PROCESSOR_SLEEP_INTERVAL`). |
+| `TASK_PROCESSOR_GRACE_PERIOD_MS` | `20000` | Millis before a running task is considered stuck. |
+| `TASK_PROCESSOR_QUEUE_POP_SIZE` | `10` | Tasks each worker pops from the queue per cycle. |
+
 ### Pre-commit hooks
 
 This repo provides a [`flagsmith-lint-tests`](.pre-commit-hooks.yaml) hook that enforces test conventions:
