@@ -194,3 +194,16 @@ def test_migrate_and_serve__startup_commands__runs_them_between_migrate_and_serv
         ["flagsmith", "bootstrap"],
         ["flagsmith", "start", "api"],
     ]
+
+
+@override_settings(FLAGSMITH_STARTUP_COMMANDS=["bootstrap --skip-fixtures"])
+def test_migrate_and_serve__startup_command_with_args__split_into_argv(
+    mock_run: MagicMock,
+) -> None:
+    # Given / When
+    run.migrate_and_serve([], prog="flagsmith migrate-and-serve")
+
+    # Then — the command string is shell-split into separate argv elements
+    assert ["flagsmith", "bootstrap", "--skip-fixtures"] in [
+        call.args[0] for call in mock_run.call_args_list
+    ]

@@ -5,6 +5,7 @@ shell, but run in a single process so the Django boot cost is paid once.
 """
 
 import os
+import shlex
 
 from django.conf import settings
 from django.core.management import (
@@ -74,5 +75,5 @@ def migrate_and_serve(argv: list[str], *, prog: str) -> None:
     _migrate()
     startup_commands: list[str] = getattr(settings, "FLAGSMITH_STARTUP_COMMANDS", [])
     for command in startup_commands:
-        django_execute_from_command_line(["flagsmith", command])
+        django_execute_from_command_line(["flagsmith", *shlex.split(command)])
     django_execute_from_command_line(["flagsmith", "start", "api", *argv])
