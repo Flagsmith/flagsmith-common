@@ -17,6 +17,7 @@ from flagsmith_schemas.dynamodb import (
     EnvironmentV2Meta,
     EnvironmentV2MetaCompressed,
     Identity,
+    MultivariateFeatureOption,
 )
 from flagsmith_schemas.types import DateTimeStr, UUIDStr
 
@@ -1065,6 +1066,19 @@ def test_type_adapter__environment_multivariate_feature_states_percentage_alloca
             "msg": "Value error, Total `percentage_allocation` of multivariate feature state values cannot exceed 100.",
         }.items()
     )
+
+
+def test_type_adapter__multivariate_feature_option_with_key__key_preserved() -> None:
+    # Given
+    type_adapter = TypeAdapter(MultivariateFeatureOption)
+
+    # When
+    document = type_adapter.validate_python(
+        {"id": 1, "value": "control", "key": "control"}
+    )
+
+    # Then
+    assert document == {"id": Decimal("1"), "value": "control", "key": "control"}
 
 
 def test_import__no_pydantic__expected_annotations(

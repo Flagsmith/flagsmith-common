@@ -48,6 +48,8 @@ class MultivariateFeatureOption(TypedDict):
     """Unique identifier for the multivariate feature option in Core. This is used by Core UI to display the selected option for an identity override for a multivariate feature."""
     value: DynamoFeatureValue
     """The feature state value that should be served when this option's parent multivariate feature state is selected by the engine."""
+    key: NotRequired[str | None]
+    """A stable, human-readable identifier for the variant. May be `None` for options created before keys were supported."""
 
 
 class MultivariateFeatureStateValue(TypedDict):
