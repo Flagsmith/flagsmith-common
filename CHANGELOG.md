@@ -2,6 +2,31 @@
 
 <a name="v1.5.2"></a>
 
+## [3.10.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.10.0...v3.10.1) (2026-06-30)
+
+
+### CI
+
+* pre-commit autoupdate ([#227](https://github.com/Flagsmith/flagsmith-common/issues/227)) ([e35609b](https://github.com/Flagsmith/flagsmith-common/commit/e35609b4591ba73bd194e07d9e757f5001f0600e))
+* **renovate:** only security ([#236](https://github.com/Flagsmith/flagsmith-common/issues/236)) ([9b49700](https://github.com/Flagsmith/flagsmith-common/commit/9b49700b3f500387efc707c6b1b3ae0a9f1ffcd5))
+
+
+### Dependency Updates
+
+* update dependency dj-database-url to v3 ([#138](https://github.com/Flagsmith/flagsmith-common/issues/138)) ([c76817c](https://github.com/Flagsmith/flagsmith-common/commit/c76817c91011f43e94fca40085e1b97357107066))
+* update dependency django to v5.2.15 [security] ([#237](https://github.com/Flagsmith/flagsmith-common/issues/237)) ([07607e1](https://github.com/Flagsmith/flagsmith-common/commit/07607e167d1fda3aa9cf73a6223fef91ffb4efcb))
+* update dependency pyfakefs to v6 ([#147](https://github.com/Flagsmith/flagsmith-common/issues/147)) ([aaf47e3](https://github.com/Flagsmith/flagsmith-common/commit/aaf47e3a02277317f2f11ca16587a276fe4b62a9))
+* update dependency pytest-cov to v7 ([#142](https://github.com/Flagsmith/flagsmith-common/issues/142)) ([08fb5a6](https://github.com/Flagsmith/flagsmith-common/commit/08fb5a6a3c0fdda2ef851550176332f4a77b50a0))
+* update github artifact actions (major) ([#144](https://github.com/Flagsmith/flagsmith-common/issues/144)) ([a45cc6e](https://github.com/Flagsmith/flagsmith-common/commit/a45cc6ed31d6f5e009a5f6c1e9ca263c5b3331d4))
+* update postgres docker tag to v15.18 ([#228](https://github.com/Flagsmith/flagsmith-common/issues/228)) ([18f4d55](https://github.com/Flagsmith/flagsmith-common/commit/18f4d5532f53b2f7962574137c6ea685b9f99933))
+
+
+### Bug Fixes
+
+* **deps:** bump urllib3 to 2.7.0 [security] ([#238](https://github.com/Flagsmith/flagsmith-common/issues/238)) ([819921a](https://github.com/Flagsmith/flagsmith-common/commit/819921aedd358246c66659e138a819d284fb269f))
+* **schemas:** preserve multivariate option key in DynamoDB document ([#242](https://github.com/Flagsmith/flagsmith-common/issues/242)) ([cb4c786](https://github.com/Flagsmith/flagsmith-common/commit/cb4c78682197d6b7ed520746aff0a3c079fcfd24))
+* **Telemetry:** Improve baggage relay tests ([#231](https://github.com/Flagsmith/flagsmith-common/issues/231)) ([f5a022b](https://github.com/Flagsmith/flagsmith-common/commit/f5a022b7a42cbf66665aca009456102aa669c841))
+
 ## [3.10.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.9.1...v3.10.0) (2026-06-04)
 
 
