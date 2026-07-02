@@ -2,6 +2,18 @@
 
 <a name="v1.5.2"></a>
 
+## [3.10.2](https://github.com/Flagsmith/flagsmith-common/compare/v3.10.1...v3.10.2) (2026-07-02)
+
+
+### CI
+
+* pre-commit autoupdate ([#241](https://github.com/Flagsmith/flagsmith-common/issues/241)) ([24736cc](https://github.com/Flagsmith/flagsmith-common/commit/24736cc0859eef32beecc117c188266bce8a8051))
+
+
+### Dependency Updates
+
+* Update pygments 2.19.2 -&gt; 2.20.0 ([#244](https://github.com/Flagsmith/flagsmith-common/issues/244)) ([4c04ff4](https://github.com/Flagsmith/flagsmith-common/commit/4c04ff4187932a73693b0c1175a064253712fe79))
+
 ## [3.10.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.10.0...v3.10.1) (2026-06-30)
 
 
