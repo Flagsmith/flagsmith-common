@@ -1,6 +1,7 @@
 import argparse
 import inspect
 import logging
+import os
 from contextlib import contextmanager
 from typing import Any, Generator
 
@@ -43,12 +44,13 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         "--sleepintervalms",
         type=int,
         help="Number of millis each worker waits before checking for new tasks",
-        default=env.int(
-            "TASK_PROCESSOR_SLEEP_INTERVAL_MS",
-            env.int(
+        default=(
+            env.int("TASK_PROCESSOR_SLEEP_INTERVAL_MS")
+            if "TASK_PROCESSOR_SLEEP_INTERVAL_MS" in os.environ
+            else env.int(
                 "TASK_PROCESSOR_SLEEP_INTERVAL",
                 default=DEFAULT_TASK_PROCESSOR_SLEEP_INTERVAL_MS,
-            ),
+            )
         ),
     )
     parser.add_argument(
