@@ -6,6 +6,12 @@ from typing import Any, Generator
 
 from environs import Env
 
+from task_processor.constants import (
+    DEFAULT_TASK_PROCESSOR_GRACE_PERIOD_MS,
+    DEFAULT_TASK_PROCESSOR_NUM_THREADS,
+    DEFAULT_TASK_PROCESSOR_QUEUE_POP_SIZE,
+    DEFAULT_TASK_PROCESSOR_SLEEP_INTERVAL_MS,
+)
 from task_processor.threads import TaskRunnerCoordinator
 from task_processor.types import TaskCallable, TaskProcessorConfig
 
@@ -28,7 +34,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         "--numthreads",
         type=int,
         help="Number of worker threads to run.",
-        default=env.int("TASK_PROCESSOR_NUM_THREADS", 5),
+        default=env.int(
+            "TASK_PROCESSOR_NUM_THREADS",
+            default=DEFAULT_TASK_PROCESSOR_NUM_THREADS,
+        ),
     )
     parser.add_argument(
         "--sleepintervalms",
@@ -36,20 +45,29 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         help="Number of millis each worker waits before checking for new tasks",
         default=env.int(
             "TASK_PROCESSOR_SLEEP_INTERVAL_MS",
-            env.int("TASK_PROCESSOR_SLEEP_INTERVAL", 500),
+            env.int(
+                "TASK_PROCESSOR_SLEEP_INTERVAL",
+                default=DEFAULT_TASK_PROCESSOR_SLEEP_INTERVAL_MS,
+            ),
         ),
     )
     parser.add_argument(
         "--graceperiodms",
         type=int,
         help="Number of millis before running task is considered 'stuck'.",
-        default=env.int("TASK_PROCESSOR_GRACE_PERIOD_MS", 20000),
+        default=env.int(
+            "TASK_PROCESSOR_GRACE_PERIOD_MS",
+            default=DEFAULT_TASK_PROCESSOR_GRACE_PERIOD_MS,
+        ),
     )
     parser.add_argument(
         "--queuepopsize",
         type=int,
         help="Number of tasks each worker will pop from the queue on each cycle.",
-        default=env.int("TASK_PROCESSOR_QUEUE_POP_SIZE", 10),
+        default=env.int(
+            "TASK_PROCESSOR_QUEUE_POP_SIZE",
+            default=DEFAULT_TASK_PROCESSOR_QUEUE_POP_SIZE,
+        ),
     )
 
 
