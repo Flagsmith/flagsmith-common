@@ -10,7 +10,7 @@ from django.core.management import (
 )
 from environs import Env
 
-from common.core.cli import healthcheck
+from common.core.cli import healthcheck, run
 from common.core.logging import setup_logging
 from common.gunicorn.processors import make_gunicorn_access_processor
 
@@ -118,6 +118,11 @@ def execute_from_command_line(argv: list[str]) -> None:
             # Backwards compatibility for task-processor health checks
             # See https://github.com/Flagsmith/flagsmith-task-processor/issues/24
             "checktaskprocessorthreadhealth": healthcheck.main,
+            # Composite startup verbs, formerly run-docker.sh
+            "serve": run.serve,
+            "migrate": run.migrate,
+            "run-task-processor": run.run_task_processor,
+            "migrate-and-serve": run.migrate_and_serve,
         }[subcommand]
     except (IndexError, KeyError):
         logger.info("Invoking Django")

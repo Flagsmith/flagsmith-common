@@ -6,7 +6,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from pytest_mock import MockerFixture
 from structlog.typing import Processor
 
-from common.core.main import ensure_cli_env
+from common.core.main import ensure_cli_env, execute_from_command_line
 from common.core.otel import add_otel_trace_context
 
 
@@ -252,3 +252,45 @@ def test_ensure_cli_env__env_service_name__expected_otel_service_name(
         endpoint="http://collector:4318/v1/traces",
         service_name="my-custom",
     )
+
+
+@pytest.mark.parametrize(
+    "subcommand,handler_name",
+    [
+        pytest.param("serve", "serve", id="serve"),
+        pytest.param("migrate", "migrate", id="migrate"),
+        pytest.param(
+            "run-task-processor", "run_task_processor", id="run_task_processor"
+        ),
+        pytest.param("migrate-and-serve", "migrate_and_serve", id="migrate_and_serve"),
+    ],
+)
+def test_execute_from_command_line__startup_verb__routes_to_run_handler(
+    mocker: MockerFixture,
+    subcommand: str,
+    handler_name: str,
+) -> None:
+    # Given
+    mock_handler = mocker.patch(f"common.core.cli.run.{handler_name}")
+
+    # When
+    execute_from_command_line(["flagsmith", subcommand, "--extra", "arg"])
+
+    # Then
+    mock_handler.assert_called_once_with(
+        ["--extra", "arg"],
+        prog=f"flagsmith {subcommand}",
+    )
+
+
+def test_execute_from_command_line__unknown_subcommand__invokes_django(
+    mocker: MockerFixture,
+) -> None:
+    # Given
+    mock_django = mocker.patch("common.core.main.django_execute_from_command_line")
+
+    # When
+    execute_from_command_line(["flagsmith", "showmigrations"])
+
+    # Then
+    mock_django.assert_called_once_with(["flagsmith", "showmigrations"])

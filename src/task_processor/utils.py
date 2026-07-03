@@ -1,13 +1,24 @@
 import argparse
 import inspect
 import logging
+import os
 from contextlib import contextmanager
 from typing import Any, Generator
 
+from environs import Env
+
+from task_processor.constants import (
+    DEFAULT_TASK_PROCESSOR_GRACE_PERIOD_MS,
+    DEFAULT_TASK_PROCESSOR_NUM_THREADS,
+    DEFAULT_TASK_PROCESSOR_QUEUE_POP_SIZE,
+    DEFAULT_TASK_PROCESSOR_SLEEP_INTERVAL_MS,
+)
 from task_processor.threads import TaskRunnerCoordinator
 from task_processor.types import TaskCallable, TaskProcessorConfig
 
 logger = logging.getLogger(__name__)
+
+env = Env()
 
 
 def get_task_identifier_from_function(
@@ -24,25 +35,41 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         "--numthreads",
         type=int,
         help="Number of worker threads to run.",
-        default=5,
+        default=env.int(
+            "TASK_PROCESSOR_NUM_THREADS",
+            default=DEFAULT_TASK_PROCESSOR_NUM_THREADS,
+        ),
     )
     parser.add_argument(
         "--sleepintervalms",
         type=int,
         help="Number of millis each worker waits before checking for new tasks",
-        default=2000,
+        default=(
+            env.int("TASK_PROCESSOR_SLEEP_INTERVAL_MS")
+            if "TASK_PROCESSOR_SLEEP_INTERVAL_MS" in os.environ
+            else env.int(
+                "TASK_PROCESSOR_SLEEP_INTERVAL",
+                default=DEFAULT_TASK_PROCESSOR_SLEEP_INTERVAL_MS,
+            )
+        ),
     )
     parser.add_argument(
         "--graceperiodms",
         type=int,
         help="Number of millis before running task is considered 'stuck'.",
-        default=20000,
+        default=env.int(
+            "TASK_PROCESSOR_GRACE_PERIOD_MS",
+            default=DEFAULT_TASK_PROCESSOR_GRACE_PERIOD_MS,
+        ),
     )
     parser.add_argument(
         "--queuepopsize",
         type=int,
         help="Number of tasks each worker will pop from the queue on each cycle.",
-        default=10,
+        default=env.int(
+            "TASK_PROCESSOR_QUEUE_POP_SIZE",
+            default=DEFAULT_TASK_PROCESSOR_QUEUE_POP_SIZE,
+        ),
     )
 
 

@@ -495,6 +495,7 @@ task-processor = [
     { name = "backoff" },
     { name = "django" },
     { name = "django-health-check" },
+    { name = "environs" },
     { name = "opentelemetry-api" },
     { name = "prometheus-client" },
 ]
@@ -537,6 +538,7 @@ requires-dist = [
     { name = "drf-spectacular", marker = "extra == 'common-core'", specifier = ">=0.28.0,<1" },
     { name = "drf-writable-nested", marker = "extra == 'common-core'" },
     { name = "environs", marker = "extra == 'common-core'", specifier = "<16" },
+    { name = "environs", marker = "extra == 'task-processor'", specifier = "<16" },
     { name = "flagsmith-common", extras = ["otel"], marker = "extra == 'common-core'" },
     { name = "flagsmith-flag-engine", marker = "extra == 'flagsmith-schemas'", specifier = ">6" },
     { name = "gunicorn", marker = "extra == 'common-core'", specifier = ">=19.1" },
