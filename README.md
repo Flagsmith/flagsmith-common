@@ -133,7 +133,8 @@ OTel instrumentation is opt-in, controlled by environment variables:
 
 | Variable                          | Description                                                                                                           | Default         |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------- |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`     | Base OTLP endpoint (e.g. `http://collector:4318`). If unset, no OTel setup occurs.                                    | _(disabled)_    |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`     | Base OTLP endpoint (e.g. `http://collector:4318` for HTTP, `http://collector:4317` for gRPC). If unset, no OTel setup occurs. | _(disabled)_    |
+| `OTEL_EXPORTER_OTLP_PROTOCOL`     | OTLP transport: `grpc`, `http/protobuf` (default), or `http/json`.                                                     | `http/protobuf` |
 | `OTEL_SERVICE_NAME`               | The `service.name` resource attribute. Defaults to `flagsmith-task-processor` when running the task processor.         | `flagsmith-api` |
 | `OTEL_TRACING_EXCLUDED_URL_PATHS` | Comma-separated URL paths to exclude from tracing (e.g. `health/liveness,health/readiness`).                          | _(none)_        |
 
@@ -143,7 +144,7 @@ Standard `OTEL_*` env vars (e.g. `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_EXPORTER_OTLP
 
 When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, `ensure_cli_env()` sets up:
 
-- **Tracing**: `TracerProvider` with OTLP/HTTP span export, W3C `TraceContext` + `Baggage` propagation, and auto-instrumentation for:
+- **Tracing**: `TracerProvider` with OTLP span export (HTTP or gRPC, per `OTEL_EXPORTER_OTLP_PROTOCOL`), W3C `TraceContext` + `Baggage` propagation, and auto-instrumentation for:
   - **Django** (`DjangoInstrumentor`): creates a root span per HTTP request with span names formatted as `{METHOD} {route_template}` (e.g. `GET /api/v1/projects/{pk}/`).
   - **psycopg2** (`Psycopg2Instrumentor`): creates child spans for each SQL query with `db.system`, `db.statement`, and `db.name` attributes. SQL commenter is enabled, adding trace context as SQL comments for database-side correlation.
   - **Redis** (`RedisInstrumentor`): creates child spans for each Redis command with `db.system` and `db.statement` attributes.
