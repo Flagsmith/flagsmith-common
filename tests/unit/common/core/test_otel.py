@@ -269,8 +269,9 @@ def test_resolve_otlp_protocol__supported_values__returns_normalised_protocol(
 
 
 def test_resolve_otlp_protocol__unsupported_value__raises() -> None:
-    # Given / When / Then
+    # Given / When
     with pytest.raises(ValueError, match="Unsupported OTLP protocol"):
+        # Then
         resolve_otlp_protocol("websocket")
 
 
