@@ -8,9 +8,10 @@ from tempfile import mkdtemp
 from django.core.management import (
     execute_from_command_line as django_execute_from_command_line,
 )
-from environs import Env
+from environs import Env, validate
 
 from common.core.cli import healthcheck, run
+from common.core.constants import DEFAULT_OTLP_PROTOCOL, OtlpProtocol
 from common.core.logging import setup_logging
 from common.gunicorn.processors import make_gunicorn_access_processor
 
@@ -64,7 +65,6 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
             build_tracer_provider,
             make_structlog_otel_processor,
             resolve_otlp_export_endpoints,
-            resolve_otlp_protocol,
             setup_tracing,
         )
 
@@ -74,8 +74,13 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
             else "flagsmith-api"
         )
         service_name = env.str("OTEL_SERVICE_NAME", default_service_name)
-        otel_protocol = resolve_otlp_protocol(
-            env.str("OTEL_EXPORTER_OTLP_PROTOCOL", None)
+        otel_protocol = typing.cast(
+            OtlpProtocol,
+            env.str(
+                "OTEL_EXPORTER_OTLP_PROTOCOL",
+                DEFAULT_OTLP_PROTOCOL,
+                validate=validate.OneOf(typing.get_args(OtlpProtocol)),
+            ),
         )
         traces_endpoint, logs_endpoint = resolve_otlp_export_endpoints(
             otel_endpoint,

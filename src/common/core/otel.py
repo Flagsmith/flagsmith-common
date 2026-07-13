@@ -3,7 +3,7 @@ import json
 from collections.abc import Generator
 from datetime import datetime, timezone
 from importlib.metadata import version
-from typing import Literal, cast
+from typing import cast
 
 import inflection
 import structlog
@@ -21,15 +21,20 @@ from opentelemetry.propagate import set_global_textmap
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.propagators.textmap import TextMapPropagator
 from opentelemetry.sdk._logs import LoggerProvider
-from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from opentelemetry.sdk._logs.export import (
+    BatchLogRecordProcessor,
+    LogRecordExporter,
+)
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter
 from opentelemetry.trace.propagation.tracecontext import (
     TraceContextTextMapPropagator,
 )
 from opentelemetry.util.types import AnyValue, Attributes
 from structlog.typing import EventDict, Processor
+
+from common.core.constants import OtlpProtocol
 
 _SEVERITY_MAP: dict[str, SeverityNumber] = {
     "debug": SeverityNumber.DEBUG,
@@ -49,23 +54,6 @@ _RESERVED_KEYS = frozenset(
         "span_id",
     ]
 )
-
-OtlpProtocol = Literal["grpc", "http/protobuf", "http/json"]
-_DEFAULT_OTLP_PROTOCOL: OtlpProtocol = "http/protobuf"
-
-
-def resolve_otlp_protocol(protocol: str | None) -> OtlpProtocol:
-    """Normalise ``OTEL_EXPORTER_OTLP_PROTOCOL`` to a supported OTLP transport."""
-    if protocol in (None, "", "http/protobuf"):
-        return "http/protobuf"
-    if protocol == "grpc":
-        return "grpc"
-    if protocol == "http/json":
-        return "http/json"
-    raise ValueError(
-        f"Unsupported OTLP protocol {protocol!r}. "
-        "Expected one of: grpc, http/protobuf, http/json."
-    )
 
 
 def resolve_otlp_export_endpoints(
@@ -185,11 +173,12 @@ def build_otel_log_provider(
     *,
     endpoint: str,
     service_name: str,
-    protocol: OtlpProtocol = _DEFAULT_OTLP_PROTOCOL,
+    protocol: OtlpProtocol,
 ) -> LoggerProvider:
     """Create and configure an OTel LoggerProvider with OTLP export."""
     resource = Resource.create({"service.name": service_name})
     provider = LoggerProvider(resource=resource)
+    exporter: LogRecordExporter
     if protocol == "grpc":
         from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
             OTLPLogExporter as GrpcOTLPLogExporter,
@@ -206,11 +195,12 @@ def build_tracer_provider(
     *,
     endpoint: str,
     service_name: str,
-    protocol: OtlpProtocol = _DEFAULT_OTLP_PROTOCOL,
+    protocol: OtlpProtocol,
 ) -> TracerProvider:
     """Create a TracerProvider with OTLP export."""
     resource = Resource.create({"service.name": service_name})
     tracer_provider = TracerProvider(resource=resource)
+    span_exporter: SpanExporter
     if protocol == "grpc":
         from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
             OTLPSpanExporter as GrpcOTLPSpanExporter,

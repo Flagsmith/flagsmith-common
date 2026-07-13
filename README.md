@@ -134,7 +134,7 @@ OTel instrumentation is opt-in, controlled by environment variables:
 | Variable                          | Description                                                                                                           | Default         |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------- |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`     | Base OTLP endpoint (e.g. `http://collector:4318` for HTTP, `http://collector:4317` for gRPC). If unset, no OTel setup occurs. | _(disabled)_    |
-| `OTEL_EXPORTER_OTLP_PROTOCOL`     | OTLP transport: `grpc`, `http/protobuf` (default), or `http/json`.                                                     | `http/protobuf` |
+| `OTEL_EXPORTER_OTLP_PROTOCOL`     | OTLP transport: `grpc` or `http/protobuf` (default).                                                                  | `http/protobuf` |
 | `OTEL_SERVICE_NAME`               | The `service.name` resource attribute. Defaults to `flagsmith-task-processor` when running the task processor.         | `flagsmith-api` |
 | `OTEL_TRACING_EXCLUDED_URL_PATHS` | Comma-separated URL paths to exclude from tracing (e.g. `health/liveness,health/readiness`).                          | _(none)_        |
 

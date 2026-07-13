@@ -17,7 +17,6 @@ from common.core.otel import (
     build_tracer_provider,
     make_structlog_otel_processor,
     resolve_otlp_export_endpoints,
-    resolve_otlp_protocol,
     setup_tracing,
 )
 
@@ -189,6 +188,7 @@ def test_build_otel_log_provider__valid_args__returns_configured_provider() -> N
     provider = build_otel_log_provider(
         endpoint="http://localhost:4318/v1/logs",
         service_name="test-service",
+        protocol="http/protobuf",
     )
 
     # Then
@@ -221,6 +221,7 @@ def test_build_tracer_provider__valid_args__returns_configured_provider() -> Non
     provider = build_tracer_provider(
         endpoint="http://localhost:4318/v1/traces",
         service_name="test-service",
+        protocol="http/protobuf",
     )
 
     # Then
@@ -249,33 +250,6 @@ def test_build_tracer_provider__grpc_protocol__uses_grpc_exporter(
 
 
 @pytest.mark.parametrize(
-    "protocol, expected",
-    [
-        (None, "http/protobuf"),
-        ("http/protobuf", "http/protobuf"),
-        ("grpc", "grpc"),
-        ("http/json", "http/json"),
-    ],
-)
-def test_resolve_otlp_protocol__supported_values__returns_normalised_protocol(
-    protocol: str | None,
-    expected: str,
-) -> None:
-    # Given / When
-    resolved = resolve_otlp_protocol(protocol)
-
-    # Then
-    assert resolved == expected
-
-
-def test_resolve_otlp_protocol__unsupported_value__raises() -> None:
-    # Given / When
-    with pytest.raises(ValueError, match="Unsupported OTLP protocol"):
-        # Then
-        resolve_otlp_protocol("websocket")
-
-
-@pytest.mark.parametrize(
     "base_endpoint, protocol, expected_traces, expected_logs",
     [
         (
@@ -286,7 +260,7 @@ def test_resolve_otlp_protocol__unsupported_value__raises() -> None:
         ),
         (
             "http://collector:4318/",
-            "http/json",
+            "http/protobuf",
             "http://collector:4318/v1/traces",
             "http://collector:4318/v1/logs",
         ),
