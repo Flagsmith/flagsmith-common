@@ -2,6 +2,24 @@
 
 <a name="v1.5.2"></a>
 
+## [3.12.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.11.0...v3.12.0) (2026-07-14)
+
+
+### CI
+
+* pre-commit autoupdate ([#246](https://github.com/Flagsmith/flagsmith-common/issues/246)) ([3eef218](https://github.com/Flagsmith/flagsmith-common/commit/3eef2183d744acca209d6d577f340581c88b5a53))
+
+
+### Dependency Updates
+
+* update dependency django to v5.2.16 [security] ([#248](https://github.com/Flagsmith/flagsmith-common/issues/248)) ([a745090](https://github.com/Flagsmith/flagsmith-common/commit/a745090719af0e31df57f1a9cb76ea2d97c96ed9))
+* update dependency setuptools to v83 [security] ([#251](https://github.com/Flagsmith/flagsmith-common/issues/251)) ([6fd5017](https://github.com/Flagsmith/flagsmith-common/commit/6fd5017801c2f81c40b714519de79fdd21989ac6))
+
+
+### Features
+
+* **otel:** Add OTLP/gRPC export support ([#247](https://github.com/Flagsmith/flagsmith-common/issues/247)) ([45b08b4](https://github.com/Flagsmith/flagsmith-common/commit/45b08b4a40465201bb59fb11a4284a3ce8be864f))
+
 ## [3.11.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.10.1...v3.11.0) (2026-07-03)
 
 
