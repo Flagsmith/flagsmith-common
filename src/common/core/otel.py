@@ -11,6 +11,12 @@ from opentelemetry import baggage, trace
 from opentelemetry import context as otel_context
 from opentelemetry._logs import SeverityNumber
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
+from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
+    OTLPLogExporter as GrpcOTLPLogExporter,
+)
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+    OTLPSpanExporter as GrpcOTLPSpanExporter,
+)
 from opentelemetry.exporter.otlp.proto.http._log_exporter import (
     OTLPLogExporter as HttpOTLPLogExporter,
 )
@@ -34,7 +40,7 @@ from opentelemetry.trace.propagation.tracecontext import (
 from opentelemetry.util.types import AnyValue, Attributes
 from structlog.typing import EventDict, Processor
 
-from common.core.constants import OtlpProtocol
+from common.core.types import OtlpProtocol
 
 _SEVERITY_MAP: dict[str, SeverityNumber] = {
     "debug": SeverityNumber.DEBUG,
@@ -180,10 +186,6 @@ def build_otel_log_provider(
     provider = LoggerProvider(resource=resource)
     exporter: LogRecordExporter
     if protocol == "grpc":
-        from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
-            OTLPLogExporter as GrpcOTLPLogExporter,
-        )
-
         exporter = GrpcOTLPLogExporter(endpoint=endpoint)
     else:
         exporter = HttpOTLPLogExporter(endpoint=endpoint)
@@ -202,10 +204,6 @@ def build_tracer_provider(
     tracer_provider = TracerProvider(resource=resource)
     span_exporter: SpanExporter
     if protocol == "grpc":
-        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-            OTLPSpanExporter as GrpcOTLPSpanExporter,
-        )
-
         span_exporter = GrpcOTLPSpanExporter(endpoint=endpoint)
     else:
         span_exporter = HttpOTLPSpanExporter(endpoint=endpoint)

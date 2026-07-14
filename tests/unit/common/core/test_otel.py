@@ -200,9 +200,7 @@ def test_build_otel_log_provider__grpc_protocol__uses_grpc_exporter(
     mocker: pytest_mock.MockerFixture,
 ) -> None:
     # Given
-    mock_grpc_exporter = mocker.patch(
-        "opentelemetry.exporter.otlp.proto.grpc._log_exporter.OTLPLogExporter"
-    )
+    mock_grpc_exporter = mocker.patch("common.core.otel.GrpcOTLPLogExporter")
 
     # When
     provider = build_otel_log_provider(
@@ -233,9 +231,7 @@ def test_build_tracer_provider__grpc_protocol__uses_grpc_exporter(
     mocker: pytest_mock.MockerFixture,
 ) -> None:
     # Given
-    mock_grpc_exporter = mocker.patch(
-        "opentelemetry.exporter.otlp.proto.grpc.trace_exporter.OTLPSpanExporter"
-    )
+    mock_grpc_exporter = mocker.patch("common.core.otel.GrpcOTLPSpanExporter")
 
     # When
     provider = build_tracer_provider(

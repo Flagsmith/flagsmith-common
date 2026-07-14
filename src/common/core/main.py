@@ -11,8 +11,9 @@ from django.core.management import (
 from environs import Env, validate
 
 from common.core.cli import healthcheck, run
-from common.core.constants import DEFAULT_OTLP_PROTOCOL, OtlpProtocol
+from common.core.constants import DEFAULT_OTLP_PROTOCOL
 from common.core.logging import setup_logging
+from common.core.types import OtlpProtocol
 from common.gunicorn.processors import make_gunicorn_access_processor
 
 env = Env()
