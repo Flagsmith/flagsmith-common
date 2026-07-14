@@ -8,10 +8,12 @@ from tempfile import mkdtemp
 from django.core.management import (
     execute_from_command_line as django_execute_from_command_line,
 )
-from environs import Env
+from environs import Env, validate
 
 from common.core.cli import healthcheck, run
+from common.core.constants import DEFAULT_OTLP_PROTOCOL
 from common.core.logging import setup_logging
+from common.core.types import OtlpProtocol
 from common.gunicorn.processors import make_gunicorn_access_processor
 
 env = Env()
@@ -63,6 +65,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
             build_otel_log_provider,
             build_tracer_provider,
             make_structlog_otel_processor,
+            resolve_otlp_export_endpoints,
             setup_tracing,
         )
 
@@ -72,17 +75,31 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
             else "flagsmith-api"
         )
         service_name = env.str("OTEL_SERVICE_NAME", default_service_name)
+        otel_protocol = typing.cast(
+            OtlpProtocol,
+            env.str(
+                "OTEL_EXPORTER_OTLP_PROTOCOL",
+                DEFAULT_OTLP_PROTOCOL,
+                validate=validate.OneOf(typing.get_args(OtlpProtocol)),
+            ),
+        )
+        traces_endpoint, logs_endpoint = resolve_otlp_export_endpoints(
+            otel_endpoint,
+            otel_protocol,
+        )
         log_provider = build_otel_log_provider(
-            endpoint=f"{otel_endpoint}/v1/logs",
+            endpoint=logs_endpoint,
             service_name=service_name,
+            protocol=otel_protocol,
         )
         otel_processors = [
             add_otel_trace_context,
             make_structlog_otel_processor(log_provider),
         ]
         tracer_provider = build_tracer_provider(
-            endpoint=f"{otel_endpoint}/v1/traces",
+            endpoint=traces_endpoint,
             service_name=service_name,
+            protocol=otel_protocol,
         )
         excluded_urls = env.str("OTEL_TRACING_EXCLUDED_URL_PATHS", None)
         ctx.enter_context(setup_tracing(tracer_provider, excluded_urls=excluded_urls))

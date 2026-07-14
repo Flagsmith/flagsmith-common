@@ -92,11 +92,13 @@ def test_ensure_cli_env__otel_endpoint_set__configures_otel_processors(
     mock_build_log.assert_called_once_with(
         endpoint="http://collector:4318/v1/logs",
         service_name="flagsmith-api",
+        protocol="http/protobuf",
     )
     mock_make_processor.assert_called_once_with(mock_log_provider)
     mock_build_tracer.assert_called_once_with(
         endpoint="http://collector:4318/v1/traces",
         service_name="flagsmith-api",
+        protocol="http/protobuf",
     )
     mock_setup_tracing.assert_called_once_with(mock_tracer_provider, excluded_urls=None)
 
@@ -137,10 +139,12 @@ def test_ensure_cli_env__otel_custom_service_name_and_excluded_urls__passes_to_p
     mock_build_log.assert_called_once_with(
         endpoint="http://collector:4318/v1/logs",
         service_name="my-service",
+        protocol="http/protobuf",
     )
     mock_build_tracer.assert_called_once_with(
         endpoint="http://collector:4318/v1/traces",
         service_name="my-service",
+        protocol="http/protobuf",
     )
     mock_setup_tracing.assert_called_once_with(
         mock_build_tracer.return_value,
@@ -213,10 +217,12 @@ def test_ensure_cli_env__argv__expected_otel_service_name(
     mock_build_log.assert_called_once_with(
         endpoint="http://collector:4318/v1/logs",
         service_name=expected_otel_service_name,
+        protocol="http/protobuf",
     )
     mock_build_tracer.assert_called_once_with(
         endpoint="http://collector:4318/v1/traces",
         service_name=expected_otel_service_name,
+        protocol="http/protobuf",
     )
 
 
@@ -247,10 +253,47 @@ def test_ensure_cli_env__env_service_name__expected_otel_service_name(
     mock_build_log.assert_called_once_with(
         endpoint="http://collector:4318/v1/logs",
         service_name="my-custom",
+        protocol="http/protobuf",
     )
     mock_build_tracer.assert_called_once_with(
         endpoint="http://collector:4318/v1/traces",
         service_name="my-custom",
+        protocol="http/protobuf",
+    )
+
+
+def test_ensure_cli_env__otel_grpc_protocol__uses_grpc_endpoints(
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+) -> None:
+    # Given
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4317")
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc")
+
+    mock_build_log = mocker.patch(
+        "common.core.otel.build_otel_log_provider",
+        return_value=mocker.MagicMock(spec=LoggerProvider),
+    )
+    mock_build_tracer = mocker.patch(
+        "common.core.otel.build_tracer_provider",
+        return_value=mocker.MagicMock(spec=TracerProvider),
+    )
+    mocker.patch("common.core.otel.setup_tracing")
+
+    # When
+    with ensure_cli_env():
+        pass
+
+    # Then
+    mock_build_log.assert_called_once_with(
+        endpoint="http://collector:4317",
+        service_name="flagsmith-api",
+        protocol="grpc",
+    )
+    mock_build_tracer.assert_called_once_with(
+        endpoint="http://collector:4317",
+        service_name="flagsmith-api",
+        protocol="grpc",
     )
 
 

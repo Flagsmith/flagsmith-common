@@ -16,6 +16,7 @@ from common.core.otel import (
     build_otel_log_provider,
     build_tracer_provider,
     make_structlog_otel_processor,
+    resolve_otlp_export_endpoints,
     setup_tracing,
 )
 
@@ -187,6 +188,7 @@ def test_build_otel_log_provider__valid_args__returns_configured_provider() -> N
     provider = build_otel_log_provider(
         endpoint="http://localhost:4318/v1/logs",
         service_name="test-service",
+        protocol="http/protobuf",
     )
 
     # Then
@@ -194,16 +196,93 @@ def test_build_otel_log_provider__valid_args__returns_configured_provider() -> N
     assert provider.resource.attributes["service.name"] == "test-service"
 
 
+def test_build_otel_log_provider__grpc_protocol__uses_grpc_exporter(
+    mocker: pytest_mock.MockerFixture,
+) -> None:
+    # Given
+    mock_grpc_exporter = mocker.patch("common.core.otel.GrpcOTLPLogExporter")
+
+    # When
+    provider = build_otel_log_provider(
+        endpoint="http://localhost:4317",
+        service_name="test-service",
+        protocol="grpc",
+    )
+
+    # Then
+    assert isinstance(provider, LoggerProvider)
+    mock_grpc_exporter.assert_called_once_with(endpoint="http://localhost:4317")
+
+
 def test_build_tracer_provider__valid_args__returns_configured_provider() -> None:
     # Given / When
     provider = build_tracer_provider(
         endpoint="http://localhost:4318/v1/traces",
         service_name="test-service",
+        protocol="http/protobuf",
     )
 
     # Then
     assert isinstance(provider, TracerProvider)
     assert provider.resource.attributes["service.name"] == "test-service"
+
+
+def test_build_tracer_provider__grpc_protocol__uses_grpc_exporter(
+    mocker: pytest_mock.MockerFixture,
+) -> None:
+    # Given
+    mock_grpc_exporter = mocker.patch("common.core.otel.GrpcOTLPSpanExporter")
+
+    # When
+    provider = build_tracer_provider(
+        endpoint="http://localhost:4317",
+        service_name="test-service",
+        protocol="grpc",
+    )
+
+    # Then
+    assert isinstance(provider, TracerProvider)
+    mock_grpc_exporter.assert_called_once_with(endpoint="http://localhost:4317")
+
+
+@pytest.mark.parametrize(
+    "base_endpoint, protocol, expected_traces, expected_logs",
+    [
+        (
+            "http://collector:4318",
+            "http/protobuf",
+            "http://collector:4318/v1/traces",
+            "http://collector:4318/v1/logs",
+        ),
+        (
+            "http://collector:4318/",
+            "http/protobuf",
+            "http://collector:4318/v1/traces",
+            "http://collector:4318/v1/logs",
+        ),
+        (
+            "http://collector:4317",
+            "grpc",
+            "http://collector:4317",
+            "http://collector:4317",
+        ),
+    ],
+)
+def test_resolve_otlp_export_endpoints__protocol__returns_expected_urls(
+    base_endpoint: str,
+    protocol: str,
+    expected_traces: str,
+    expected_logs: str,
+) -> None:
+    # Given / When
+    traces_endpoint, logs_endpoint = resolve_otlp_export_endpoints(
+        base_endpoint,
+        protocol,  # type: ignore[arg-type]
+    )
+
+    # Then
+    assert traces_endpoint == expected_traces
+    assert logs_endpoint == expected_logs
 
 
 def test_setup_tracing__called__instruments_and_uninstruments_all_libraries(
