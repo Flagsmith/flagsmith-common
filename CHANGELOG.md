@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [3.12.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.12.0...v3.12.1) (2026-07-21)
+
+
+### Dependency Updates
+
+* bump pyjwt to 2.13.0 [security] ([#255](https://github.com/Flagsmith/flagsmith-common/issues/255)) ([f4e7836](https://github.com/Flagsmith/flagsmith-common/commit/f4e78369c0b8c1e299c0cb452f1b756726c9ef1d))
+
 ## [3.12.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.11.0...v3.12.0) (2026-07-14)
 
 
