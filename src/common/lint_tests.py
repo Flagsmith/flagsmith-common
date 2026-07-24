@@ -220,23 +220,37 @@ def check_ft004(
                         message=f"Test `{node.name}` is missing GWT comments: {', '.join(missing)}",
                     )
                 )
-            for line_no, comment in func_comments.items():
-                if _split_gwt_parts(comment.text) is None:
+            watermark = -1
+            for line_no, comment in sorted(func_comments.items()):
+                parts = _split_gwt_parts(comment.text)
+                if parts is None:
                     continue
-                if comment.text in _GWT_COMMENTS:
-                    continue
-                violations.append(
-                    Violation(
-                        file=filepath,
-                        line=line_no,
-                        col=comment.col,
-                        code="FT004",
-                        message=(
-                            f"GWT comment `{comment.text}` must be one of: "
-                            + ", ".join(f"`{c}`" for c in sorted(_GWT_COMMENTS))
-                        ),
+                if comment.text not in _GWT_COMMENTS:
+                    violations.append(
+                        Violation(
+                            file=filepath,
+                            line=line_no,
+                            col=comment.col,
+                            code="FT004",
+                            message=(
+                                f"GWT comment `{comment.text}` must be one of: "
+                                + ", ".join(f"`{c}`" for c in sorted(_GWT_COMMENTS))
+                            ),
+                        )
                     )
-                )
+                    continue
+                indices = [_GWT_KEYWORDS.index(part) for part in parts]
+                if indices[0] < watermark:
+                    violations.append(
+                        Violation(
+                            file=filepath,
+                            line=line_no,
+                            col=comment.col,
+                            code="FT004",
+                            message=f"GWT comment `{comment.text}` is out of Given / When / Then order",
+                        )
+                    )
+                watermark = max(watermark, indices[-1])
     return violations
 
 

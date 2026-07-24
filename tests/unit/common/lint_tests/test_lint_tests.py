@@ -339,6 +339,34 @@ def write_test_file(tmp_path: Path) -> WriteTestFileFixture:
         pytest.param(
             """\
             def test_subject__condition__expected():
+                # Then
+                x = 1
+                # Given
+                y = 2
+                # When
+                assert y == x + 1
+            """,
+            [
+                Violation(
+                    file=ANY,
+                    line=4,
+                    col=5,
+                    code="FT004",
+                    message="GWT comment `# Given` is out of Given / When / Then order",
+                ),
+                Violation(
+                    file=ANY,
+                    line=6,
+                    col=5,
+                    code="FT004",
+                    message="GWT comment `# When` is out of Given / When / Then order",
+                ),
+            ],
+            id="FT004-standalone-markers-out-of-order",
+        ),
+        pytest.param(
+            """\
+            def test_subject__condition__expected():
                 # given
                 x = 1
                 # When / Then
