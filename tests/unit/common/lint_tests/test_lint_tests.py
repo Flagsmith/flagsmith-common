@@ -244,6 +244,166 @@ def write_test_file(tmp_path: Path) -> WriteTestFileFixture:
         ),
         pytest.param(
             """\
+            def test_subject__condition__expected():
+                # Given / When / Then
+                assert 1 + 1 == 2
+            """,
+            [],
+            id="FT004-combined-given-when-then-ok",
+        ),
+        pytest.param(
+            """\
+            def test_subject__condition__expected():
+                # Given a user exists
+                x = 1
+                # When
+                result = x + 1
+                # Then
+                assert result == 2
+            """,
+            [
+                Violation(
+                    file=ANY,
+                    line=1,
+                    col=1,
+                    code="FT004",
+                    message="Test `test_subject__condition__expected` is missing GWT comments: Given",
+                ),
+                Violation(
+                    file=ANY,
+                    line=2,
+                    col=5,
+                    code="FT004",
+                    message="GWT comment `# Given a user exists` must be one of: `# Given`, `# Given / When`, `# Given / When / Then`, `# Then`, `# When`, `# When / Then`",
+                ),
+            ],
+            id="FT004-narrative-comment",
+        ),
+        pytest.param(
+            """\
+            def test_subject__condition__expected():
+                # Given/When
+                result = 1 + 1
+                # Then
+                assert result == 2
+            """,
+            [
+                Violation(
+                    file=ANY,
+                    line=2,
+                    col=5,
+                    code="FT004",
+                    message="GWT comment `# Given/When` must be one of: `# Given`, `# Given / When`, `# Given / When / Then`, `# Then`, `# When`, `# When / Then`",
+                ),
+            ],
+            id="FT004-missing-spaces-around-slash",
+        ),
+        pytest.param(
+            """\
+            def test_subject__condition__expected():
+                # Given
+                x = 1
+                # Then / When
+                assert x == 1
+            """,
+            [
+                Violation(
+                    file=ANY,
+                    line=4,
+                    col=5,
+                    code="FT004",
+                    message="GWT comment `# Then / When` must be one of: `# Given`, `# Given / When`, `# Given / When / Then`, `# Then`, `# When`, `# When / Then`",
+                ),
+            ],
+            id="FT004-out-of-order",
+        ),
+        pytest.param(
+            """\
+            def test_subject__condition__expected():
+                # Given / Then
+                x = 1
+                # When
+                result = x + 1
+            """,
+            [
+                Violation(
+                    file=ANY,
+                    line=2,
+                    col=5,
+                    code="FT004",
+                    message="GWT comment `# Given / Then` must be one of: `# Given`, `# Given / When`, `# Given / When / Then`, `# Then`, `# When`, `# When / Then`",
+                ),
+            ],
+            id="FT004-skipped-keyword",
+        ),
+        pytest.param(
+            """\
+            def test_subject__condition__expected():
+                # given
+                x = 1
+                # When / Then
+                assert x == 1
+            """,
+            [
+                Violation(
+                    file=ANY,
+                    line=1,
+                    col=1,
+                    code="FT004",
+                    message="Test `test_subject__condition__expected` is missing GWT comments: Given",
+                ),
+                Violation(
+                    file=ANY,
+                    line=2,
+                    col=5,
+                    code="FT004",
+                    message="GWT comment `# given` must be one of: `# Given`, `# Given / When`, `# Given / When / Then`, `# Then`, `# When`, `# When / Then`",
+                ),
+            ],
+            id="FT004-lowercase-keyword",
+        ),
+        pytest.param(
+            """\
+            def test_subject__condition__expected():
+                #Given
+                x = 1
+                # When / Then
+                assert x == 1
+            """,
+            [
+                Violation(
+                    file=ANY,
+                    line=2,
+                    col=5,
+                    code="FT004",
+                    message="GWT comment `#Given` must be one of: `# Given`, `# Given / When`, `# Given / When / Then`, `# Then`, `# When`, `# When / Then`",
+                ),
+            ],
+            id="FT004-missing-space-after-hash",
+        ),
+        pytest.param(
+            """\
+            def test_subject__condition__expected():
+                # Given
+                url = "http://example.com#given-fragment"
+                # When / Then
+                assert url
+            """,
+            [],
+            id="FT004-hash-inside-string-ok",
+        ),
+        pytest.param(
+            """\
+            # Given some module context
+            def helper():
+                # when in doubt
+                pass
+            """,
+            [],
+            id="FT004-outside-test-function-ok",
+        ),
+        pytest.param(
+            """\
             def test_something():  # a regular comment, not noqa
                 pass
             """,
