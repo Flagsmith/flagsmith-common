@@ -394,6 +394,19 @@ def write_test_file(tmp_path: Path) -> WriteTestFileFixture:
         ),
         pytest.param(
             """\
+            def test_subject__condition__expected():
+                # Given
+                x = 1
+                # Whenever the retry fires, back off
+                y = x
+                # When / Then
+                assert y == 1
+            """,
+            [],
+            id="FT004-narrative-starting-with-gwt-letters-ok",
+        ),
+        pytest.param(
+            """\
             # Given some module context
             def helper():
                 # when in doubt

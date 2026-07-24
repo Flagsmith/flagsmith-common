@@ -174,12 +174,13 @@ _GWT_COMMENTS = frozenset(
         "# Given / When / Then",
     }
 )
+_GWT_PREFIX_RE = re.compile(r"^(given|when|then)\b", re.IGNORECASE)
 
 
 def _split_gwt_parts(comment: str) -> list[str] | None:
     """Split a GWT marker comment into slash-separated parts; None for other comments."""
     content = comment.lstrip("#").strip()
-    if not content.lower().startswith(("given", "when", "then")):
+    if not _GWT_PREFIX_RE.match(content):
         return None
     return [part.strip() for part in content.split("/")]
 
