@@ -58,14 +58,10 @@ def serve(argv: list[str], *, prog: str) -> None:
 
 def run_task_processor(argv: list[str], *, prog: str) -> None:
     """Migrate, wait for migrations to be applied, then start the task processor."""
-    # Without this the processor starts, claims tasks, and fails every one of them
-    # in `task_processor.processor._run_task` — a silent backlog rather than a
-    # crash. Refuse to start instead, so misconfiguration is immediately visible.
     if not getattr(settings, "TASK_PROCESSOR_MODE", False):
         raise ImproperlyConfigured(
-            "Refusing to start the task processor: TASK_PROCESSOR_MODE is not set. "
-            "It is derived from the RUN_BY_PROCESSOR environment variable, which "
-            "must be set before Django settings are loaded."
+            f"{prog} {argv} is not supported as an entrypoint. "
+            "Please use `flagsmith start task-processor` to start the Task processor."
         )
     _migrate()
     databases: list[str] = getattr(

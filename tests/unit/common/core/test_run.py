@@ -175,8 +175,9 @@ def test_run_task_processor__task_processor_mode_unset__refuses_to_start(
     with pytest.raises(ImproperlyConfigured) as exc_info:
         run.run_task_processor([], prog="flagsmith run-task-processor")
 
-    # Then — fails before any work, rather than claiming tasks it cannot run
-    assert "RUN_BY_PROCESSOR" in str(exc_info.value)
+    # Then — fails before any work, rather than claiming tasks it cannot run,
+    # and points at an entrypoint that does set the mode
+    assert "flagsmith start task-processor" in str(exc_info.value)
     assert mock_run.call_args_list == []
 
 
