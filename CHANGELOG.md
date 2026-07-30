@@ -2,6 +2,18 @@
 
 <a name="v1.5.2"></a>
 
+## [3.12.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.12.0...v3.12.1) (2026-07-30)
+
+
+### Dependency Updates
+
+* bump pyjwt to 2.13.0 [security] ([#255](https://github.com/Flagsmith/flagsmith-common/issues/255)) ([f4e7836](https://github.com/Flagsmith/flagsmith-common/commit/f4e78369c0b8c1e299c0cb452f1b756726c9ef1d))
+
+
+### Bug Fixes
+
+* **Task processor:** Task processor silently fails every task when started with run-task-processor ([#258](https://github.com/Flagsmith/flagsmith-common/issues/258)) ([904555e](https://github.com/Flagsmith/flagsmith-common/commit/904555e2e54fd0d53087c473f52389db18dfdf71))
+
 ## [3.12.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.11.0...v3.12.0) (2026-07-14)
 
 
