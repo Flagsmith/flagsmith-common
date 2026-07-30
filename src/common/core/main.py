@@ -20,14 +20,14 @@ env = Env()
 
 logger = logging.getLogger(__name__)
 
-# The argv tokens that mean "this process is the task processor": the
-# `start task-processor` Django command, and the `run-task-processor` composite
-# verb that wraps it. Both must be recognised before Django settings are loaded.
-_TASK_PROCESSOR_ARGV = frozenset({"task-processor", "run-task-processor"})
-
 
 def _is_task_processor(argv: list[str]) -> bool:
-    return not _TASK_PROCESSOR_ARGV.isdisjoint(argv)
+    """
+    Returns True if the current running process is inferred to be the task processor,
+    i.e. that it was run by either `flagsmith start task-processor` or
+    `flagsmith run-task-processor`.
+    """
+    return not {"task-processor", "run-task-processor"}.isdisjoint(argv)
 
 
 @contextlib.contextmanager
