@@ -8,6 +8,7 @@ import os
 import shlex
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.core.management import (
     execute_from_command_line as django_execute_from_command_line,
 )
@@ -57,6 +58,15 @@ def serve(argv: list[str], *, prog: str) -> None:
 
 def run_task_processor(argv: list[str], *, prog: str) -> None:
     """Migrate, wait for migrations to be applied, then start the task processor."""
+    # Without this the processor starts, claims tasks, and fails every one of them
+    # in `task_processor.processor._run_task` — a silent backlog rather than a
+    # crash. Refuse to start instead, so misconfiguration is immediately visible.
+    if not getattr(settings, "TASK_PROCESSOR_MODE", False):
+        raise ImproperlyConfigured(
+            "Refusing to start the task processor: TASK_PROCESSOR_MODE is not set. "
+            "It is derived from the RUN_BY_PROCESSOR environment variable, which "
+            "must be set before Django settings are loaded."
+        )
     _migrate()
     databases: list[str] = getattr(
         settings, "FLAGSMITH_WAIT_FOR_MIGRATIONS_DATABASES", ["default"]

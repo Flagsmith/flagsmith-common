@@ -20,6 +20,15 @@ env = Env()
 
 logger = logging.getLogger(__name__)
 
+# The argv tokens that mean "this process is the task processor": the
+# `start task-processor` Django command, and the `run-task-processor` composite
+# verb that wraps it. Both must be recognised before Django settings are loaded.
+_TASK_PROCESSOR_ARGV = frozenset({"task-processor", "run-task-processor"})
+
+
+def _is_task_processor(argv: list[str]) -> bool:
+    return not _TASK_PROCESSOR_ARGV.isdisjoint(argv)
+
 
 @contextlib.contextmanager
 def ensure_cli_env() -> typing.Generator[None, None, None]:
@@ -50,7 +59,9 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
     if "docgen" in sys.argv:
         os.environ["DOCGEN_MODE"] = "true"
 
-    if "task-processor" in sys.argv:
+    task_processor_mode = _is_task_processor(sys.argv)
+
+    if task_processor_mode:
         # A hacky way to signal we're not running the API
         os.environ["RUN_BY_PROCESSOR"] = "true"
 
@@ -70,9 +81,7 @@ def ensure_cli_env() -> typing.Generator[None, None, None]:
         )
 
         default_service_name = (
-            "flagsmith-task-processor"
-            if "task-processor" in sys.argv
-            else "flagsmith-api"
+            "flagsmith-task-processor" if task_processor_mode else "flagsmith-api"
         )
         service_name = env.str("OTEL_SERVICE_NAME", default_service_name)
         otel_protocol = typing.cast(

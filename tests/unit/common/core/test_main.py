@@ -163,24 +163,50 @@ def test_ensure_cli_env__docgen_in_argv__sets_docgen_mode(
         assert os.environ.get("DOCGEN_MODE") == "true"
 
 
+@pytest.mark.parametrize(
+    "argv",
+    [
+        pytest.param(["flagsmith", "start", "task-processor"], id="start_verb"),
+        pytest.param(["flagsmith", "run-task-processor"], id="composite_verb"),
+    ],
+)
 def test_ensure_cli_env__task_processor_in_argv__sets_run_by_processor(
     monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
 ) -> None:
     # Given
-    monkeypatch.setattr("sys.argv", ["flagsmith", "task-processor"])
+    monkeypatch.delenv("RUN_BY_PROCESSOR", raising=False)
+    monkeypatch.setattr("sys.argv", argv)
 
     # When / Then
     with ensure_cli_env():
         assert os.environ.get("RUN_BY_PROCESSOR") == "true"
 
 
+def test_ensure_cli_env__api_argv__does_not_set_run_by_processor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Given
+    monkeypatch.delenv("RUN_BY_PROCESSOR", raising=False)
+    monkeypatch.setattr("sys.argv", ["flagsmith", "migrate-and-serve"])
+
+    # When / Then
+    with ensure_cli_env():
+        assert os.environ.get("RUN_BY_PROCESSOR") is None
+
+
 @pytest.mark.parametrize(
     "argv,expected_otel_service_name",
     [
         pytest.param(
-            ["flagsmith", "task-processor"],
+            ["flagsmith", "start", "task-processor"],
             "flagsmith-task-processor",
             id="task_processor",
+        ),
+        pytest.param(
+            ["flagsmith", "run-task-processor"],
+            "flagsmith-task-processor",
+            id="task_processor_composite_verb",
         ),
         pytest.param(
             ["flagsmith", "anything-else"],

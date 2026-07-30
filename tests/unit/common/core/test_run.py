@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from django.core.exceptions import ImproperlyConfigured
 from django.test import override_settings
 from pytest_mock import MockerFixture
 
@@ -102,6 +103,7 @@ def test_migrate__with_args__defers_to_django_migrate(
     ]
 
 
+@override_settings(TASK_PROCESSOR_MODE=True)
 def test_run_task_processor__default__migrates_waits_then_starts(
     mock_run: MagicMock,
 ) -> None:
@@ -127,6 +129,7 @@ def test_run_task_processor__default__migrates_waits_then_starts(
 
 
 @override_settings(
+    TASK_PROCESSOR_MODE=True,
     FLAGSMITH_MIGRATE_DATABASES=["default", "analytics"],
     FLAGSMITH_WAIT_FOR_MIGRATIONS_DATABASES=["default", "analytics"],
 )
@@ -162,6 +165,19 @@ def test_run_task_processor__configured_databases__migrates_and_waits_for_each(
         ],
         ["flagsmith", "start", "task-processor"],
     ]
+
+
+@override_settings(TASK_PROCESSOR_MODE=False)
+def test_run_task_processor__task_processor_mode_unset__refuses_to_start(
+    mock_run: MagicMock,
+) -> None:
+    # Given / When
+    with pytest.raises(ImproperlyConfigured) as exc_info:
+        run.run_task_processor([], prog="flagsmith run-task-processor")
+
+    # Then — fails before any work, rather than claiming tasks it cannot run
+    assert "RUN_BY_PROCESSOR" in str(exc_info.value)
+    assert mock_run.call_args_list == []
 
 
 def test_migrate_and_serve__no_startup_commands__migrates_then_serves(
