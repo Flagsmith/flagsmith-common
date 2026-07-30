@@ -8,6 +8,7 @@ import os
 import shlex
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.core.management import (
     execute_from_command_line as django_execute_from_command_line,
 )
@@ -57,6 +58,11 @@ def serve(argv: list[str], *, prog: str) -> None:
 
 def run_task_processor(argv: list[str], *, prog: str) -> None:
     """Migrate, wait for migrations to be applied, then start the task processor."""
+    if not getattr(settings, "TASK_PROCESSOR_MODE", False):
+        raise ImproperlyConfigured(
+            f"{prog} {argv} is not supported as an entrypoint. "
+            "Please use `flagsmith start task-processor` to start the Task processor."
+        )
     _migrate()
     databases: list[str] = getattr(
         settings, "FLAGSMITH_WAIT_FOR_MIGRATIONS_DATABASES", ["default"]
