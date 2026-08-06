@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [3.13.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.12.1...v3.13.0) (2026-08-06)
+
+
+### Features
+
+* **schemas:** Add `V1Flag.variant`, `V1Flag.reason` ([#259](https://github.com/Flagsmith/flagsmith-common/issues/259)) ([efda6c0](https://github.com/Flagsmith/flagsmith-common/commit/efda6c07ed0e837aac44f9e0d0e5ade265549938))
+
 ## [3.12.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.12.0...v3.12.1) (2026-07-30)
 
 
