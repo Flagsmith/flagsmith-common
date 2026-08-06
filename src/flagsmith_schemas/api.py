@@ -157,9 +157,9 @@ class V1Flag(TypedDict):
     """Whether the feature is enabled or disabled."""
     feature_state_value: FeatureValue
     """The value for this feature state."""
-    variant: NotRequired[str]
+    variant: NotRequired[str | None]
     """Variant key for the feature state."""
-    reason: NotRequired[str]
+    reason: NotRequired[str | None]
     """Why and how this feature state is resolved."""
 
 
