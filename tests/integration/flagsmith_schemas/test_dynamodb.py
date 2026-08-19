@@ -33,6 +33,7 @@ T = TypeVar("T")
             {
                 "id": Decimal("12561"),
                 "api_key": "n9fbf9h3v4fFgH3U3ngWhb",
+                "onboarding_pending": True,
                 "project": {
                     "id": Decimal("5359"),
                     "name": "Edge API Test Project",
@@ -325,6 +326,7 @@ T = TypeVar("T")
                 "compressed": True,
                 "id": Decimal("12561"),
                 "api_key": "n9fbf9h3v4fFgH3U3ngWhb",
+                "onboarding_pending": True,
                 "project": gzip.compress(
                     json.dumps(
                         {

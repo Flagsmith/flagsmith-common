@@ -1,4 +1,5 @@
 {
+    "onboarding_pending": true,
     "project": {
         "hide_disabled_flags": false,
         "segments": [

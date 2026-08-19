@@ -224,6 +224,8 @@ class _EnvironmentBaseFields(TypedDict):
     """Whether the SDK API should set `$.identity.key` in engine evaluation context to identity's composite key. Defaults to `False`."""
     use_identity_overrides_in_local_eval: NotRequired[bool]
     """Whether the SDK API should return identity overrides as part of the environment document. Defaults to `False`."""
+    onboarding_pending: NotRequired[bool]
+    """Whether the environment is awaiting its first SDK evaluation. When `True`, the SDK API should report the first evaluation to Core. Defaults to `False`."""
 
     amplitude_config: NotRequired[Integration | None]
     """Amplitude integration configuration."""
