@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [3.13.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.13.0...v3.13.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* **schemas:** First evaluation never reported for compressed environment documents ([#261](https://github.com/Flagsmith/flagsmith-common/issues/261)) ([95d4133](https://github.com/Flagsmith/flagsmith-common/commit/95d4133e6522fe1ffc263e664f5136014ba64642))
+
 ## [3.13.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.12.1...v3.13.0) (2026-08-06)
 
 
