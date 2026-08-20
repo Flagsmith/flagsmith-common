@@ -4,6 +4,7 @@ from datetime import datetime, time, timedelta
 from threading import Thread
 
 from django.conf import settings
+from django.db import connections
 from django.db.transaction import on_commit
 from django.utils import timezone
 from opentelemetry import propagate
@@ -121,7 +122,14 @@ class TaskHandler(typing.Generic[TaskParameters]):
     ) -> None:
         kwargs = kwargs or {}
         _validate_inputs(*args, **kwargs)
-        thread = Thread(target=self.unwrapped, args=args, kwargs=kwargs, daemon=True)
+
+        def _run() -> None:
+            try:
+                self.unwrapped(*args, **kwargs)
+            finally:
+                connections.close_all()
+
+        thread = Thread(target=_run, daemon=True)
 
         def _start() -> None:
             logger.info(
