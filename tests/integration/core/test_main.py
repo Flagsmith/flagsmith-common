@@ -20,7 +20,7 @@ def test_main__non_overridden_args__defaults_to_django(
     expected_out: str,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    # Given & When
+    # Given / When
     main(argv)
 
     # Then
@@ -39,7 +39,7 @@ def test_main__healthcheck_tcp_no_server__runs_expected(
     argv: list[str],
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    # Given & When
+    # Given / When
     with pytest.raises(SystemExit) as exc_info:
         main(argv)
 
@@ -67,7 +67,7 @@ def test_main__healthcheck_http_no_server__runs_expected() -> None:
     # Given
     argv = ["flagsmith", "healthcheck", "http"]
 
-    # When & Then
+    # When / Then
     with pytest.raises(Exception):
         main(argv)
 
@@ -90,7 +90,7 @@ def test_main__healthcheck_http_server__runs_expected(
 
     http_server.expect_request(expected_path).respond_with_data(status=200)
 
-    # When & Then
+    # When / Then
     main(argv)
 
 
@@ -103,7 +103,7 @@ def test_main__healthcheck_http_server_invalid_response__runs_expected(
 
     http_server.expect_request("/health/liveness").respond_with_data(status=500)
 
-    # When & Then
+    # When / Then
     with pytest.raises(Exception):
         main(argv)
 
