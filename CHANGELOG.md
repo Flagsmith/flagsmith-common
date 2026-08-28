@@ -2,6 +2,19 @@
 
 <a name="v1.5.2"></a>
 
+## [3.13.2](https://github.com/Flagsmith/flagsmith-common/compare/v3.13.1...v3.13.2) (2026-08-28)
+
+
+### CI
+
+* pre-commit autoupdate ([#253](https://github.com/Flagsmith/flagsmith-common/issues/253)) ([9eb25ee](https://github.com/Flagsmith/flagsmith-common/commit/9eb25ee7aada0961ab8aa514cf008a7af163a1b1))
+
+
+### Dependency Updates
+
+* Bump sqlparse to 0.6.0 ([#266](https://github.com/Flagsmith/flagsmith-common/issues/266)) ([5170741](https://github.com/Flagsmith/flagsmith-common/commit/51707415c0b822e495e66236a939cc12f246f730))
+* update dependency django to v5.2.17 [security] ([#263](https://github.com/Flagsmith/flagsmith-common/issues/263)) ([3d4ae9d](https://github.com/Flagsmith/flagsmith-common/commit/3d4ae9d42a3d37592ba39bb35d824a15d931efb0))
+
 ## [3.13.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.13.0...v3.13.1) (2026-08-19)
 
 
