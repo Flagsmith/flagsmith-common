@@ -9,7 +9,6 @@
 
 * pre-commit autoupdate ([#253](https://github.com/Flagsmith/flagsmith-common/issues/253)) ([9eb25ee](https://github.com/Flagsmith/flagsmith-common/commit/9eb25ee7aada0961ab8aa514cf008a7af163a1b1))
 
-
 ### Dependency Updates
 
 * Bump sqlparse to 0.6.0 ([#266](https://github.com/Flagsmith/flagsmith-common/issues/266)) ([5170741](https://github.com/Flagsmith/flagsmith-common/commit/51707415c0b822e495e66236a939cc12f246f730))
