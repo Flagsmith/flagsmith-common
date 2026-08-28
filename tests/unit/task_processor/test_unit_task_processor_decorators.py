@@ -55,9 +55,9 @@ def test_register_task_handler_run_in_thread__transaction_commit_true__default(
         my_function.run_in_thread(args=args, kwargs=kwargs)
 
     # Then
-    mock_thread_class.assert_called_once_with(
-        target=my_function.unwrapped, args=args, kwargs=kwargs, daemon=True
-    )
+    mock_thread_class.assert_called_once()
+    assert mock_thread_class.call_args.kwargs["target"] is not my_function.unwrapped
+    assert mock_thread_class.call_args.kwargs["daemon"] is True
     mock_thread.start.assert_called_once()
 
     assert len(caplog.records) == 1
@@ -87,9 +87,9 @@ def test_register_task_handler_run_in_thread__transaction_commit__false(
     my_function.run_in_thread(args=args, kwargs=kwargs)
 
     # Then
-    mock_thread_class.assert_called_once_with(
-        target=my_function.unwrapped, args=args, kwargs=kwargs, daemon=True
-    )
+    mock_thread_class.assert_called_once()
+    assert mock_thread_class.call_args.kwargs["target"] is not my_function.unwrapped
+    assert mock_thread_class.call_args.kwargs["daemon"] is True
     mock_thread.start.assert_called_once()
 
     assert len(caplog.records) == 1
@@ -97,6 +97,40 @@ def test_register_task_handler_run_in_thread__transaction_commit__false(
         caplog.records[0].getMessage()
         == "Running function my_function in unmanaged thread."
     )
+
+
+@pytest.mark.parametrize("raises", [False, True])
+def test_register_task_handler_run_in_thread__callable_returns_or_raises__closes_database_connections(
+    mocker: MockerFixture,
+    mock_thread_class: MagicMock,
+    raises: bool,
+) -> None:
+    # Given
+    close_all = mocker.patch("task_processor.decorators.connections.close_all")
+    calls: list[tuple[str, str]] = []
+
+    @register_task_handler(
+        task_name=f"test_run_in_thread_cleanup_{raises}",
+        transaction_on_commit=False,
+    )
+    def my_function(arg: str, *, keyword_arg: str) -> None:
+        calls.append((arg, keyword_arg))
+        if raises:
+            raise RuntimeError("task failed")
+
+    # When
+    my_function.run_in_thread(args=("positional",), kwargs={"keyword_arg": "keyword"})
+    thread_target = mock_thread_class.call_args.kwargs["target"]
+
+    if raises:
+        with pytest.raises(RuntimeError, match="task failed"):
+            thread_target()
+    else:
+        thread_target()
+
+    # Then
+    assert calls == [("positional", "keyword")]
+    close_all.assert_called_once_with()
 
 
 @pytest.mark.django_db
