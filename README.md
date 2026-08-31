@@ -93,6 +93,7 @@ To test your metrics using the `assert_metric` fixture:
 ```python
 from common.test_tools import AssertMetricFixture
 
+
 def test_my_code__expected_metrics(assert_metric: AssertMetricFixture) -> None:
     # When
     my_code()
