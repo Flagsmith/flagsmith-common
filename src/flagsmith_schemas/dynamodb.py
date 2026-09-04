@@ -341,6 +341,14 @@ class Identity(TypedDict):
     """List of traits associated with this identity."""
     django_id: NotRequired[DynamoInt | None]
     """Unique identifier for the identity in Core. If identity created via Core's `edge-identities` API, this can be missing or `None`."""
+    dashboard_alias: NotRequired[str | None]
+    """Human-friendly alias for the identity, shown in the dashboard."""
+    system_traits: NotRequired[dict[str, DynamoContextValue] | None]
+    """System-owned traits keyed by trait key, written by Core (e.g. cohort membership); not user data.
+
+    Merged over `identity_traits` for flag evaluation and analytics — on a key clash, the system value wins.
+    An attribute stored as `NULL` counts as absent.
+    """
 
 
 class Environment(
