@@ -2,6 +2,18 @@
 
 <a name="v1.5.2"></a>
 
+## [3.14.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.13.2...v3.14.0) (2026-09-04)
+
+
+### Features
+
+* **schemas:** declare system_traits and dashboard_alias on the Identity document ([#271](https://github.com/Flagsmith/flagsmith-common/issues/271)) ([94d3a55](https://github.com/Flagsmith/flagsmith-common/commit/94d3a556c96c84dbf87b7d438090336337b1e5f9))
+
+
+### Bug Fixes
+
+* close database connections after threaded tasks ([#265](https://github.com/Flagsmith/flagsmith-common/issues/265)) ([65ae7db](https://github.com/Flagsmith/flagsmith-common/commit/65ae7db9369f50ccb2c8065440836dfbe81ab74a))
+
 ## [3.13.2](https://github.com/Flagsmith/flagsmith-common/compare/v3.13.1...v3.13.2) (2026-08-28)
 
 
