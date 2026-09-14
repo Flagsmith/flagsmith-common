@@ -130,8 +130,7 @@ def test_run_task__timeout__kills_task(
     task_runs = run_tasks(current_database)
     elapsed_time = time.time() - start_time
 
-    # Then - the function should return quickly (within ~2 seconds)
-    # Not block for 10 seconds waiting for the worker thread
+    # Then
     assert elapsed_time < 2.0, (
         f"run_tasks blocked for {elapsed_time:.2f} seconds, "
         "indicating it's waiting for the worker thread to finish"
@@ -186,8 +185,7 @@ def test_run_recurring_task__timeout__kills_task(
     task_run = run_recurring_task(current_database)
     elapsed_time = time.time() - start_time
 
-    # Then - the function should return quickly (within ~2 seconds)
-    # Not block for 10 seconds waiting for the worker thread
+    # Then
     assert elapsed_time < 2.0, (
         f"run_recurring_task blocked for {elapsed_time:.2f} seconds, "
         "indicating it's waiting for the worker thread to finish"
@@ -293,9 +291,7 @@ def test_run_recurring_task__locked_task_after_timeout__runs_task(
 def test_run_recurring_task__abandoned_run__reconciled_as_failure(
     current_database: str,
 ) -> None:
-    # Given - a recurring task with a stale lock and a pre-saved
-    # RecurringTaskRun row that a previous worker left behind when it
-    # died mid-task (result/finished_at still null).
+    # Given
     @register_recurring_task(run_every=timedelta(seconds=1))
     def _dummy_recurring_task() -> None:
         pass
@@ -316,8 +312,7 @@ def test_run_recurring_task__abandoned_run__reconciled_as_failure(
     # When
     run_recurring_task(current_database)
 
-    # Then - the abandoned row is marked as FAILURE with a distinguishing
-    # error message
+    # Then
     abandoned_run.refresh_from_db(using=current_database)
     assert abandoned_run.result == TaskResult.FAILURE.value
     assert abandoned_run.finished_at is not None
@@ -380,7 +375,7 @@ def test_run_recurring_task__multiple_tasks__loops_over_all(
     current_database: str,
     settings: SettingsWrapper,
 ) -> None:
-    # Given, Three recurring tasks
+    # Given
     @register_recurring_task(run_every=timedelta(hours=1))
     def _dummy_recurring_task_1() -> None:
         pass
@@ -395,11 +390,11 @@ def test_run_recurring_task__multiple_tasks__loops_over_all(
 
     initialise()
 
-    # When, we call run_recurring_task in a loop few times
+    # When
     for _ in range(4):
         run_recurring_task(current_database)
 
-    # Then - we should have exactly one RecurringTaskRun for each task
+    # Then
     for i in range(1, 4):
         task_identifier = (
             f"test_unit_task_processor_processor._dummy_recurring_task_{i}"
@@ -430,11 +425,11 @@ def test_run_recurring_task__called_before_interval__executes_only_once(
         task_identifier="test_unit_task_processor_processor._dummy_recurring_task",
     )
 
-    # When - we call run_recurring_task twice
+    # When
     run_recurring_task(current_database)
     run_recurring_task(current_database)
 
-    # Then - we expect the task to have been run once
+    # Then
 
     assert cache.get(DEFAULT_CACHE_KEY) == 1
 
@@ -661,7 +656,7 @@ def test_run_recurring_task__disabled_task__not_picked_up(
 def test_run_recurring_task__four_consecutive_failures__auto_disables(
     current_database: str,
 ) -> None:
-    # Given - a task that always fails
+    # Given
     task_identifier = "test_unit_task_processor_processor._auto_disable_raise_exception"
 
     @register_recurring_task(run_every=timedelta(seconds=1))
@@ -674,11 +669,11 @@ def test_run_recurring_task__four_consecutive_failures__auto_disables(
         task_identifier=task_identifier,
     )
 
-    # When - we run the failing task 4 times
+    # When
     for _ in range(RecurringTask.MAX_CONSECUTIVE_FAILURES):
         run_recurring_task(current_database)
 
-    # Then - the task is disabled and the counter reflects every failure
+    # Then
     task.refresh_from_db(using=current_database)
     assert task.is_disabled is True
     assert task.num_consecutive_failures == RecurringTask.MAX_CONSECUTIVE_FAILURES
@@ -700,7 +695,7 @@ def test_run_recurring_task__four_consecutive_failures__auto_disables(
 def test_run_recurring_task__success__resets_consecutive_failures(
     current_database: str,
 ) -> None:
-    # Given - a registered task with prior failures recorded on the row
+    # Given
     @register_recurring_task(run_every=timedelta(seconds=1))
     def _dummy_recurring_task() -> None:
         cache.set(DEFAULT_CACHE_KEY, DEFAULT_CACHE_VALUE)
@@ -713,10 +708,10 @@ def test_run_recurring_task__success__resets_consecutive_failures(
     task.num_consecutive_failures = 2
     task.save(using=current_database)
 
-    # When - the task runs successfully
+    # When
     task_run = run_recurring_task(current_database)
 
-    # Then - the failure counter is cleared and the task stays enabled
+    # Then
     assert task_run is not None
     assert task_run.result == TaskResult.SUCCESS.value
 
@@ -728,10 +723,7 @@ def test_run_recurring_task__success__resets_consecutive_failures(
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
 def test_run_task__no_tasks__does_nothing(current_database: str) -> None:
-    # Given - no tasks
-    pass
-
-    # When
+    # Given / When
     result = run_tasks(current_database)
 
     # Then
@@ -742,10 +734,7 @@ def test_run_task__no_tasks__does_nothing(current_database: str) -> None:
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
 def test_run_recurring_task__no_tasks__does_nothing(current_database: str) -> None:
-    # Given - no recurring tasks
-    pass
-
-    # When
+    # Given / When
     task_run = run_recurring_task(current_database)
 
     # Then
@@ -1144,7 +1133,7 @@ def test_run_task__timeout__does_not_block(
     does not block indefinitely waiting for the worker thread to finish.
 
     """
-    # Given - a task that will take longer than the timeout
+    # Given
     task = Task.create(
         sleep_task.task_identifier,
         scheduled_for=timezone.now(),
@@ -1153,13 +1142,12 @@ def test_run_task__timeout__does_not_block(
     )
     task.save(using=current_database)
 
-    # When - we run the task
+    # When
     start_time = time.time()
     task_runs = run_tasks(current_database)
     elapsed_time = time.time() - start_time
 
-    # Then - the function should return quickly (within ~1 second)
-    # Not block for 10 seconds waiting for the worker thread
+    # Then
     assert elapsed_time < 2.0, (
         f"run_tasks blocked for {elapsed_time:.2f} seconds, "
         "indicating it's waiting for the worker thread to finish"
@@ -1289,7 +1277,7 @@ def test_delay_and_run__active_trace__propagates_to_task_span(
 
     tracer = trace.get_tracer("test")
 
-    # When — enqueue within an active span
+    # When
     with tracer.start_as_current_span("django-request") as request_span:
         task = _traced_task.delay()
 
@@ -1300,7 +1288,7 @@ def test_delay_and_run__active_trace__propagates_to_task_span(
     # Run the task
     run_tasks()
 
-    # Then — verify full trace linkage
+    # Then
     spans = span_exporter.get_finished_spans()
     task_spans = [s for s in spans if s.name == _traced_task.task_identifier]
     assert len(task_spans) == 1

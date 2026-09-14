@@ -13,8 +13,10 @@ from __future__ import annotations
 
 import argparse
 import ast
+import io
 import re
 import sys
+import tokenize
 from pathlib import Path
 from typing import NamedTuple
 
@@ -56,17 +58,18 @@ def _has_fixture_decorator(node: ast.FunctionDef) -> bool:
     return False
 
 
-_COMMENT_RE = re.compile(r"#(.*)$")
+class Comment(NamedTuple):
+    col: int
+    text: str
 
 
-def _extract_comments(source: str) -> dict[int, str]:
-    """Return a mapping of line number (1-based) -> comment text."""
-    comments: dict[int, str] = {}
-    for lineno, line in enumerate(source.splitlines(), start=1):
-        match = _COMMENT_RE.search(line)
-        if match:
-            comments[lineno] = "#" + match.group(1)
-    return comments
+def _extract_comments(source: str) -> dict[int, Comment]:
+    """Return a mapping of line number (1-based) -> comment."""
+    return {
+        token.start[0]: Comment(col=token.start[1] + 1, text=token.string)
+        for token in tokenize.generate_tokens(io.StringIO(source).readline)
+        if token.type == tokenize.COMMENT
+    }
 
 
 _NOQA_RE = re.compile(r"#\s*noqa\b(?::\s*(?P<codes>[A-Z0-9,\s]+))?")
@@ -160,40 +163,38 @@ def check_ft003(tree: ast.Module, filepath: str) -> list[Violation]:
     return violations
 
 
-def _find_missing_gwt(func_comments: list[str]) -> list[str]:
-    """Return list of missing Given/When/Then keywords from comments."""
-    has_given = False
-    has_when = False
-    has_then = False
-    for text in func_comments:
-        normalized = text.lstrip("#").strip().lower()
-        if normalized.startswith("given"):
-            has_given = True
-            # "Given / When" satisfies both
-            if "when" in normalized:
-                has_when = True
-        if normalized.startswith("when"):
-            has_when = True
-            # "When / Then" satisfies both
-            if "then" in normalized:
-                has_then = True
-        if normalized.startswith("then"):
-            has_then = True
+_GWT_KEYWORDS = ("Given", "When", "Then")
+_GWT_COMMENTS = frozenset(
+    {
+        "# Given",
+        "# When",
+        "# Then",
+        "# Given / When",
+        "# When / Then",
+        "# Given / When / Then",
+    }
+)
+_GWT_PREFIX_RE = re.compile(r"^(given|when|then)\b", re.IGNORECASE)
 
-    missing = []
-    if not has_given:
-        missing.append("Given")
-    if not has_when:
-        missing.append("When")
-    if not has_then:
-        missing.append("Then")
-    return missing
+
+def _split_gwt_parts(comment: str) -> list[str] | None:
+    """Split a GWT marker comment into slash-separated parts; None for other comments."""
+    content = comment.lstrip("#").strip()
+    if not _GWT_PREFIX_RE.match(content):
+        return None
+    return [part.strip() for part in content.split("/")]
+
+
+def _find_missing_gwt(func_comments: list[str]) -> list[str]:
+    """Return the Given/When/Then keywords absent from comments."""
+    parts = {part for text in func_comments for part in _split_gwt_parts(text) or []}
+    return [keyword for keyword in _GWT_KEYWORDS if keyword not in parts]
 
 
 def check_ft004(
-    tree: ast.Module, filepath: str, comments: dict[int, str]
+    tree: ast.Module, filepath: str, comments: dict[int, Comment]
 ) -> list[Violation]:
-    """FT004: Missing # Given, # When, or # Then comments in test body."""
+    """FT004: Missing or malformed # Given / # When / # Then comments in test body."""
     violations = []
     for node in ast.iter_child_nodes(tree):
         if (
@@ -201,12 +202,14 @@ def check_ft004(
             and node.name.startswith("test_")
             and not _has_fixture_decorator(node)
         ):
-            func_comments = [
-                text
-                for line_no, text in comments.items()
+            func_comments = {
+                line_no: comment
+                for line_no, comment in comments.items()
                 if node.lineno <= line_no <= (node.end_lineno or node.lineno)
-            ]
-            missing = _find_missing_gwt(func_comments)
+            }
+            missing = _find_missing_gwt(
+                [comment.text for comment in func_comments.values()]
+            )
             if missing:
                 violations.append(
                     Violation(
@@ -217,6 +220,37 @@ def check_ft004(
                         message=f"Test `{node.name}` is missing GWT comments: {', '.join(missing)}",
                     )
                 )
+            watermark = -1
+            for line_no, comment in sorted(func_comments.items()):
+                parts = _split_gwt_parts(comment.text)
+                if parts is None:
+                    continue
+                if comment.text not in _GWT_COMMENTS:
+                    violations.append(
+                        Violation(
+                            file=filepath,
+                            line=line_no,
+                            col=comment.col,
+                            code="FT004",
+                            message=(
+                                f"GWT comment `{comment.text}` must be one of: "
+                                + ", ".join(f"`{c}`" for c in sorted(_GWT_COMMENTS))
+                            ),
+                        )
+                    )
+                    continue
+                indices = [_GWT_KEYWORDS.index(part) for part in parts]
+                if indices[0] < watermark:
+                    violations.append(
+                        Violation(
+                            file=filepath,
+                            line=line_no,
+                            col=comment.col,
+                            code="FT004",
+                            message=f"GWT comment `{comment.text}` is out of Given / When / Then order",
+                        )
+                    )
+                watermark = max(watermark, indices[-1])
     return violations
 
 
@@ -254,7 +288,8 @@ def lint_file(filepath: str) -> list[Violation]:
     return [
         v
         for v in violations
-        if v.line not in comments or not _is_noqa_suppressed(comments[v.line], v.code)
+        if v.line not in comments
+        or not _is_noqa_suppressed(comments[v.line].text, v.code)
     ]
 
 

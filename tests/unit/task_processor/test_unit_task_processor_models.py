@@ -48,7 +48,7 @@ def test_task_args__no_data__return_expected() -> None:
         scheduled_for=timezone.now(),
     )
 
-    # When & Then
+    # When / Then
     assert task.args == ()
 
 
@@ -101,7 +101,7 @@ def test_recurring_task_should_execute__first_run_time_after_midnight__returns_f
         run_every=timedelta(days=1),
     )
 
-    # When & Then
+    # When / Then
     assert task.should_execute is False
 
 
@@ -115,7 +115,7 @@ def test_recurring_task_should_execute__first_run_time_before_midnight__returns_
         run_every=timedelta(days=1),
     )
 
-    # When & Then
+    # When / Then
     assert task.should_execute is True
 
 
@@ -148,7 +148,7 @@ def test_task_create__trace_context__persists_expected(
 
 @pytest.mark.django_db
 def test_recurring_task_reconcile_abandoned_run__no_abandoned_run__noop() -> None:
-    # Given - a task with one completed run and no abandoned rows
+    # Given
     task = RecurringTask.objects.create(
         task_identifier="test_recurring_task",
         run_every=timedelta(seconds=1),
@@ -164,7 +164,7 @@ def test_recurring_task_reconcile_abandoned_run__no_abandoned_run__noop() -> Non
     # When
     task.reconcile_abandoned_run()
 
-    # Then - the finished run is untouched
+    # Then
     finished_run.refresh_from_db()
     assert finished_run.result == TaskResult.SUCCESS.value
     assert finished_run.finished_at == finished_at
@@ -175,7 +175,7 @@ def test_recurring_task_reconcile_abandoned_run__no_abandoned_run__noop() -> Non
 def test_recurring_task_reconcile_abandoned_run__finished_run_present__only_abandoned_touched() -> (
     None
 ):
-    # Given - a task with both a completed run and an abandoned run
+    # Given
     task = RecurringTask.objects.create(
         task_identifier="test_recurring_task",
         run_every=timedelta(seconds=1),
@@ -196,7 +196,7 @@ def test_recurring_task_reconcile_abandoned_run__finished_run_present__only_aban
     # When
     task.reconcile_abandoned_run()
 
-    # Then - only the abandoned row is marked FAILURE
+    # Then
     abandoned_run.refresh_from_db()
     assert abandoned_run.result == TaskResult.FAILURE.value
     assert abandoned_run.finished_at is not None

@@ -164,14 +164,14 @@ def test_structlog_otel_log_record__active_span__trace_context_on_log_record(
     provider = TracerProvider()
     tracer = provider.get_tracer(__name__)
 
-    # When — emit a structlog event inside an active span
+    # When
     with tracer.start_as_current_span("test-span") as span:
         structlog.get_logger("mylogger").info("inside-span")
         expected_trace_id = span.get_span_context().trace_id
         expected_span_id = span.get_span_context().span_id
 
-    # Then — trace context is on the LogRecord itself (via otel_context),
-    # not duplicated in attributes (trace_id/span_id are reserved keys).
+    # Then
+    # trace_id and span_id are reserved keys, carried on the LogRecord itself.
     log_record = log_exporter.get_finished_logs()[0].log_record
     assert log_record.trace_id == expected_trace_id
     assert log_record.span_id == expected_span_id
@@ -291,7 +291,7 @@ def test_django_tracing__request_with_baggage__propagates_trace_context(
         HTTP_BAGGAGE=baggage_header,
     )
 
-    # Then — all spans share the propagated trace ID
+    # Then
     spans = span_exporter.get_finished_spans()
     assert len(spans) == 3
     for span in spans:
@@ -338,8 +338,7 @@ def test_django_tracing__excluded_url__produces_no_span(
     client: APIClient,
     span_exporter: InMemorySpanExporter,
 ) -> None:
-    # Given — health/liveness is excluded in the setup_tracing fixture
-    # When
+    # Given / When
     response = client.get("/health/liveness/")
 
     # Then
@@ -353,7 +352,7 @@ def test_django_tracing__propagators__composite_with_tracecontext_and_baggage(
     # Given / When
     textmap = get_global_textmap()
 
-    # Then — verify the module-scoped setup configured correct propagators
+    # Then
     assert isinstance(textmap, CompositePropagator)
     assert {type(p) for p in textmap._propagators} == {
         TraceContextTextMapPropagator,

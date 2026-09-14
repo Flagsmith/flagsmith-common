@@ -88,7 +88,7 @@ def test_ensure_cli_env__otel_endpoint_set__configures_otel_processors(
     with ensure_cli_env():
         pass
 
-    # Then — OTel providers are built with the right endpoint and service name
+    # Then
     mock_build_log.assert_called_once_with(
         endpoint="http://collector:4318/v1/logs",
         service_name="flagsmith-api",

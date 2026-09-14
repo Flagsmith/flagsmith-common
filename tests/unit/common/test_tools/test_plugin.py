@@ -17,7 +17,7 @@ def test_assert_metrics__metric_incremented__asserts_expected(
     # Given
     test_metric.labels(test_name="test_assert_metrics__asserts_expected").inc()
 
-    # When & Then
+    # When / Then
     assert_metric(
         name="pytest_tests_run_total",
         labels={"test_name": "test_assert_metrics__asserts_expected"},
@@ -29,15 +29,10 @@ def test_assert_metrics__unlabeled_metric_incremented__asserts_expected(
     assert_metric: AssertMetricFixture,
     test_unlabeled_metric: prometheus_client.Counter,
 ) -> None:
-    # Given an unlabeled counter incremented during the test (the fixture
-    # has already reset the registry). The unlabeled-metric reset previously
-    # raised AttributeError because `MetricWrapperBase.clear()` only works
-    # on labeled parents; the fixture now uses `_metric_init` for unlabeled.
-
-    # When the counter is incremented
+    # Given / When
     test_unlabeled_metric.inc()
 
-    # Then the assertion sees a fresh count of 1
+    # Then
     assert_metric(name="pytest_unlabeled_total", labels={}, value=1)
 
 
@@ -51,7 +46,7 @@ def test_assert_metrics__after_registry_reset__raises_assertion(
     assert_metric = next(assert_metric_gen)
     next(assert_metric_gen, None)
 
-    # When & Then
+    # When / Then
     with pytest.raises(AssertionError):
         assert_metric(
             name="pytest_tests_run_total",
