@@ -2,7 +2,7 @@ import gzip
 from decimal import Decimal
 from importlib import reload
 from sys import modules
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import pytest
 import simplejson as json
@@ -16,6 +16,7 @@ from flagsmith_schemas.dynamodb import (
     EnvironmentV2IdentityOverride,
     EnvironmentV2Meta,
     EnvironmentV2MetaCompressed,
+    FeatureState,
     Identity,
     MultivariateFeatureOption,
 )
@@ -1081,6 +1082,79 @@ def test_type_adapter__multivariate_feature_option_with_key__key_preserved() -> 
 
     # Then
     assert document == {"id": Decimal("1"), "value": "control", "key": "control"}
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        pytest.param(None, id="absent"),
+        pytest.param("feature_state_metadata", id="present"),
+    ],
+)
+def test_type_adapter__feature_state_metadata__preserved_verbatim(
+    metadata: str | None,
+    request: pytest.FixtureRequest,
+) -> None:
+    # Given
+    type_adapter = TypeAdapter(FeatureState)
+    data: dict[str, Any] = {
+        "feature": {"id": 1, "name": "feature", "type": "STANDARD"},
+        "enabled": True,
+        "feature_state_value": "value",
+    }
+    if metadata:
+        data["metadata"] = request.getfixturevalue(metadata)
+
+    # When
+    document = type_adapter.validate_python(data)
+
+    # Then
+    if metadata:
+        assert document["metadata"] == data["metadata"]
+    else:
+        assert "metadata" not in document
+
+
+def test_type_adapter__compressed_environment_feature_state_metadata__metadata_preserved(
+    feature_state_metadata: dict[str, Any],
+) -> None:
+    # Given
+    type_adapter = TypeAdapter(EnvironmentCompressed)
+    python_data = {
+        "id": 1,
+        "api_key": "envkey",
+        "compressed": True,
+        "project": {
+            "id": 1,
+            "name": "Project",
+            "organisation": {
+                "id": 1,
+                "name": "Org",
+                "feature_analytics": False,
+                "stop_serving_flags": False,
+                "persist_trait_data": True,
+            },
+            "segments": [],
+            "hide_disabled_flags": False,
+        },
+        "feature_states": [
+            {
+                "feature": {"id": 1, "name": "feature", "type": "STANDARD"},
+                "enabled": True,
+                "feature_state_value": "value",
+                "django_id": 1,
+                "multivariate_feature_state_values": [],
+                "metadata": feature_state_metadata,
+            }
+        ],
+    }
+
+    # When
+    document = type_adapter.validate_python(python_data)
+
+    # Then
+    feature_states = json.loads(gzip.decompress(bytes(document["feature_states"])))
+    assert feature_states[0]["metadata"] == feature_state_metadata
 
 
 def test_import__no_pydantic__expected_annotations(

@@ -7,7 +7,7 @@ when `pydantic` is installed.
 Otherwise, they serve as documentation for the structure of the data stored in DynamoDB.
 """
 
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from flag_engine.segments.types import ConditionOperator, RuleType
 from typing_extensions import NotRequired, TypedDict
@@ -95,6 +95,8 @@ class FeatureState(TypedDict):
 
     Total `percentage_allocation` sum of the child multivariate feature state values must be less or equal to 100.
     """
+    metadata: NotRequired[dict[str, Any]]
+    """Additional, non-evaluation data about this feature state, written by Core and served as-is by the SDK API."""
 
 
 class Trait(TypedDict):

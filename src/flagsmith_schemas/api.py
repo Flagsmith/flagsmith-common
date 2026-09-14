@@ -12,6 +12,8 @@ with any library that supports TypedDict, such as Pydantic or typeguard.
 When updating this module, ensure that the changes are backwards compatible.
 """
 
+from typing import Any
+
 from flag_engine.engine import ContextValue
 from flag_engine.segments.types import ConditionOperator, RuleType
 from typing_extensions import NotRequired, TypedDict
@@ -57,6 +59,24 @@ class FeatureSegment(TypedDict):
     """The priority of this segment feature override. Lower numbers indicate stronger priority. If null or not set, the weakest priority is assumed."""
 
 
+class ExperimentMetadata(TypedDict):
+    """Represents the experiment a feature state is part of. Only present while the experiment is running."""
+
+    id: int
+    """Unique identifier for the experiment in Core."""
+    name: str
+    """Name of the experiment."""
+    in_experiment: bool
+    """Whether this evaluation counts towards the experiment, i.e. whether the identity was bucketed by the experiment itself."""
+
+
+class FeatureStateMetadata(TypedDict, extra_items=Any, total=False):  # type: ignore[call-arg]  # TODO https://github.com/python/mypy/issues/18176
+    """Additional, non-evaluation data about a feature state."""
+
+    experiment: ExperimentMetadata
+    """The experiment this feature state is part of, if any."""
+
+
 class FeatureState(TypedDict):
     """Used to define the state of a feature for an environment, segment overrides, and identity overrides."""
 
@@ -72,6 +92,8 @@ class FeatureState(TypedDict):
     """Segment override data, if this feature state is for a segment override."""
     multivariate_feature_state_values: list[MultivariateFeatureStateValue]
     """List of multivariate feature state values, if this feature state is for a multivariate feature."""
+    metadata: NotRequired[FeatureStateMetadata]
+    """Additional, non-evaluation data about this feature state. Absent if there is none."""
 
 
 class Trait(TypedDict):
@@ -161,6 +183,8 @@ class V1Flag(TypedDict):
     """Variant key for the feature state."""
     reason: NotRequired[str | None]
     """Why and how this feature state is resolved."""
+    metadata: NotRequired[FeatureStateMetadata]
+    """Additional, non-evaluation data about this feature state. Absent if there is none."""
 
 
 ### Root request schemas below. ###
