@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [3.15.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.14.0...v3.15.0) (2026-09-15)
+
+
+### Features
+
+* **schemas:** add feature state `metadata` envelope ([#272](https://github.com/Flagsmith/flagsmith-common/issues/272)) ([26eeade](https://github.com/Flagsmith/flagsmith-common/commit/26eeade6906d56d3eb23830e6fdcb7953351f8f4))
+
 ## [3.14.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.13.2...v3.14.0) (2026-09-04)
 
 
