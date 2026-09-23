@@ -78,7 +78,7 @@ def test_gunicorn_json_capable_logger__json_format__access_log_uses_processor_fo
     # When
     logger = GunicornJsonCapableLogger(config)
 
-    # Then — error log propagates to root
+    # Then
     assert logger.error_log.handlers == []
     assert logger.error_log.propagate is True
 
@@ -101,7 +101,7 @@ def test_gunicorn_json_capable_logger__generic_format__access_log_keeps_clf(
     # When
     logger = GunicornJsonCapableLogger(config)
 
-    # Then — error log propagates
+    # Then
     assert logger.error_log.handlers == []
     assert logger.error_log.propagate is True
 
@@ -145,7 +145,7 @@ def test_gunicorn_json_capable_logger__json_format_file__writes_to_access_log_lo
         },
     )
 
-    # Then — output went to the file, not stdout
+    # Then
     content = access_log_file.read_text()
     assert json.loads(content) == {
         "duration_in_ms": 5,
@@ -321,7 +321,7 @@ def test_gunicorn_json_capable_logger__generic_format__outputs_pure_clf(
     # When
     gunicorn_logger.access_log.info(DEFAULT_ACCESS_LOG_FORMAT, record_args)
 
-    # Then — pure CLF, no structlog metadata
+    # Then
     output = capsys.readouterr().out.strip()
     assert output == (
         '192.168.0.1 - - [08/Dec/2023:06:05:47 +0000] "GET /api/flags HTTP/1.1"'
