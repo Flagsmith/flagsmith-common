@@ -13,6 +13,7 @@ from pydantic import (
 )
 
 from flagsmith_schemas.validators import (
+    is_integral_decimal,
     validate_dynamo_feature_state_value,
     validate_identity_feature_states,
     validate_multivariate_feature_state_values,
@@ -23,9 +24,7 @@ def _keep_stored_decimal(
     value: Any, handler: ValidatorFunctionWrapHandler, *, integral: bool
 ) -> Decimal:
     # DynamoDB reads numbers back as `Decimal`s: keep them as they are.
-    if isinstance(value, Decimal) and (
-        not integral or value == value.to_integral_value()
-    ):
+    if isinstance(value, Decimal) and (not integral or is_integral_decimal(value)):
         return value
     validated: Decimal = handler(value)
     return validated

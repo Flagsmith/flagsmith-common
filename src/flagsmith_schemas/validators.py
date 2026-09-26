@@ -8,6 +8,14 @@ if typing.TYPE_CHECKING:
     from flagsmith_schemas.types import DynamoFeatureValue
 
 
+def is_integral_decimal(value: typing.Any) -> typing.TypeGuard[Decimal]:
+    return (
+        isinstance(value, Decimal)
+        and value.is_finite()
+        and value == value.to_integral_value()
+    )
+
+
 def validate_dynamo_feature_state_value(
     value: typing.Any,
 ) -> "DynamoFeatureValue":
@@ -23,7 +31,7 @@ def validate_dynamo_feature_state_value(
         return value
     if isinstance(value, int):
         return Decimal(value)
-    if isinstance(value, Decimal) and value == value.to_integral_value():
+    if is_integral_decimal(value):
         return value
     return str(value)
 

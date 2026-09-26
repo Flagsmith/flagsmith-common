@@ -28,6 +28,7 @@ def test_dynamo_feature_value__not_int__coerces_to_str() -> None:
     [
         pytest.param(Decimal("1234"), Decimal("1234"), id="integer"),
         pytest.param(Decimal("12.34"), "12.34", id="non_integer"),
+        pytest.param(Decimal("Infinity"), "Infinity", id="infinity"),
     ],
 )
 def test_dynamo_feature_value__stored_decimal__returns_expected(
@@ -61,19 +62,30 @@ def test_dynamo_context_value__stored_decimal__returns_unchanged(
     result = type_adapter.validate_python(value)
 
     # Then
+    assert isinstance(result, Decimal)
     assert str(result) == str(value)
 
 
-def test_dynamo_int__stored_non_integer_decimal__raises_expected() -> None:
+@pytest.mark.parametrize(
+    ("value", "expected_error_type"),
+    [
+        pytest.param(Decimal("1.5"), "int_from_float", id="non_integer"),
+        pytest.param(Decimal("Infinity"), "finite_number", id="infinity"),
+    ],
+)
+def test_dynamo_int__stored_non_integer_decimal__raises_expected(
+    value: Decimal,
+    expected_error_type: str,
+) -> None:
     # Given
     type_adapter: TypeAdapter[DynamoInt] = TypeAdapter(DynamoInt)
 
     # When
     with pytest.raises(ValidationError) as exc_info:
-        type_adapter.validate_python(Decimal("1.5"))
+        type_adapter.validate_python(value)
 
     # Then
-    assert exc_info.value.errors()[0]["type"] == "int_from_float"
+    assert exc_info.value.errors()[0]["type"] == expected_error_type
 
 
 def test_dynamo_feature_value__long_string__raises_expected() -> None:
