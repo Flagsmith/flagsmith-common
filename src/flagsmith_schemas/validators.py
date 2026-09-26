@@ -23,6 +23,8 @@ def validate_dynamo_feature_state_value(
         return value
     if isinstance(value, int):
         return Decimal(value)
+    if isinstance(value, Decimal) and value == value.to_integral_value():
+        return value
     return str(value)
 
 

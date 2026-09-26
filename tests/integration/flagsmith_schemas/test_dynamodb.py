@@ -970,6 +970,36 @@ def test_document__validate_json__expected_result(
     assert document == expected_result
 
 
+@pytest.mark.parametrize(
+    ("document_type", "json_data_filename"),
+    [
+        (Environment, "flagsmith_environments.json"),
+        (EnvironmentAPIKey, "flagsmith_environment_api_key.json"),
+        (Identity, "flagsmith_identities.json"),
+        (EnvironmentV2Meta, "flagsmith_environments_v2:_META.json"),
+        (
+            EnvironmentV2IdentityOverride,
+            "flagsmith_environments_v2:identity_override.json",
+        ),
+    ],
+)
+def test_document__validate_python_stored_document__returns_unchanged(
+    request: pytest.FixtureRequest,
+    document_type: type[T],
+    json_data_filename: str,
+) -> None:
+    # Given
+    type_adapter = TypeAdapter(document_type)
+    json_data = request.path.parent.joinpath(f"data/{json_data_filename}").read_text()
+    stored_document = type_adapter.validate_json(json_data)
+
+    # When
+    document = type_adapter.validate_python(stored_document)
+
+    # Then
+    assert document == stored_document
+
+
 def test_type_adapter__identity_duplicate_features__raises_expected(
     mocker: MockerFixture,
 ) -> None:
