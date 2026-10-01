@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [3.15.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.15.0...v3.15.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **gunicorn:** respect `GUNICORN_KEEP_ALIVE` and `GUNICORN_CMD_ARGS` ([#275](https://github.com/Flagsmith/flagsmith-common/issues/275)) ([23751e9](https://github.com/Flagsmith/flagsmith-common/commit/23751e9270441c25f3c39df7a65fa4080540b6c2))
+
 ## [3.15.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.14.0...v3.15.0) (2026-09-15)
 
 
