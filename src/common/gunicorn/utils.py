@@ -23,6 +23,7 @@ GUNICORN_FLAGSMITH_DEFAULTS = {
     "accesslog": env.str("ACCESS_LOG_LOCATION", os.devnull),
     "bind": "0.0.0.0:8000",
     "config": "python:common.gunicorn.conf",
+    "keepalive": env.int("GUNICORN_KEEP_ALIVE", 2),
     "logger_class": "common.gunicorn.logging.GunicornJsonCapableLogger",
     "statsd_prefix": "flagsmith.api",
     "threads": env.int("GUNICORN_THREADS", 1),
@@ -40,10 +41,23 @@ class DjangoWSGIApplication(GunicornWSGIApplication):  # type: ignore[misc]
         super().__init__()
 
     def load_config(self) -> None:
+        # We don't call `super().load_config()` as it parses `sys.argv`,
+        # which is owned by our own CLI. Instead, apply settings in order of
+        # precedence: Flagsmith defaults < `GUNICORN_CMD_ARGS` < CLI options.
         cfg_settings = self.cfg.settings
+        env_args = self.cfg.parser().parse_args(self.cfg.get_cmd_args_from_env())
+        env_options = {
+            key: value
+            for key, value in vars(env_args).items()
+            if key != "args" and value is not None
+        }
         options_items = (
             (key, value)
-            for key, value in {**GUNICORN_FLAGSMITH_DEFAULTS, **self.options}.items()
+            for key, value in {
+                **GUNICORN_FLAGSMITH_DEFAULTS,
+                **env_options,
+                **self.options,
+            }.items()
             if key in cfg_settings
         )
         for key, value in options_items:
