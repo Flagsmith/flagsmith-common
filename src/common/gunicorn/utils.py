@@ -41,9 +41,6 @@ class DjangoWSGIApplication(GunicornWSGIApplication):  # type: ignore[misc]
         super().__init__()
 
     def load_config(self) -> None:
-        # We don't call `super().load_config()` as it parses `sys.argv`,
-        # which is owned by our own CLI. Instead, apply settings in order of
-        # precedence: Flagsmith defaults < `GUNICORN_CMD_ARGS` < CLI options.
         cfg_settings = self.cfg.settings
         env_args = self.cfg.parser().parse_args(self.cfg.get_cmd_args_from_env())
         env_options = {
