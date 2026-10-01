@@ -548,7 +548,7 @@ requires-dist = [
     { name = "environs", marker = "extra == 'task-processor'", specifier = "<16" },
     { name = "flagsmith-common", extras = ["otel"], marker = "extra == 'common-core'" },
     { name = "flagsmith-flag-engine", marker = "extra == 'flagsmith-schemas'", specifier = ">6" },
-    { name = "gunicorn", marker = "extra == 'common-core'", specifier = ">=19.1" },
+    { name = "gunicorn", marker = "extra == 'common-core'", specifier = ">=23" },
     { name = "inflection", marker = "extra == 'otel'" },
     { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.25,<2" },
     { name = "opentelemetry-api", marker = "extra == 'task-processor'", specifier = ">=1.25,<2" },

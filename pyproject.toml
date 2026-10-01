@@ -16,7 +16,7 @@ optional-dependencies = { test-tools = [
     "drf-spectacular (>=0.28.0,<1)",
     "drf-writable-nested",
     "environs (<16)",
-    "gunicorn (>=19.1)",
+    "gunicorn (>=23)",
     "opentelemetry-instrumentation-django (>=0.46b0,<1)",
     "opentelemetry-instrumentation-psycopg2 (>=0.46b0,<1)",
     "opentelemetry-instrumentation-redis (>=0.46b0,<1)",
