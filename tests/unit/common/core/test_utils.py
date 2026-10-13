@@ -93,6 +93,7 @@ def test_get_version_info__all_files_present__returns_expected(
         "ci_commit_sha": "some_sha",
         "image_tag": "2.66.2",
         "has_email_provider": False,
+        "experimentation_enabled": False,
         "is_enterprise": True,
         "is_saas": False,
         "package_versions": {".": "2.66.2"},
@@ -115,6 +116,7 @@ def test_get_version_info__missing_files__returns_unknown(fs: FakeFilesystem) ->
         "ci_commit_sha": "unknown",
         "image_tag": "unknown",
         "has_email_provider": False,
+        "experimentation_enabled": False,
         "is_enterprise": True,
         "is_saas": False,
         "package_versions": {".": "unknown"},
@@ -174,6 +176,19 @@ def test_get_version_info__email_config_disabled__return_expected(
 
     # Then
     assert result["has_email_provider"] is False
+
+
+def test_get_version_info__experimentation_enabled__returns_true(
+    settings: SettingsWrapper,
+) -> None:
+    # Given
+    settings.EXPERIMENTATION_ENABLED = True
+
+    # When
+    result = get_version_info()
+
+    # Then
+    assert result["experimentation_enabled"] is True
 
 
 def test_get_version__valid_file_contents__returns_version_number(
