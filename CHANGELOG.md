@@ -2,6 +2,13 @@
 
 <a name="v1.5.2"></a>
 
+## [3.16.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.15.1...v3.16.0) (2026-10-13)
+
+
+### Features
+
+* **version:** expose `experimentation_enabled` in version info ([#278](https://github.com/Flagsmith/flagsmith-common/issues/278)) ([6436068](https://github.com/Flagsmith/flagsmith-common/commit/6436068a4b518bd4ba1a0a0c91ba016678211e42))
+
 ## [3.15.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.15.0...v3.15.1) (2026-10-01)
 
 
