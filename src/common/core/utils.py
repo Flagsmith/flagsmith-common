@@ -55,6 +55,7 @@ class VersionInfo(TypedDict):
     ci_commit_sha: str
     image_tag: str
     has_email_provider: bool
+    experimentation_enabled: bool
     is_enterprise: bool
     is_saas: bool
     self_hosted_data: SelfHostedData | None
@@ -95,6 +96,7 @@ def get_version_info() -> VersionInfo:
         "ci_commit_sha": get_file_contents("./CI_COMMIT_SHA") or UNKNOWN,
         "image_tag": UNKNOWN,
         "has_email_provider": has_email_provider(),
+        "experimentation_enabled": getattr(settings, "EXPERIMENTATION_ENABLED", False),
         "is_enterprise": is_enterprise(),
         "is_saas": _is_saas,
         "self_hosted_data": None,
