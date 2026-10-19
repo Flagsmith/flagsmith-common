@@ -209,6 +209,12 @@ class RecurringTask(AbstractBaseTask):
                 "Recurring task '%s' auto-disabled after %d consecutive failures",
                 self.task_identifier,
                 self.num_consecutive_failures,
+                extra={
+                    "fingerprint": [
+                        "recurring-task-auto-disabled",
+                        str(self.task_identifier),
+                    ]
+                },
             )
 
     def mark_success(self) -> None:
