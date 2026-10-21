@@ -22,6 +22,8 @@ if PYDANTIC_INSTALLED:
     from pydantic_core import core_schema
 
     from flagsmith_schemas.pydantic_types import (
+        KeepStoredFloat,
+        KeepStoredInt,
         ValidateDecimalAsFloat,
         ValidateDecimalAsInt,
         ValidateDynamoFeatureStateValue,
@@ -36,6 +38,8 @@ elif not TYPE_CHECKING:
     def WithJsonSchema(_: object) -> object:
         return ...
 
+    KeepStoredFloat = ...
+    KeepStoredInt = ...
     ValidateDecimalAsFloat = ...
     ValidateDecimalAsInt = ...
     ValidateDynamoFeatureStateValue = ...
@@ -76,14 +80,14 @@ class JsonGzipped(DynamoBinary, Generic[T]):
             )
 
 
-DynamoInt: TypeAlias = Annotated[Decimal, ValidateDecimalAsInt]
+DynamoInt: TypeAlias = Annotated[Decimal, ValidateDecimalAsInt, KeepStoredInt]
 """An integer value stored in DynamoDB.
 
 DynamoDB represents all numbers as `Decimal`.
 `DynamoInt` indicates that the value should be treated as an integer.
 """
 
-DynamoFloat: TypeAlias = Annotated[Decimal, ValidateDecimalAsFloat]
+DynamoFloat: TypeAlias = Annotated[Decimal, ValidateDecimalAsFloat, KeepStoredFloat]
 """A float value stored in DynamoDB.
 
 DynamoDB represents all numbers as `Decimal`.
