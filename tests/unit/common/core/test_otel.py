@@ -163,7 +163,7 @@ def test_otel_processor__active_span__adds_span_event(
     with tracer.start_as_current_span("test-span") as span:
         structlog.get_logger("mylogger").info("something-happened", detail="value")
 
-    # Then — span event is added with the same name and attributes
+    # Then
     events = span.events  # type: ignore[attr-defined]
     assert len(events) == 1
     assert events[0].name == "mylogger.something_happened"
@@ -174,10 +174,10 @@ def test_otel_processor__active_span__adds_span_event(
 def test_otel_processor__no_active_span__no_span_event(
     otel_exporter: InMemoryLogExporter,
 ) -> None:
-    # Given / When — no active span
+    # Given / When
     structlog.get_logger("mylogger").info("no-span-event")
 
-    # Then — log record is still emitted
+    # Then
     records = otel_exporter.get_finished_logs()
     assert len(records) == 1
     assert records[0].log_record.body == "no-span-event"
@@ -312,7 +312,7 @@ def test_setup_tracing__called__instruments_and_uninstruments_all_libraries(
         )
         redis_instrument.assert_called_once()
 
-    # Then — uninstrumented on exit
+    # Then
     psycopg2_uninstrument.assert_called_once()
     redis_uninstrument.assert_called_once()
 
