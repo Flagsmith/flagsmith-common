@@ -2,6 +2,19 @@
 
 <a name="v1.5.2"></a>
 
+## [3.16.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.16.0...v3.16.1) (2026-11-05)
+
+
+### CI
+
+* pre-commit autoupdate ([#270](https://github.com/Flagsmith/flagsmith-common/issues/270)) ([d844d26](https://github.com/Flagsmith/flagsmith-common/commit/d844d26549e16d2604d045bcaf2b651139418b5a))
+
+
+### Dependency Updates
+
+* update dependency opentelemetry-api to v1.45.1 [security] ([#281](https://github.com/Flagsmith/flagsmith-common/issues/281)) ([404e356](https://github.com/Flagsmith/flagsmith-common/commit/404e35689c8535a675d2d4d36fb598803a5ddaa1))
+* update dependency setuptools to v84 [security] ([#282](https://github.com/Flagsmith/flagsmith-common/issues/282)) ([0d77b31](https://github.com/Flagsmith/flagsmith-common/commit/0d77b3164cb2aa914782f962b369c70e150718ab))
+
 ## [3.16.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.15.1...v3.16.0) (2026-10-13)
 
 
