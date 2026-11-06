@@ -2,8 +2,6 @@ import argparse
 import socket
 import urllib.parse
 
-import requests
-
 DEFAULT_PORT = 8000
 DEFAULT_TIMEOUT_SECONDS = 1
 
@@ -88,6 +86,9 @@ def check_http_response(
     timeout_seconds: int,
     path: str,
 ) -> None:
+    # Imported lazily to keep the more frequently used TCP check lightweight
+    import requests
+
     url = urllib.parse.urljoin(f"http://127.0.0.1:{port}", path)
     requests.get(
         url,
