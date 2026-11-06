@@ -75,7 +75,7 @@ Issues = "https://github.com/flagsmith/flagsmith-common/issues"
 Repository = "https://github.com/flagsmith/flagsmith-common"
 
 [project.scripts]
-flagsmith = "common.core.main:main"
+flagsmith = "common.core.cli.entrypoint:main"
 flagsmith-lint-tests = "common.lint_tests:main"
 
 [project.entry-points.pytest11]
