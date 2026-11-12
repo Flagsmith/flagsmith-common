@@ -80,8 +80,7 @@ def test_docgen__events__runs_expected(
     patched_apps: None,
     snapshot: SnapshotFixture,
 ) -> None:
-    # Given — `tmp_path` is a real git repo, so `_get_repo_root` resolves
-    # paths against it without mocking the subprocess call.
+    # Given
     subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
     monkeypatch.chdir(tmp_path)
     expected_stdout = snapshot()
@@ -100,9 +99,7 @@ def test_docgen__events_not_in_git_repo__falls_back_to_cwd(
     monkeypatch: pytest.MonkeyPatch,
     patched_apps: None,
 ) -> None:
-    # Given — no `git init`; `_get_repo_root` swallows the
-    # `CalledProcessError` and falls back to `Path.cwd()`, which we pin to
-    # `tmp_path` via `monkeypatch.chdir`.
+    # Given
     monkeypatch.chdir(tmp_path)
 
     # When
@@ -122,9 +119,7 @@ def test_docgen__events_app_outside_repo_root__keeps_absolute_path(
     fixture_app: Path,
     patched_apps: None,
 ) -> None:
-    # Given — the resolved repo root and the fixture app live in *different*
-    # subtrees under `tmp_path`, so `_relative_if_under` hits its `ValueError`
-    # branch and keeps the absolute path on each emitted location.
+    # Given
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     subprocess.run(["git", "init"], cwd=repo_root, check=True, capture_output=True)

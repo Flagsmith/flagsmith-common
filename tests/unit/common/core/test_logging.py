@@ -307,7 +307,7 @@ def test_setup_logging__stdlib_error__sentry_captures_clean_message(
     # When
     test_logger.error("order %s failed for %s", "ORD-123", "alice")
 
-    # Then — the stream got JSON
+    # Then
     output = capsys.readouterr().out.strip()
     parsed = json.loads(output)
     assert parsed["message"] == "order ORD-123 failed for alice"
@@ -361,7 +361,7 @@ def test_setup_logging__structlog_exception__sentry_captures_with_context(
     # When
     _raise_and_log()
 
-    # Then — Sentry captured the event with exception and structlog context
+    # Then
     assert len(sentry_transport_mock.events) == 1
     event = sentry_transport_mock.events[0]
     assert (
@@ -439,7 +439,7 @@ def test_setup_logging__stdlib_exception__sentry_captures_exc_info(
     # When
     _raise_and_log()
 
-    # Then — Sentry captured the exception with full traceback
+    # Then
     assert len(sentry_transport_mock.events) == 1
     event = sentry_transport_mock.events[0]
     assert (

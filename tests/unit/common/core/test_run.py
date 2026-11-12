@@ -97,7 +97,7 @@ def test_migrate__with_args__defers_to_django_migrate(
     # Given / When
     run.migrate(["myapp", "0042"], prog="flagsmith migrate")
 
-    # Then — targeted migration only, no composite steps
+    # Then
     assert [call.args[0] for call in mock_run.call_args_list] == [
         ["flagsmith", "migrate", "myapp", "0042"],
     ]
@@ -110,7 +110,7 @@ def test_run_task_processor__default__migrates_waits_then_starts(
     # Given / When
     run.run_task_processor([], prog="flagsmith run-task-processor")
 
-    # Then — migrates (like run-docker.sh), waits for migrations, then starts
+    # Then
     assert [call.args[0] for call in mock_run.call_args_list] == [
         ["flagsmith", "waitfordb", "--database", "default"],
         ["flagsmith", "migrate", "--database", "default"],
@@ -220,7 +220,7 @@ def test_migrate_and_serve__startup_command_with_args__split_into_argv(
     # Given / When
     run.migrate_and_serve([], prog="flagsmith migrate-and-serve")
 
-    # Then — the command string is shell-split into separate argv elements
+    # Then
     assert ["flagsmith", "bootstrap", "--skip-fixtures"] in [
         call.args[0] for call in mock_run.call_args_list
     ]
