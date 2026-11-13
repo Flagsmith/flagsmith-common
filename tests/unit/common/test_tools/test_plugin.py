@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 import prometheus_client
 import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem
 
 from common.test_tools import AssertMetricFixture, RunTasksFixture
 from common.test_tools.plugin import assert_metric_impl
@@ -86,6 +87,20 @@ def test_edition_printer__enterprise_mode__returns_enterprise() -> None:
     assert result == "enterprise!"
 
 
+@pytest.mark.saas_mode
+def test_edition_printer__saas_mode_with_fake_filesystem__returns_saas(
+    fs: FakeFilesystem,
+) -> None:
+    # Given
+    assert not fs.exists("./SAAS_DEPLOYMENT")
+
+    # When
+    result = edition_printer()
+
+    # Then
+    assert result == "saas!"
+
+
 def test_run_tasks__single_task_delayed__runs_expected(
     run_tasks: RunTasksFixture,
 ) -> None:
@@ -125,3 +140,32 @@ def test_run_tasks__delay_inside_task__runs_expected(
     assert len(task_runs) == 1
     assert Task.objects.count() == 2
     assert Task.objects.latest("scheduled_for").task_identifier == "test_plugin.my_task"
+
+
+@pytest.mark.parametrize(
+    "expected_edition",
+    [
+        pytest.param("saas!", marks=pytest.mark.saas_mode, id="saas_mode"),
+        pytest.param(
+            "enterprise!", marks=pytest.mark.enterprise_mode, id="enterprise_mode"
+        ),
+    ],
+)
+def test_run_tasks__edition_marker__runs_expected(
+    run_tasks: RunTasksFixture,
+    expected_edition: str,
+) -> None:
+    # Given
+    @register_task_handler()
+    def my_task() -> None:
+        return None
+
+    my_task.delay()
+
+    # When
+    task_runs = run_tasks(num_tasks=1)
+
+    # Then
+    assert len(task_runs) == 1
+    assert task_runs[0].result == "SUCCESS"
+    assert edition_printer() == expected_edition

@@ -1,4 +1,5 @@
-from functools import partial
+from functools import _lru_cache_wrapper, partial
+from pathlib import Path
 from typing import TYPE_CHECKING, Generator
 
 import pytest
@@ -12,7 +13,6 @@ from common.test_tools.types import (
 from task_processor.task_run_method import TaskRunMethod
 
 if TYPE_CHECKING:
-    from pyfakefs.fake_filesystem import FakeFilesystem
     from pytest_django.fixtures import SettingsWrapper
 
 
@@ -61,28 +61,47 @@ def assert_metric_impl() -> Generator[AssertMetricFixture, None, None]:
 assert_metric = pytest.fixture(assert_metric_impl)
 
 
+def _edition_mode_impl(
+    edition_check: "_lru_cache_wrapper[bool]",
+    marker_file_name: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
+    # Prime the edition check's cache against a real marker file instead of
+    # using pyfakefs: pyfakefs evicts modules (re)loaded under the fake
+    # filesystem from `sys.modules` on teardown, which breaks fixtures that
+    # reload metrics modules, such as `task_processor_mode`.
+    edition_check.cache_clear()
+    (tmp_path / marker_file_name).touch()
+    with monkeypatch.context() as patch:
+        patch.chdir(tmp_path)
+        assert edition_check()
+
+    yield
+
+    edition_check.cache_clear()
+
+
 @pytest.fixture()
-def saas_mode(fs: "FakeFilesystem") -> Generator[None, None, None]:
+def saas_mode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
     from common.core.utils import is_saas
 
-    is_saas.cache_clear()
-    fs.create_file("./SAAS_DEPLOYMENT")
-
-    yield
-
-    is_saas.cache_clear()
+    yield from _edition_mode_impl(is_saas, "SAAS_DEPLOYMENT", tmp_path, monkeypatch)
 
 
 @pytest.fixture()
-def enterprise_mode(fs: "FakeFilesystem") -> Generator[None, None, None]:
+def enterprise_mode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
     from common.core.utils import is_enterprise
 
-    is_enterprise.cache_clear()
-    fs.create_file("./ENTERPRISE_VERSION")
-
-    yield
-
-    is_enterprise.cache_clear()
+    yield from _edition_mode_impl(
+        is_enterprise, "ENTERPRISE_VERSION", tmp_path, monkeypatch
+    )
 
 
 @pytest.fixture()
