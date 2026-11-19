@@ -14,20 +14,11 @@ All other commands are delegated to `common.core.main.main`.
 import os
 import sys
 
-HEALTHCHECK_SUBCOMMANDS = frozenset(
-    {
-        "healthcheck",
-        # Backwards compatibility for task-processor health checks
-        # See https://github.com/Flagsmith/flagsmith-task-processor/issues/24
-        "checktaskprocessorthreadhealth",
-    }
-)
+from common.core.cli import healthcheck
 
 
 def main(argv: list[str] = sys.argv) -> None:
-    if len(argv) > 1 and argv[1] in HEALTHCHECK_SUBCOMMANDS:
-        from common.core.cli import healthcheck
-
+    if len(argv) > 1 and argv[1] in healthcheck.SUBCOMMANDS:
         return healthcheck.main(
             argv[2:],
             prog=f"{os.path.basename(argv[0])} {argv[1]}",

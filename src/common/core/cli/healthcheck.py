@@ -2,6 +2,16 @@ import argparse
 import socket
 import urllib.parse
 
+# Subcommands of the `flagsmith` CLI dispatched to `main`.
+# This module must stay lightweight to import, as `common.core.cli.entrypoint`
+# imports it to fast-path these subcommands.
+SUBCOMMANDS = (
+    "healthcheck",
+    # Backwards compatibility for task-processor health checks
+    # See https://github.com/Flagsmith/flagsmith-task-processor/issues/24
+    "checktaskprocessorthreadhealth",
+)
+
 DEFAULT_PORT = 8000
 DEFAULT_TIMEOUT_SECONDS = 1
 
