@@ -2,6 +2,26 @@
 
 <a name="v1.5.2"></a>
 
+## [3.16.2](https://github.com/Flagsmith/flagsmith-common/compare/v3.16.1...v3.16.2) (2026-11-19)
+
+
+### Dependency Updates
+
+* update dependency idna to v3.15 [security] ([#293](https://github.com/Flagsmith/flagsmith-common/issues/293)) ([3541aaf](https://github.com/Flagsmith/flagsmith-common/commit/3541aaf16d2e7e6bdec413c192a366ea2b3c5d73))
+* update dependency marshmallow to v4.1.2 [security] ([#290](https://github.com/Flagsmith/flagsmith-common/issues/290)) ([7666da2](https://github.com/Flagsmith/flagsmith-common/commit/7666da2c0170e099ea2015cd1105de6f234a8995))
+* update dependency python-dotenv to v1.2.2 [security] ([#291](https://github.com/Flagsmith/flagsmith-common/issues/291)) ([fee0833](https://github.com/Flagsmith/flagsmith-common/commit/fee08330635d4a758505fe2730069843200962c8))
+* update dependency werkzeug to v3.1.9 [security] ([#292](https://github.com/Flagsmith/flagsmith-common/issues/292)) ([1055150](https://github.com/Flagsmith/flagsmith-common/commit/1055150037e48632ac67b98f84b7df8d651dc0a7))
+
+
+### Bug Fixes
+
+* **cli:** High CPU usage by the TCP healtcheck ([#288](https://github.com/Flagsmith/flagsmith-common/issues/288)) ([d10a45c](https://github.com/Flagsmith/flagsmith-common/commit/d10a45c61e81be379f6a005c39e2e2be0504f81a))
+
+
+### Refactoring
+
+* Remove CreateSegmentOverrideFeatureStateSerializer ([#296](https://github.com/Flagsmith/flagsmith-common/issues/296)) ([26f8a38](https://github.com/Flagsmith/flagsmith-common/commit/26f8a38a877ca89029eef85d8a1013122bf7cae8))
+
 ## [3.16.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.16.0...v3.16.1) (2026-11-05)
 
 
