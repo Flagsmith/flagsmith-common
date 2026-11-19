@@ -2,7 +2,15 @@ import argparse
 import socket
 import urllib.parse
 
-import requests
+# Subcommands of the `flagsmith` CLI dispatched to `main`.
+# This module must stay lightweight to import, as `common.core.cli.entrypoint`
+# imports it to fast-path these subcommands.
+SUBCOMMANDS = (
+    "healthcheck",
+    # Backwards compatibility for task-processor health checks
+    # See https://github.com/Flagsmith/flagsmith-task-processor/issues/24
+    "checktaskprocessorthreadhealth",
+)
 
 DEFAULT_PORT = 8000
 DEFAULT_TIMEOUT_SECONDS = 1
@@ -88,6 +96,9 @@ def check_http_response(
     timeout_seconds: int,
     path: str,
 ) -> None:
+    # Imported lazily to keep the more frequently used TCP check lightweight
+    import requests
+
     url = urllib.parse.urljoin(f"http://127.0.0.1:{port}", path)
     requests.get(
         url,

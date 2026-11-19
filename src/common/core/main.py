@@ -140,10 +140,7 @@ def execute_from_command_line(argv: list[str]) -> None:
     try:
         subcommand = argv[1]
         subcommand_main = {
-            "healthcheck": healthcheck.main,
-            # Backwards compatibility for task-processor health checks
-            # See https://github.com/Flagsmith/flagsmith-task-processor/issues/24
-            "checktaskprocessorthreadhealth": healthcheck.main,
+            **dict.fromkeys(healthcheck.SUBCOMMANDS, healthcheck.main),
             # Composite startup verbs, formerly run-docker.sh
             "serve": run.serve,
             "migrate": run.migrate,
