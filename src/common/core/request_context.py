@@ -22,7 +22,7 @@ from django.http import HttpRequest, HttpResponse
 from opentelemetry import trace
 from opentelemetry.util.types import AttributeValue
 
-from common.gunicorn.utils import get_route_template
+from common.gunicorn.utils import get_route_template, log_extra
 
 
 def bind_request_context(**attributes: AttributeValue) -> None:
@@ -42,9 +42,15 @@ def get_request_context(name: str) -> Any:
 
 class RequestContextMiddleware:
     """
-    Scope request context to the request, and bind its route.
+    Scope request context to the request, and record its route.
 
-    Put it before any middleware that binds request context.
+    The route, in its OpenAPI schema form, is bound to the request context,
+    names the current span, and is passed on to Gunicorn's access log and
+    HTTP metrics through the WSGI `environ`.
+
+    Put it before any middleware that binds request context, and before any
+    middleware whose `process_view` can return a response, e.g.
+    `CsrfViewMiddleware`, so the route is recorded for every resolved request.
     """
 
     def __init__(
@@ -68,10 +74,16 @@ class RequestContextMiddleware:
     ) -> None:
         # The URL is resolved by now.
         assert request.resolver_match
+        route = get_route_template(
+            request.resolver_match.route,
+            getattr(view_func, "cls", None),
+        )
         bind_request_context(
             http__request__method=request.method or "",
-            http__route=get_route_template(
-                request.resolver_match.route,
-                getattr(view_func, "cls", None),
-            ),
+            http__route=route,
         )
+        # Gunicorn logs requests after they leave Django, and this context
+        log_extra(request=request, key="route", value=route)
+        span = trace.get_current_span()
+        if span.is_recording():
+            span.update_name(f"{request.method} {route}")

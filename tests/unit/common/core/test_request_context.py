@@ -88,6 +88,30 @@ def test_request_context_middleware__process_view__binds_openapi_route_and_metho
     assert get_request_context("http__request__method") == "GET"
 
 
+def test_request_context_middleware__process_view__records_route_for_gunicorn_and_span(
+    rf: RequestFactory,
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    # Given
+    request = rf.get("/version/")
+    request.resolver_match = resolve("/version/")
+    middleware = RequestContextMiddleware(lambda request: HttpResponse())
+    tracer = trace.get_tracer(__name__)
+
+    # When
+    with tracer.start_as_current_span("original"):
+        middleware.process_view(request, request.resolver_match.func, (), {})
+
+    # Then
+    assert request.META["flagsmith.route"] == "/version/"
+    [span] = span_exporter.get_finished_spans()
+    assert span.name == "GET /version/"
+    assert span.attributes == {
+        "http.request.method": "GET",
+        "http.route": "/version/",
+    }
+
+
 def test_request_context_middleware__bound_while_handling__not_visible_after(
     rf: RequestFactory,
 ) -> None:

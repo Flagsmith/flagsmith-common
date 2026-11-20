@@ -50,7 +50,7 @@ INSTALLED_APPS = [
 ]
 MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
-    "common.gunicorn.middleware.RouteLoggerMiddleware",
+    "common.core.request_context.RequestContextMiddleware",
 ]
 LOG_FORMAT = "json"
 PROMETHEUS_HISTOGRAM_BUCKETS = prometheus_client.Histogram.DEFAULT_BUCKETS
