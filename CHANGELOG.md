@@ -2,6 +2,19 @@
 
 <a name="v1.5.2"></a>
 
+## [3.17.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.16.2...v3.17.0) (2026-11-20)
+
+
+### Features
+
+* **observability:** Bind request context and record routes for telemetry ([#299](https://github.com/Flagsmith/flagsmith-common/issues/299)) ([d571083](https://github.com/Flagsmith/flagsmith-common/commit/d571083fd108a4e8d6b22d895a52a0bf99a0742b))
+
+
+### Bug Fixes
+
+* **gunicorn:** Report routes as their OpenAPI schema paths ([#297](https://github.com/Flagsmith/flagsmith-common/issues/297)) ([33c0bcb](https://github.com/Flagsmith/flagsmith-common/commit/33c0bcb7102cf5d1b991dc7b8fe1855b0cb19fcd))
+* **task-processor:** End task spans when an exception escapes ([#300](https://github.com/Flagsmith/flagsmith-common/issues/300)) ([b83708a](https://github.com/Flagsmith/flagsmith-common/commit/b83708a141230e38d3de04d3723a824c46763615))
+
 ## [3.16.2](https://github.com/Flagsmith/flagsmith-common/compare/v3.16.1...v3.16.2) (2026-11-19)
 
 
