@@ -30,8 +30,9 @@ To run tests, run `make test`.
 3. Make sure `"common.core"` is in the `INSTALLED_APPS` of your settings module.
 This enables the `manage.py flagsmith` commands.
 
-4. Add `"common.core.request_context.RequestContextMiddleware"` to `MIDDLEWARE` in your settings module, before `CsrfViewMiddleware`.
+4. Add `"common.core.request_context.RequestContextMiddleware"` first in `MIDDLEWARE` in your settings module.
 This scopes request context (see `common.core.request_context`) to each request, and records the route for logs, traces and the `route` label of Prometheus HTTP metrics. It replaces the deprecated `common.gunicorn.middleware.RouteLoggerMiddleware`.
+Request context only exists while it handles the request, so middleware listed before it can't bind request context, nor read any in its response phase. It must also come before any middleware whose `process_view` can return a response, e.g. `CsrfViewMiddleware`, so the route is recorded for every resolved request.
 
 5. To enable the `/metrics` endpoint, set the `PROMETHEUS_ENABLED` setting to `True`.
 

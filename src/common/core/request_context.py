@@ -51,9 +51,11 @@ class RequestContextMiddleware(MiddlewareMixin):
     names the current span, and is passed on to Gunicorn's access log and
     HTTP metrics through the WSGI `environ`.
 
-    Put it before any middleware that binds request context, and before any
-    middleware whose `process_view` can return a response, e.g.
-    `CsrfViewMiddleware`, so the route is recorded for every resolved request.
+    Put it first in `MIDDLEWARE`. Request context only exists while it handles
+    the request, so middleware listed before it can't bind request context,
+    nor read any in its response phase. Its `process_view` must also run
+    before any that can return a response, e.g. `CsrfViewMiddleware`'s, so
+    the route is recorded for every resolved request.
 
     Works in both sync (WSGI) and async (ASGI) middleware chains.
     """
