@@ -6,7 +6,7 @@ from typing import Any
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.wsgi import get_wsgi_application
 from django.http import HttpRequest
-from drf_spectacular.generators import EndpointEnumerator
+from drf_spectacular.generators import EndpointEnumerator, SchemaGenerator
 from environs import Env
 from gunicorn.app.wsgiapp import (  # type: ignore[import-untyped]
     WSGIApplication as GunicornWSGIApplication,
@@ -77,18 +77,21 @@ def run_server(options: dict[str, Any] | None = None) -> None:
     DjangoWSGIApplication(options).run()
 
 
-@lru_cache
-def get_route_template(route: str) -> str:
+@lru_cache(maxsize=None)  # One entry per URL route
+def get_route_template(route: str, view: type | None = None) -> str:
     """
-    Convert a Django regex route to a template string that can be
-    searched for in the API documentation.
+    Convert a Django regex route to its path in the OpenAPI schema.
 
     e.g.,
 
-    `"^api/v1/environments/(?P<environment_api_key>[^/.]+)/api-keys/$"` ->
-    `"/api/v1/environments/{environment_api_key}/api-keys/"`
+    `"^api/v1/environments/(?P<environment_api_key>[^/.]+)/api-keys/(?P<pk>[^/.]+)/$"` ->
+    `"/api/v1/environments/{environment_api_key}/api-keys/{id}/"`
+
+    Like the schema, a `{pk}` parameter is named after the primary key of the
+    `view`'s model, or `{id}` when there's no model to go by.
     """
-    route_template: str = EndpointEnumerator().get_path_from_regex(route)  # type: ignore[no-untyped-call]
+    path = EndpointEnumerator().get_path_from_regex(route)  # type: ignore[no-untyped-call]
+    route_template: str = SchemaGenerator().coerce_path(path, None, view)  # type: ignore[no-untyped-call]
     return route_template
 
 

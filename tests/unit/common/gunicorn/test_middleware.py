@@ -32,6 +32,7 @@ def test_route_logger_middleware__resolved_route__sets_log_extra_and_span_name(
     request.method = "GET"
     request.resolver_match = mocker.Mock()
     request.resolver_match.route = "api/v1/projects/<int:pk>/"
+    request.resolver_match.func = mocker.Mock(spec=[])  # A plain view function
     request.META = {}
 
     response = mocker.Mock()
@@ -47,10 +48,10 @@ def test_route_logger_middleware__resolved_route__sets_log_extra_and_span_name(
 
     # Then
     assert result is response
-    assert request.META["flagsmith.route"] == "/api/v1/projects/{pk}/"
+    assert request.META["flagsmith.route"] == "/api/v1/projects/{id}/"
     spans = exporter.get_finished_spans()
     assert len(spans) == 1
-    assert spans[0].name == "GET /api/v1/projects/{pk}/"
+    assert spans[0].name == "GET /api/v1/projects/{id}/"
 
 
 def test_route_logger_middleware__no_resolver_match__no_log_extra_and_span_unchanged(
