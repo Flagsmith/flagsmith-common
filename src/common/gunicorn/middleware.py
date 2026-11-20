@@ -22,7 +22,10 @@ class RouteLoggerMiddleware:
         response = self.get_response(request)
 
         if resolver_match := request.resolver_match:
-            route_template = get_route_template(resolver_match.route)
+            route_template = get_route_template(
+                resolver_match.route,
+                getattr(resolver_match.func, "cls", None),
+            )
             log_extra(
                 request=request,
                 key="route",

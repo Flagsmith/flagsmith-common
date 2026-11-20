@@ -15,6 +15,7 @@ from common.gunicorn.utils import (
     get_route_template,
     run_server,
 )
+from task_processor.models import Task
 
 
 def test_django_wsgi_application__defaults__expected_config(
@@ -124,17 +125,53 @@ def test_run_server__default_config_file__runs_expected(
         run_server({"bind": f"0.0.0.0:{unused_tcp_port}"})
 
 
-def test_get_route_template__returns_expected__caches_expected(
+@pytest.mark.parametrize(
+    "regex_route, view, expected_route_template",
+    [
+        (
+            "^api/v1/environments/(?P<environment_api_key>[^/.]+)/api-keys/$",
+            None,
+            "/api/v1/environments/{environment_api_key}/api-keys/",
+        ),
+        (
+            "^api/v1/projects/(?P<pk>[^/.]+)/$",
+            None,
+            "/api/v1/projects/{id}/",
+        ),
+        (
+            "^api/v1/projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/$",
+            type("TaskViewSet", (), {"queryset": Task.objects.none()}),
+            "/api/v1/projects/{project_pk}/tasks/{id}/",
+        ),
+    ],
+    ids=["no-pk", "pk-without-view", "pk-with-model-view"],
+)
+def test_get_route_template__regex_route__returns_openapi_path(
+    regex_route: str,
+    view: type | None,
+    expected_route_template: str,
+) -> None:
+    # Given
+    get_route_template.cache_clear()
+
+    # When
+    route_template = get_route_template(regex_route, view)
+
+    # Then
+    assert route_template == expected_route_template
+
+
+def test_get_route_template__same_route__caches_result(
     mocker: MockerFixture,
 ) -> None:
     # Given
+    get_route_template.cache_clear()
     get_path_from_regex_spy = mocker.spy(EndpointEnumerator, "get_path_from_regex")
     regex_route = "^api/v1/environments/(?P<environment_api_key>[^/.]+)/api-keys/$"
 
     # When
-    result = get_route_template(regex_route)
+    get_route_template(regex_route)
     get_route_template(regex_route)
 
     # Then
-    assert result == "/api/v1/environments/{environment_api_key}/api-keys/"
     get_path_from_regex_spy.assert_called_once()
