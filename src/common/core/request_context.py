@@ -28,8 +28,7 @@ from common.gunicorn.utils import get_route_template, log_extra
 def bind_request_context(**attributes: AttributeValue) -> None:
     """Describe the current request with `attributes`, e.g. `organisation__id=1`."""
     structlog.contextvars.bind_contextvars(**attributes)
-    span = trace.get_current_span()
-    if span.is_recording():
+    if (span := trace.get_current_span()).is_recording():
         span.set_attributes(
             {name.replace("__", "."): value for name, value in attributes.items()}
         )
@@ -84,6 +83,5 @@ class RequestContextMiddleware:
         )
         # Gunicorn logs requests after they leave Django, and this context
         log_extra(request=request, key="route", value=route)
-        span = trace.get_current_span()
-        if span.is_recording():
+        if (span := trace.get_current_span()).is_recording():
             span.update_name(f"{request.method} {route}")
