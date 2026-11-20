@@ -14,7 +14,6 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
 )
 from opentelemetry.trace import StatusCode
 from pytest_django.fixtures import SettingsWrapper
-from pytest_mock import MockerFixture
 
 from common.test_tools.types import AssertMetricFixture, RunTasksFixture
 from task_processor.decorators import (
@@ -871,6 +870,49 @@ def test_run_task__backoff_recurring__raises_expected(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
+def test_run_task__exception_escapes__records_run_ends_span_and_restores_context(
+    current_database: str,
+    span_exporter: InMemorySpanExporter,
+    assert_metric: AssertMetricFixture,
+) -> None:
+    # Given
+    @register_recurring_task(run_every=timedelta(seconds=1))
+    def backoff_task() -> None:
+        raise TaskBackoffError()
+
+    initialise()
+    current_span = trace.get_current_span()
+
+    # When
+    with pytest.raises(AssertionError):
+        run_recurring_task(current_database)
+
+    # Then
+    assert trace.get_current_span() is current_span
+    assert [
+        span.name
+        for span in span_exporter.get_finished_spans()
+        if span.name.endswith(".backoff_task")
+    ] == ["test_unit_task_processor_processor.backoff_task"]
+    labels = {
+        "task_identifier": "test_unit_task_processor_processor.backoff_task",
+        "task_type": "recurring",
+        "result": "failure",
+    }
+    assert_metric(
+        name="flagsmith_task_processor_finished_tasks_total",
+        value=1.0,
+        labels=labels,
+    )
+    assert_metric(
+        name="flagsmith_task_processor_task_duration_seconds_count",
+        value=1.0,
+        labels=labels,
+    )
+
+
+@pytest.mark.multi_database
+@pytest.mark.task_processor_mode
 def test_run_task__backoff_max_num_failures__noop(
     current_database: str,
     caplog: pytest.LogCaptureFixture,
@@ -924,7 +966,6 @@ def test_run_tasks__tasks_executed__expected_metrics(
     assert_metric: AssertMetricFixture,
     current_database: str,
     dummy_task: TaskHandler[[str, str]],
-    mocker: MockerFixture,
     raise_exception_task: TaskHandler[[str]],
     settings: SettingsWrapper,
 ) -> None:
@@ -987,8 +1028,8 @@ def test_run_tasks__tasks_executed__expected_metrics(
         },
     )
     assert_metric(
-        name="flagsmith_task_processor_task_duration_seconds",
-        value=mocker.ANY,
+        name="flagsmith_task_processor_task_duration_seconds_count",
+        value=1.0,
         labels={
             "task_identifier": dummy_task_identifier,
             "task_type": "standard",
@@ -996,8 +1037,8 @@ def test_run_tasks__tasks_executed__expected_metrics(
         },
     )
     assert_metric(
-        name="flagsmith_task_processor_task_duration_seconds",
-        value=mocker.ANY,
+        name="flagsmith_task_processor_task_duration_seconds_count",
+        value=1.0,
         labels={
             "task_identifier": raise_exception_task_identifier,
             "task_type": "standard",
@@ -1005,8 +1046,8 @@ def test_run_tasks__tasks_executed__expected_metrics(
         },
     )
     assert_metric(
-        name="flagsmith_task_processor_task_duration_seconds",
-        value=mocker.ANY,
+        name="flagsmith_task_processor_task_duration_seconds_count",
+        value=1.0,
         labels={
             "task_identifier": recurring_task_identifier,
             "task_type": "recurring",
