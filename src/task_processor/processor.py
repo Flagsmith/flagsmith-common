@@ -146,15 +146,17 @@ def _run_task(
     )
     if task_run is None:
         task_run = task.task_runs.model(started_at=timezone.now(), task=task)  # type: ignore[attr-defined]
-    result: str
+    # A failure, unless the task completes
+    result: str = TaskResult.FAILURE.value
     executor = None
 
     extracted_ctx = propagate.extract(task.trace_context or {})
     tracer = trace.get_tracer("task_processor", version("flagsmith-common"))
     span = tracer.start_span(task_identifier, context=extracted_ctx)
     otel_token = otel_context.attach(trace.set_span_in_context(span, extracted_ctx))
-    # End the span and restore the context even when an exception escapes, so
-    # later work on this thread doesn't run under this task's span.
+    # Record the run, end the span and restore the context even when an
+    # exception escapes, so the run is counted and later work on this thread
+    # doesn't run under this task's span.
     try:
         try:
             # Use explicit executor management to avoid blocking on shutdown
@@ -217,6 +219,7 @@ def _run_task(
             if executor is not None:
                 executor.shutdown(wait=False)
 
+    finally:
         labels = {
             "task_identifier": task_identifier,
             "task_type": registered_task.task_type.value.lower(),
@@ -229,7 +232,6 @@ def _run_task(
         metrics.flagsmith_task_processor_finished_tasks_total.labels(**labels).inc()
 
         span.set_attributes(labels)
-    finally:
         span.end()
         otel_context.detach(otel_token)
 

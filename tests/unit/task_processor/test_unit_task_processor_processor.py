@@ -871,9 +871,10 @@ def test_run_task__backoff_recurring__raises_expected(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
-def test_run_task__exception_escapes__ends_span_and_restores_context(
+def test_run_task__exception_escapes__records_run_ends_span_and_restores_context(
     current_database: str,
     span_exporter: InMemorySpanExporter,
+    assert_metric: AssertMetricFixture,
 ) -> None:
     # Given
     @register_recurring_task(run_every=timedelta(seconds=1))
@@ -894,6 +895,15 @@ def test_run_task__exception_escapes__ends_span_and_restores_context(
         for span in span_exporter.get_finished_spans()
         if span.name.endswith(".backoff_task")
     ] == ["test_unit_task_processor_processor.backoff_task"]
+    assert_metric(
+        name="flagsmith_task_processor_finished_tasks_total",
+        value=1.0,
+        labels={
+            "task_identifier": "test_unit_task_processor_processor.backoff_task",
+            "task_type": "recurring",
+            "result": "failure",
+        },
+    )
 
 
 @pytest.mark.multi_database
