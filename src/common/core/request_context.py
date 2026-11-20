@@ -13,12 +13,16 @@ reported as `organisation.id`. `RequestContextMiddleware` scopes bindings to
 the request.
 """
 
+import asyncio
 import contextvars
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 import structlog.contextvars
+from asgiref.sync import iscoroutinefunction
 from django.http import HttpRequest, HttpResponse
+from django.http.response import HttpResponseBase
+from django.utils.deprecation import MiddlewareMixin
 from opentelemetry import trace
 from opentelemetry.util.types import AttributeValue
 
@@ -39,7 +43,7 @@ def get_request_context(name: str) -> Any:
     return structlog.contextvars.get_contextvars().get(name)
 
 
-class RequestContextMiddleware:
+class RequestContextMiddleware(MiddlewareMixin):
     """
     Scope request context to the request, and record its route.
 
@@ -50,19 +54,30 @@ class RequestContextMiddleware:
     Put it before any middleware that binds request context, and before any
     middleware whose `process_view` can return a response, e.g.
     `CsrfViewMiddleware`, so the route is recorded for every resolved request.
+
+    Works in both sync (WSGI) and async (ASGI) middleware chains.
     """
 
-    def __init__(
+    def __call__(
         self,
-        get_response: Callable[[HttpRequest], HttpResponse],
-    ) -> None:
-        self.get_response = get_response
-
-    def __call__(self, request: HttpRequest) -> HttpResponse:
+        request: HttpRequest,
+    ) -> HttpResponseBase | Awaitable[HttpResponseBase]:
+        # `MiddlewareMixin` marks the middleware a coroutine function in async mode
+        async_mode = iscoroutinefunction(self)
+        if async_mode:
+            return self.__acall__(request)
         # Handle the request in a copy of the current context, so whatever
         # gets bound while handling it doesn't leak into the next request
         # served by the same thread.
-        return contextvars.copy_context().run(self.get_response, request)
+        return contextvars.copy_context().run(super().__call__, request)
+
+    async def __acall__(self, request: HttpRequest) -> HttpResponseBase:
+        # A coroutine runs in the context of whatever awaits it, so isolate the
+        # request in a task with its own copy of the context instead.
+        return await asyncio.create_task(
+            super().__acall__(request),
+            context=contextvars.copy_context(),
+        )
 
     def process_view(
         self,

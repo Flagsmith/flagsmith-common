@@ -1,9 +1,12 @@
-from collections.abc import Generator
+import asyncio
+from collections.abc import Awaitable, Callable, Generator
+from typing import ClassVar
 
 import pytest
 import structlog.contextvars
+from asgiref.sync import markcoroutinefunction
 from django.http import HttpRequest, HttpResponse
-from django.test import Client, RequestFactory
+from django.test import AsyncClient, Client, RequestFactory
 from django.urls import resolve
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
@@ -175,3 +178,95 @@ def test_request_context_middleware__django_request__binds_route_for_the_view(
         http__request__method="GET",
         http__route="/health/liveness/",
     )
+
+
+class RouteRecorderMiddleware:
+    """Record the route bound for each request, as seen by later middleware."""
+
+    sync_capable = False
+    async_capable = True
+    routes: ClassVar[list[object]] = []
+
+    def __init__(
+        self,
+        get_response: Callable[[HttpRequest], Awaitable[HttpResponse]],
+    ) -> None:
+        self.get_response = get_response
+        markcoroutinefunction(self)
+
+    async def __call__(self, request: HttpRequest) -> HttpResponse:
+        response = await self.get_response(request)
+        self.routes.append(get_request_context("http__route"))
+        return response
+
+
+@pytest.mark.asyncio
+async def test_request_context_middleware__async_bound_while_handling__not_visible_after(
+    rf: RequestFactory,
+) -> None:
+    # Given
+    bind_request_context(deployment__environment="test")
+    seen: dict[str, object] = {}
+
+    async def get_response(request: HttpRequest) -> HttpResponse:
+        seen["outer"] = get_request_context("deployment__environment")
+        bind_request_context(organisation__id=1)
+        return HttpResponse()
+
+    middleware = RequestContextMiddleware(get_response)
+
+    # When
+    result = middleware(rf.get("/version/"))
+    assert asyncio.iscoroutine(result)
+    await result
+
+    # Then
+    assert seen == {"outer": "test"}  # Context bound outside is visible inside
+    assert get_request_context("organisation__id") is None
+    assert get_request_context("deployment__environment") == "test"  # Not cleared
+
+
+@pytest.mark.asyncio
+async def test_request_context_middleware__async_consecutive_requests__context_does_not_leak(
+    rf: RequestFactory,
+) -> None:
+    # Given
+    seen: list[object] = []
+
+    async def get_response(request: HttpRequest) -> HttpResponse:
+        seen.append(get_request_context("organisation__id"))
+        if request.GET.get("org"):
+            bind_request_context(organisation__id=int(request.GET["org"]))
+        return HttpResponse()
+
+    middleware = RequestContextMiddleware(get_response)
+
+    # When
+    for request in (rf.get("/version/", {"org": "1"}), rf.get("/version/")):
+        result = middleware(request)
+        assert asyncio.iscoroutine(result)
+        await result
+
+    # Then
+    assert seen == [None, None]
+
+
+@pytest.mark.asyncio
+async def test_request_context_middleware__async_django_request__route_visible_to_later_middleware(
+    async_client: AsyncClient,
+    settings: SettingsWrapper,
+) -> None:
+    # Given
+    settings.MIDDLEWARE = [
+        "common.core.request_context.RequestContextMiddleware",
+        f"{__name__}.RouteRecorderMiddleware",
+    ]
+    RouteRecorderMiddleware.routes.clear()
+
+    # When
+    response = await async_client.get("/health/liveness/")
+
+    # Then
+    assert response.status_code == 200
+    assert RouteRecorderMiddleware.routes == ["/health/liveness/"]
+    assert get_request_context("http__route") is None
