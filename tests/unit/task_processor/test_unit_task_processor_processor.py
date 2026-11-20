@@ -895,14 +895,20 @@ def test_run_task__exception_escapes__records_run_ends_span_and_restores_context
         for span in span_exporter.get_finished_spans()
         if span.name.endswith(".backoff_task")
     ] == ["test_unit_task_processor_processor.backoff_task"]
+    labels = {
+        "task_identifier": "test_unit_task_processor_processor.backoff_task",
+        "task_type": "recurring",
+        "result": "failure",
+    }
     assert_metric(
         name="flagsmith_task_processor_finished_tasks_total",
         value=1.0,
-        labels={
-            "task_identifier": "test_unit_task_processor_processor.backoff_task",
-            "task_type": "recurring",
-            "result": "failure",
-        },
+        labels=labels,
+    )
+    assert_metric(
+        name="flagsmith_task_processor_task_duration_seconds_count",
+        value=1.0,
+        labels=labels,
     )
 
 
