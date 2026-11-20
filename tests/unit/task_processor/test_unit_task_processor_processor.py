@@ -14,7 +14,6 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
 )
 from opentelemetry.trace import StatusCode
 from pytest_django.fixtures import SettingsWrapper
-from pytest_mock import MockerFixture
 
 from common.test_tools.types import AssertMetricFixture, RunTasksFixture
 from task_processor.decorators import (
@@ -967,7 +966,6 @@ def test_run_tasks__tasks_executed__expected_metrics(
     assert_metric: AssertMetricFixture,
     current_database: str,
     dummy_task: TaskHandler[[str, str]],
-    mocker: MockerFixture,
     raise_exception_task: TaskHandler[[str]],
     settings: SettingsWrapper,
 ) -> None:
@@ -1030,8 +1028,8 @@ def test_run_tasks__tasks_executed__expected_metrics(
         },
     )
     assert_metric(
-        name="flagsmith_task_processor_task_duration_seconds",
-        value=mocker.ANY,
+        name="flagsmith_task_processor_task_duration_seconds_count",
+        value=1.0,
         labels={
             "task_identifier": dummy_task_identifier,
             "task_type": "standard",
@@ -1039,8 +1037,8 @@ def test_run_tasks__tasks_executed__expected_metrics(
         },
     )
     assert_metric(
-        name="flagsmith_task_processor_task_duration_seconds",
-        value=mocker.ANY,
+        name="flagsmith_task_processor_task_duration_seconds_count",
+        value=1.0,
         labels={
             "task_identifier": raise_exception_task_identifier,
             "task_type": "standard",
@@ -1048,8 +1046,8 @@ def test_run_tasks__tasks_executed__expected_metrics(
         },
     )
     assert_metric(
-        name="flagsmith_task_processor_task_duration_seconds",
-        value=mocker.ANY,
+        name="flagsmith_task_processor_task_duration_seconds_count",
+        value=1.0,
         labels={
             "task_identifier": recurring_task_identifier,
             "task_type": "recurring",
