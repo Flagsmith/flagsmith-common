@@ -83,5 +83,7 @@ class RequestContextMiddleware:
         )
         # Gunicorn logs requests after they leave Django, and this context
         log_extra(request=request, key="route", value=route)
+        # OpenTelemetry's Django instrumentation names the span, and sets its
+        # `http.route`, after the raw Django route, e.g. a router's regex
         if (span := trace.get_current_span()).is_recording():
             span.update_name(f"{request.method} {route}")
