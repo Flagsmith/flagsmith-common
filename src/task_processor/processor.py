@@ -153,81 +153,84 @@ def _run_task(
     tracer = trace.get_tracer("task_processor", version("flagsmith-common"))
     span = tracer.start_span(task_identifier, context=extracted_ctx)
     otel_token = otel_context.attach(trace.set_span_in_context(span, extracted_ctx))
-
+    # End the span and restore the context even when an exception escapes, so
+    # later work on this thread doesn't run under this task's span.
     try:
-        # Use explicit executor management to avoid blocking on shutdown
-        # when tasks timeout but continue running in worker threads.
-        # The default context manager behavior (wait=True) would block
-        # the TaskRunner thread indefinitely waiting for stuck workers.
-        executor = ThreadPoolExecutor(max_workers=1)
-        future = executor.submit(task.run)
-        timeout = task.timeout.total_seconds() if task.timeout else None
-        future.result(timeout=timeout)  # Wait for completion or timeout
+        try:
+            # Use explicit executor management to avoid blocking on shutdown
+            # when tasks timeout but continue running in worker threads.
+            # The default context manager behavior (wait=True) would block
+            # the TaskRunner thread indefinitely waiting for stuck workers.
+            executor = ThreadPoolExecutor(max_workers=1)
+            future = executor.submit(task.run)
+            timeout = task.timeout.total_seconds() if task.timeout else None
+            future.result(timeout=timeout)  # Wait for completion or timeout
 
-        task_run.result = result = TaskResult.SUCCESS.value
-        task_run.finished_at = timezone.now()
-        task.mark_success()
+            task_run.result = result = TaskResult.SUCCESS.value
+            task_run.finished_at = timezone.now()
+            task.mark_success()
 
-        logger.debug(f"Task {task_identifier} id={task.pk} completed")
+            logger.debug(f"Task {task_identifier} id={task.pk} completed")
 
-    except Exception as e:
-        # For errors that don't include a default message (e.g., TimeoutError),
-        # fall back to using repr.
-        err_msg = str(e) or repr(e)
+        except Exception as e:
+            # For errors that don't include a default message (e.g., TimeoutError),
+            # fall back to using repr.
+            err_msg = str(e) or repr(e)
 
-        span.set_status(trace.StatusCode.ERROR, err_msg)
-        span.record_exception(e)
+            span.set_status(trace.StatusCode.ERROR, err_msg)
+            span.record_exception(e)
 
-        task.mark_failure()
+            task.mark_failure()
 
-        task_run.result = result = TaskResult.FAILURE.value
-        task_run.error_details = str(traceback.format_exc())
+            task_run.result = result = TaskResult.FAILURE.value
+            task_run.error_details = str(traceback.format_exc())
 
-        logger.error(
-            "Failed to execute task '%s', with id %d. Exception: %s",
-            task_identifier,
-            task.pk,
-            err_msg,
-            exc_info=True,
-        )
-
-        if isinstance(e, TaskBackoffError):
-            assert registered_task.task_type == TaskType.STANDARD, (
-                "Attempt to back off a recurring task (currently not supported)"
+            logger.error(
+                "Failed to execute task '%s', with id %d. Exception: %s",
+                task_identifier,
+                task.pk,
+                err_msg,
+                exc_info=True,
             )
-            if typing.TYPE_CHECKING:
-                assert isinstance(task, Task)
-            if task.num_failures <= 3:
-                delay_until = e.delay_until or timezone.now() + timedelta(
-                    seconds=settings.TASK_BACKOFF_DEFAULT_DELAY_SECONDS,
-                )
-                task.scheduled_for = delay_until
-                logger.info(
-                    "Backoff requested. Task '%s' set to retry at %s",
-                    task_identifier,
-                    delay_until,
-                )
 
+            if isinstance(e, TaskBackoffError):
+                assert registered_task.task_type == TaskType.STANDARD, (
+                    "Attempt to back off a recurring task (currently not supported)"
+                )
+                if typing.TYPE_CHECKING:
+                    assert isinstance(task, Task)
+                if task.num_failures <= 3:
+                    delay_until = e.delay_until or timezone.now() + timedelta(
+                        seconds=settings.TASK_BACKOFF_DEFAULT_DELAY_SECONDS,
+                    )
+                    task.scheduled_for = delay_until
+                    logger.info(
+                        "Backoff requested. Task '%s' set to retry at %s",
+                        task_identifier,
+                        delay_until,
+                    )
+
+        finally:
+            # Always shutdown the executor without waiting for worker threads.
+            # This prevents the TaskRunner thread from blocking indefinitely
+            # when a task times out but continues running in a worker thread.
+            if executor is not None:
+                executor.shutdown(wait=False)
+
+        labels = {
+            "task_identifier": task_identifier,
+            "task_type": registered_task.task_type.value.lower(),
+            "result": result.lower(),
+        }
+
+        timer.labels(**labels)  # type: ignore[no-untyped-call]
+        ctx.close()
+
+        metrics.flagsmith_task_processor_finished_tasks_total.labels(**labels).inc()
+
+        span.set_attributes(labels)
     finally:
-        # Always shutdown the executor without waiting for worker threads.
-        # This prevents the TaskRunner thread from blocking indefinitely
-        # when a task times out but continues running in a worker thread.
-        if executor is not None:
-            executor.shutdown(wait=False)
-
-    labels = {
-        "task_identifier": task_identifier,
-        "task_type": registered_task.task_type.value.lower(),
-        "result": result.lower(),
-    }
-
-    timer.labels(**labels)  # type: ignore[no-untyped-call]
-    ctx.close()
-
-    metrics.flagsmith_task_processor_finished_tasks_total.labels(**labels).inc()
-
-    span.set_attributes(labels)
-    span.end()
-    otel_context.detach(otel_token)
+        span.end()
+        otel_context.detach(otel_token)
 
     return task, task_run

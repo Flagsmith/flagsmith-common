@@ -871,6 +871,33 @@ def test_run_task__backoff_recurring__raises_expected(
 
 @pytest.mark.multi_database
 @pytest.mark.task_processor_mode
+def test_run_task__exception_escapes__ends_span_and_restores_context(
+    current_database: str,
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    # Given
+    @register_recurring_task(run_every=timedelta(seconds=1))
+    def backoff_task() -> None:
+        raise TaskBackoffError()
+
+    initialise()
+    current_span = trace.get_current_span()
+
+    # When
+    with pytest.raises(AssertionError):
+        run_recurring_task(current_database)
+
+    # Then
+    assert trace.get_current_span() is current_span
+    assert [
+        span.name
+        for span in span_exporter.get_finished_spans()
+        if span.name.endswith(".backoff_task")
+    ] == ["test_unit_task_processor_processor.backoff_task"]
+
+
+@pytest.mark.multi_database
+@pytest.mark.task_processor_mode
 def test_run_task__backoff_max_num_failures__noop(
     current_database: str,
     caplog: pytest.LogCaptureFixture,
