@@ -126,10 +126,10 @@ def map_event_to_json_record(
 
 
 class StructlogEventDict(dict[str, Any]):
-    """An event dict carried as a stdlib ``LogRecord.msg``.
+    """An event dict carried as a stdlib `LogRecord.msg`.
 
-    ``ProcessorFormatter`` reads the dict as usual. Handlers that convert
-    the message to a string, like Sentry's ``LoggingIntegration``, get
+    `ProcessorFormatter` reads the dict as usual. Handlers that convert
+    the message to a string, like Sentry's `LoggingIntegration`, get
     the bare event name instead of the whole dict repr.
     """
 
@@ -142,11 +142,11 @@ def format_exc_info(
     method_name: str,
     event_dict: EventDict,
 ) -> EventDict:
-    """Run structlog's ``format_exc_info``, keeping the original ``exc_info``.
+    """Run structlog's `format_exc_info`, keeping the original `exc_info`.
 
-    The rendered traceback goes in the ``exception`` key as usual. The
-    original value is kept in ``LOGGING_EXC_INFO_EVENT_KEY`` so
-    `wrap_for_formatter` can pass it to stdlib, which resolves ``True``
+    The rendered traceback goes in the `exception` key as usual. The
+    original value is kept in `LOGGING_EXC_INFO_EVENT_KEY` so
+    `wrap_for_formatter` can pass it to stdlib, which resolves `True`
     and exception instances itself.
     """
     exc_info = event_dict.get("exc_info")
@@ -161,11 +161,11 @@ def wrap_for_formatter(
     method_name: str,
     event_dict: EventDict,
 ) -> tuple[tuple[EventDict], dict[str, Any]]:
-    """Like ``ProcessorFormatter.wrap_for_formatter``, but also passes
-    ``exc_info`` to stdlib.
+    """Like `ProcessorFormatter.wrap_for_formatter`, but also passes
+    `exc_info` to stdlib.
 
-    Without ``exc_info``, stdlib handlers like Sentry's
-    ``LoggingIntegration`` treat the log as a plain message and lose the
+    Without `exc_info`, stdlib handlers like Sentry's
+    `LoggingIntegration` treat the log as a plain message and lose the
     exception and its stack trace.
     """
     exc_info = event_dict.pop(LOGGING_EXC_INFO_EVENT_KEY, None)
