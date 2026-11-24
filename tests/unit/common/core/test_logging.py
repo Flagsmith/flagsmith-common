@@ -418,7 +418,6 @@ def test_setup_logging__structlog_error_with_exc_info__sentry_captures_exception
     sentry_transport_mock: "MockSentryTransport",
     exc_info_kwarg: str,
 ) -> None:
-    """Verify `.error(exc_info=...)` reaches Sentry as an exception event."""
     # Given
     setup_logging(
         log_level="DEBUG",
@@ -474,7 +473,6 @@ def test_setup_logging__structlog_error_without_exception__sentry_message_is_eve
     test_app_loggers: list[str],
     sentry_transport_mock: "MockSentryTransport",
 ) -> None:
-    """Verify Sentry titles structlog errors with the event, not the dict repr."""
     # Given
     setup_logging(
         log_level="DEBUG",
