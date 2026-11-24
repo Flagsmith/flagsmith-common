@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, Callable, Generator
 from unittest.mock import patch
 
 import pytest
@@ -405,18 +405,18 @@ def test_setup_logging__structlog_exception__sentry_captures_with_context(
 
 
 @pytest.mark.parametrize(
-    "exc_info_kwarg",
+    "get_exc_info",
     [
-        pytest.param("true", id="exc_info=True"),
-        pytest.param("exception", id="exc_info=exc"),
-        pytest.param("tuple", id="exc_info=sys.exc_info()"),
+        pytest.param(lambda exc: True, id="exc_info=True"),
+        pytest.param(lambda exc: exc, id="exc_info=exc"),
+        pytest.param(lambda exc: sys.exc_info(), id="exc_info=sys.exc_info()"),
     ],
 )
 def test_setup_logging__structlog_error_with_exc_info__sentry_captures_exception(
     capsys: pytest.CaptureFixture[str],
     test_app_loggers: list[str],
     sentry_transport_mock: "MockSentryTransport",
-    exc_info_kwarg: str,
+    get_exc_info: Callable[[BaseException], object],
 ) -> None:
     # Given
     setup_logging(
@@ -430,13 +430,8 @@ def test_setup_logging__structlog_error_with_exc_info__sentry_captures_exception
         try:
             raise ConnectionError("upstream unauthorised")
         except ConnectionError as exc:
-            exc_info = {
-                "true": True,
-                "exception": exc,
-                "tuple": sys.exc_info(),
-            }[exc_info_kwarg]
             structured_logger.error(
-                "api_call.failed", organisation__id=1, exc_info=exc_info
+                "api_call.failed", organisation__id=1, exc_info=get_exc_info(exc)
             )
 
     # When
