@@ -4,6 +4,7 @@ import logging.config
 import os
 import sys
 import threading
+from types import TracebackType
 from typing import Any
 
 import structlog
@@ -11,10 +12,13 @@ import structlog.contextvars
 import structlog.dev
 import structlog.processors
 import structlog.stdlib
-from structlog.typing import EventDict, Processor, WrappedLogger
+from structlog.typing import EventDict, ExcInfo, Processor, WrappedLogger
 from typing_extensions import TypedDict
 
-from common.core.constants import LOGGING_DEFAULT_ROOT_LOG_LEVEL
+from common.core.constants import (
+    LOGGING_DEFAULT_ROOT_LOG_LEVEL,
+    LOGGING_EXC_INFO_EVENT_KEY,
+)
 from common.core.sentry import sentry_processor
 
 logger = logging.getLogger(__name__)
@@ -122,6 +126,77 @@ def map_event_to_json_record(
     return event_dict
 
 
+class StructlogEventDict(dict[str, Any]):
+    """An event dict carried as a stdlib ``LogRecord.msg``.
+
+    ``ProcessorFormatter`` reads the dict as usual. Handlers that convert
+    the message to a string, like Sentry's ``LoggingIntegration``, get
+    the bare event name instead of the whole dict repr.
+    """
+
+    def __str__(self) -> str:
+        return str(self.get("event", ""))
+
+
+def _resolve_exc_info(value: Any) -> ExcInfo | None:
+    if isinstance(value, BaseException):
+        return (type(value), value, value.__traceback__)
+    if (
+        isinstance(value, tuple)
+        and len(value) == 3
+        and isinstance(value[1], BaseException)
+        and (value[2] is None or isinstance(value[2], TracebackType))
+    ):
+        return value
+    if value:
+        exc_info = sys.exc_info()
+        if exc_info[1] is not None:
+            return exc_info
+    return None
+
+
+def format_exc_info(
+    logger: WrappedLogger,
+    method_name: str,
+    event_dict: EventDict,
+) -> EventDict:
+    """Run structlog's ``format_exc_info``, keeping the exception tuple.
+
+    The rendered traceback goes in the ``exception`` key as usual. The
+    original tuple is kept in ``LOGGING_EXC_INFO_EVENT_KEY`` so
+    `wrap_for_formatter` can set it on the stdlib ``LogRecord``.
+    """
+    exc_info = _resolve_exc_info(event_dict.get("exc_info"))
+    event_dict = structlog.processors.format_exc_info(logger, method_name, event_dict)
+    if exc_info:
+        event_dict[LOGGING_EXC_INFO_EVENT_KEY] = exc_info
+    return event_dict
+
+
+def wrap_for_formatter(
+    logger: WrappedLogger,
+    method_name: str,
+    event_dict: EventDict,
+) -> tuple[tuple[EventDict], dict[str, Any]]:
+    """Like ``ProcessorFormatter.wrap_for_formatter``, but also passes
+    ``exc_info`` to stdlib.
+
+    Without ``exc_info``, stdlib handlers like Sentry's
+    ``LoggingIntegration`` treat the log as a plain message and lose the
+    exception and its stack trace.
+    """
+    exc_info = event_dict.pop(LOGGING_EXC_INFO_EVENT_KEY, None)
+    args, kwargs = structlog.stdlib.ProcessorFormatter.wrap_for_formatter(
+        logger,
+        method_name,
+        StructlogEventDict(event_dict),
+    )
+    stdlib_kwargs: dict[str, Any] = {**kwargs}
+    if exc_info:
+        stdlib_kwargs["exc_info"] = exc_info
+    return args, stdlib_kwargs
+
+
 def setup_structlog(
     log_format: str,
     extra_foreign_processors: list[Processor] | None = None,
@@ -173,11 +248,11 @@ def setup_structlog(
             structlog.stdlib.PositionalArgumentsFormatter(),
             structlog.processors.StackInfoRenderer(),
             structlog.processors.UnicodeDecoder(),
-            structlog.processors.format_exc_info,
+            format_exc_info,
             structlog.processors.TimeStamper(fmt="iso"),
             sentry_processor,
             *(otel_processors or []),
-            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+            wrap_for_formatter,
         ],
         wrapper_class=structlog.stdlib.BoundLogger,
         context_class=dict,

@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Generator
 from unittest.mock import patch
@@ -350,13 +351,6 @@ def test_setup_logging__structlog_exception__sentry_captures_with_context(
             structured_logger.exception("payment failed", order_id="ORD-456")
 
     expected_lineno = _raise_and_log.__code__.co_firstlineno + 2
-    expected_tb_string = (
-        "Traceback (most recent call last):\n"
-        f'  File "{expected_module_path}",'
-        f" line {expected_lineno}, in _raise_and_log\n"
-        '    raise RuntimeError("payment gateway timeout")\n'
-        "RuntimeError: payment gateway timeout"
-    )
 
     # When
     _raise_and_log()
@@ -369,6 +363,11 @@ def test_setup_logging__structlog_exception__sentry_captures_with_context(
         >= {
             "level": "error",
             "logger": "test.sentry_structlog",
+            "logentry": {
+                "message": "payment failed",
+                "formatted": "payment failed",
+                "params": [],
+            },
             "platform": "python",
         }.items()
     )
@@ -397,11 +396,109 @@ def test_setup_logging__structlog_exception__sentry_captures_with_context(
         }.items()
     )
 
-    # And — sentry_processor set the structlog context
+    # And — sentry_processor set the structlog context, without duplicating
+    # the exception Sentry already has
     assert event["contexts"]["structlog"] == {
         "order_id": "ORD-456",
         "logger": "test.sentry_structlog",
-        "exception": expected_tb_string,
+    }
+
+
+@pytest.mark.parametrize(
+    "exc_info_kwarg",
+    [
+        pytest.param("true", id="exc_info=True"),
+        pytest.param("exception", id="exc_info=exc"),
+        pytest.param("tuple", id="exc_info=sys.exc_info()"),
+    ],
+)
+def test_setup_logging__structlog_error_with_exc_info__sentry_captures_exception(
+    capsys: pytest.CaptureFixture[str],
+    test_app_loggers: list[str],
+    sentry_transport_mock: "MockSentryTransport",
+    exc_info_kwarg: str,
+) -> None:
+    """Verify `.error(exc_info=...)` reaches Sentry as an exception event."""
+    # Given
+    setup_logging(
+        log_level="DEBUG",
+        log_format="json",
+        application_loggers=test_app_loggers,
+    )
+    structured_logger = structlog.get_logger("test.sentry_exc_info")
+
+    def _raise_and_log() -> None:
+        try:
+            raise ConnectionError("upstream unauthorised")
+        except ConnectionError as exc:
+            exc_info = {
+                "true": True,
+                "exception": exc,
+                "tuple": sys.exc_info(),
+            }[exc_info_kwarg]
+            structured_logger.error(
+                "api_call.failed", organisation__id=1, exc_info=exc_info
+            )
+
+    # When
+    _raise_and_log()
+
+    # Then — Sentry got an exception event titled with the event name
+    assert len(sentry_transport_mock.events) == 1
+    event = sentry_transport_mock.events[0]
+    assert event["logentry"] == {
+        "message": "api_call.failed",
+        "formatted": "api_call.failed",
+        "params": [],
+    }
+    exc = event["exception"]["values"][0]
+    assert exc["type"] == "ConnectionError"
+    assert exc["value"] == "upstream unauthorised"
+    assert exc["stacktrace"]["frames"][-1]["function"] == "_raise_and_log"
+    assert event["contexts"]["structlog"] == {
+        "organisation__id": 1,
+        "logger": "test.sentry_exc_info",
+    }
+
+    # And — the JSON output still has the rendered traceback
+    parsed = json.loads(capsys.readouterr().out.strip())
+    assert parsed["message"] == "api_call.failed"
+    assert parsed["organisation__id"] == 1
+    assert parsed["exc_info"].startswith("Traceback (most recent call last):\n")
+    assert parsed["exc_info"].endswith("ConnectionError: upstream unauthorised")
+    assert "_exc_info" not in parsed
+
+
+def test_setup_logging__structlog_error_without_exception__sentry_message_is_event(
+    capsys: pytest.CaptureFixture[str],
+    test_app_loggers: list[str],
+    sentry_transport_mock: "MockSentryTransport",
+) -> None:
+    """Verify Sentry titles structlog errors with the event, not the dict repr."""
+    # Given
+    setup_logging(
+        log_level="DEBUG",
+        log_format="json",
+        application_loggers=test_app_loggers,
+    )
+    structured_logger = structlog.get_logger("test.sentry_message")
+
+    # When
+    structured_logger.error("webhook.failed", organisation__id=1, status_code=500)
+
+    # Then
+    assert len(sentry_transport_mock.events) == 1
+    event = sentry_transport_mock.events[0]
+    assert event["logentry"] == {
+        "message": "webhook.failed",
+        "formatted": "webhook.failed",
+        "params": [],
+    }
+    assert "exception" not in event
+    assert event["contexts"]["structlog"] == {
+        "organisation__id": 1,
+        "status_code": 500,
+        "logger": "test.sentry_message",
     }
 
 
