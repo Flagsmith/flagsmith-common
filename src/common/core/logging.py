@@ -4,7 +4,6 @@ import logging.config
 import os
 import sys
 import threading
-from types import TracebackType
 from typing import Any
 
 import structlog
@@ -12,7 +11,7 @@ import structlog.contextvars
 import structlog.dev
 import structlog.processors
 import structlog.stdlib
-from structlog.typing import EventDict, ExcInfo, Processor, WrappedLogger
+from structlog.typing import EventDict, Processor, WrappedLogger
 from typing_extensions import TypedDict
 
 from common.core.constants import (
@@ -138,35 +137,19 @@ class StructlogEventDict(dict[str, Any]):
         return str(self.get("event", ""))
 
 
-def _resolve_exc_info(value: Any) -> ExcInfo | None:
-    if isinstance(value, BaseException):
-        return (type(value), value, value.__traceback__)
-    if (
-        isinstance(value, tuple)
-        and len(value) == 3
-        and isinstance(value[1], BaseException)
-        and (value[2] is None or isinstance(value[2], TracebackType))
-    ):
-        return value
-    if value:
-        exc_info = sys.exc_info()
-        if exc_info[1] is not None:
-            return exc_info
-    return None
-
-
 def format_exc_info(
     logger: WrappedLogger,
     method_name: str,
     event_dict: EventDict,
 ) -> EventDict:
-    """Run structlog's ``format_exc_info``, keeping the exception tuple.
+    """Run structlog's ``format_exc_info``, keeping the original ``exc_info``.
 
     The rendered traceback goes in the ``exception`` key as usual. The
-    original tuple is kept in ``LOGGING_EXC_INFO_EVENT_KEY`` so
-    `wrap_for_formatter` can set it on the stdlib ``LogRecord``.
+    original value is kept in ``LOGGING_EXC_INFO_EVENT_KEY`` so
+    `wrap_for_formatter` can pass it to stdlib, which resolves ``True``
+    and exception instances itself.
     """
-    exc_info = _resolve_exc_info(event_dict.get("exc_info"))
+    exc_info = event_dict.get("exc_info")
     event_dict = structlog.processors.format_exc_info(logger, method_name, event_dict)
     if exc_info:
         event_dict[LOGGING_EXC_INFO_EVENT_KEY] = exc_info
