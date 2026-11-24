@@ -9,8 +9,6 @@ _SKIP_CONTEXT_FIELDS = frozenset(
         "level",
         "timestamp",
         "_record",
-        # Sentry renders the exception from `LogRecord.exc_info`;
-        # no need to duplicate it as context.
         "exception",
         LOGGING_EXC_INFO_EVENT_KEY,
     }

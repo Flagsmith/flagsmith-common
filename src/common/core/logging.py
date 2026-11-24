@@ -126,11 +126,8 @@ def map_event_to_json_record(
 
 
 class StructlogEventDict(dict[str, Any]):
-    """An event dict carried as a stdlib `LogRecord.msg`.
-
-    `ProcessorFormatter` reads the dict as usual. Handlers that convert
-    the message to a string, like Sentry's `LoggingIntegration`, get
-    the bare event name instead of the whole dict repr.
+    """A wrapper ensuring that Sentry's `LoggingIntegration`
+    gets the bare event name instead of the whole dict repr.
     """
 
     def __str__(self) -> str:
@@ -142,12 +139,8 @@ def format_exc_info(
     method_name: str,
     event_dict: EventDict,
 ) -> EventDict:
-    """Run structlog's `format_exc_info`, keeping the original `exc_info`.
-
-    The rendered traceback goes in the `exception` key as usual. The
-    original value is kept in `LOGGING_EXC_INFO_EVENT_KEY` so
-    `wrap_for_formatter` can pass it to stdlib, which resolves `True`
-    and exception instances itself.
+    """Run structlog's `format_exc_info`, keeping the original `exc_info`
+    for later processing.
     """
     exc_info = event_dict.get("exc_info")
     event_dict = structlog.processors.format_exc_info(logger, method_name, event_dict)
