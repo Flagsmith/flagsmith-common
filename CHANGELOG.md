@@ -2,6 +2,18 @@
 
 <a name="v1.5.2"></a>
 
+## [3.17.1](https://github.com/Flagsmith/flagsmith-common/compare/v3.17.0...v3.17.1) (2026-11-25)
+
+
+### CI
+
+* pre-commit autoupdate ([#289](https://github.com/Flagsmith/flagsmith-common/issues/289)) ([e5edf7a](https://github.com/Flagsmith/flagsmith-common/commit/e5edf7acac1d6e1cfa7e0cddebc9918eccb35661))
+
+
+### Bug Fixes
+
+* **logging:** Send structlog exceptions to Sentry as exception events ([#301](https://github.com/Flagsmith/flagsmith-common/issues/301)) ([02151ac](https://github.com/Flagsmith/flagsmith-common/commit/02151ac94347d6c6f1d83e521fa354e3c61b68e4))
+
 ## [3.17.0](https://github.com/Flagsmith/flagsmith-common/compare/v3.16.2...v3.17.0) (2026-11-20)
 
 
