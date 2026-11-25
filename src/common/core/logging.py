@@ -14,7 +14,10 @@ import structlog.stdlib
 from structlog.typing import EventDict, Processor, WrappedLogger
 from typing_extensions import TypedDict
 
-from common.core.constants import LOGGING_DEFAULT_ROOT_LOG_LEVEL
+from common.core.constants import (
+    LOGGING_DEFAULT_ROOT_LOG_LEVEL,
+    LOGGING_EXC_INFO_EVENT_KEY,
+)
 from common.core.sentry import sentry_processor
 
 logger = logging.getLogger(__name__)
@@ -122,6 +125,54 @@ def map_event_to_json_record(
     return event_dict
 
 
+class StructlogEventDict(dict[str, Any]):
+    """A wrapper ensuring that Sentry's `LoggingIntegration`
+    gets the bare event name instead of the whole dict repr.
+    """
+
+    def __str__(self) -> str:
+        return str(self.get("event", ""))
+
+
+def format_exc_info(
+    logger: WrappedLogger,
+    method_name: str,
+    event_dict: EventDict,
+) -> EventDict:
+    """Run structlog's `format_exc_info`, keeping the original `exc_info`
+    for later processing.
+    """
+    exc_info = event_dict.get("exc_info")
+    event_dict = structlog.processors.format_exc_info(logger, method_name, event_dict)
+    if exc_info:
+        event_dict[LOGGING_EXC_INFO_EVENT_KEY] = exc_info
+    return event_dict
+
+
+def wrap_for_formatter(
+    logger: WrappedLogger,
+    method_name: str,
+    event_dict: EventDict,
+) -> tuple[tuple[EventDict], dict[str, Any]]:
+    """Like `ProcessorFormatter.wrap_for_formatter`, but also passes
+    `exc_info` to stdlib.
+
+    Without `exc_info`, stdlib handlers like Sentry's
+    `LoggingIntegration` treat the log as a plain message and lose the
+    exception and its stack trace.
+    """
+    exc_info = event_dict.pop(LOGGING_EXC_INFO_EVENT_KEY, None)
+    args, kwargs = structlog.stdlib.ProcessorFormatter.wrap_for_formatter(
+        logger,
+        method_name,
+        StructlogEventDict(event_dict),
+    )
+    stdlib_kwargs: dict[str, Any] = {**kwargs}
+    if exc_info:
+        stdlib_kwargs["exc_info"] = exc_info
+    return args, stdlib_kwargs
+
+
 def setup_structlog(
     log_format: str,
     extra_foreign_processors: list[Processor] | None = None,
@@ -173,11 +224,11 @@ def setup_structlog(
             structlog.stdlib.PositionalArgumentsFormatter(),
             structlog.processors.StackInfoRenderer(),
             structlog.processors.UnicodeDecoder(),
-            structlog.processors.format_exc_info,
+            format_exc_info,
             structlog.processors.TimeStamper(fmt="iso"),
             sentry_processor,
             *(otel_processors or []),
-            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+            wrap_for_formatter,
         ],
         wrapper_class=structlog.stdlib.BoundLogger,
         context_class=dict,

@@ -12,6 +12,7 @@ from opentelemetry.sdk._logs.export import (
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 
+from common.core.logging import format_exc_info
 from common.core.otel import (
     build_otel_log_provider,
     build_tracer_provider,
@@ -127,6 +128,39 @@ def test_otel_processor__single_underscore_attributes__left_unchanged(
     assert attrs is not None
     assert attrs["simple_attr"] == "value"
     assert attrs["issues_created_count"] == 7
+
+
+def test_otel_processor__exc_info__exports_rendered_exception_only(
+    otel_exporter: InMemoryLogExporter,
+    otel_processor: structlog.typing.Processor,
+) -> None:
+    # Given
+    structlog.configure(
+        processors=[
+            structlog.stdlib.add_logger_name,
+            structlog.stdlib.add_log_level,
+            format_exc_info,
+            otel_processor,
+            structlog.dev.ConsoleRenderer(),
+        ],
+        wrapper_class=structlog.stdlib.BoundLogger,
+        context_class=dict,
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        cache_logger_on_first_use=False,
+    )
+
+    # When
+    try:
+        raise ValueError("boom")
+    except ValueError as exc:
+        structlog.get_logger().error("failed", exc_info=exc)
+
+    # Then
+    attrs = otel_exporter.get_finished_logs()[0].log_record.attributes
+    assert attrs is not None
+    assert str(attrs["exception"]).endswith("ValueError: boom")
+    assert "_exc_info" not in attrs
+    assert "exc_info" not in attrs
 
 
 @pytest.mark.parametrize(

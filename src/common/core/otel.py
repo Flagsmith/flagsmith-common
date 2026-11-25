@@ -40,6 +40,7 @@ from opentelemetry.trace.propagation.tracecontext import (
 from opentelemetry.util.types import AnyValue, Attributes
 from structlog.typing import EventDict, Processor
 
+from common.core.constants import LOGGING_EXC_INFO_EVENT_KEY
 from common.core.types import OtlpProtocol
 
 _SEVERITY_MAP: dict[str, SeverityNumber] = {
@@ -58,6 +59,7 @@ _RESERVED_KEYS = frozenset(
         "logger",
         "trace_id",
         "span_id",
+        LOGGING_EXC_INFO_EVENT_KEY,
     ]
 )
 

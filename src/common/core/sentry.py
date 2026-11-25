@@ -1,7 +1,18 @@
 import sentry_sdk
 from structlog.typing import EventDict, WrappedLogger
 
-_SKIP_CONTEXT_FIELDS = frozenset({"event", "level", "timestamp", "_record"})
+from common.core.constants import LOGGING_EXC_INFO_EVENT_KEY
+
+_SKIP_CONTEXT_FIELDS = frozenset(
+    {
+        "event",
+        "level",
+        "timestamp",
+        "_record",
+        "exception",
+        LOGGING_EXC_INFO_EVENT_KEY,
+    }
+)
 
 
 def sentry_processor(
