@@ -445,7 +445,7 @@ wheels = [
 
 [[package]]
 name = "flagsmith-common"
-version = "3.17.0"
+version = "3.17.1"
 source = { editable = "." }
 
 [package.optional-dependencies]
